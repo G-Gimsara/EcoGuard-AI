@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const CoralauthRoutes = require('./Routes/CoralUserRoute');
 const ReportRoutes = require('./Routes/ReportRoute');
+const stationReadingRoutes = require('./Routes/fstation.Rute');
 require('dotenv').config();
 
 const app = express();
@@ -20,5 +21,6 @@ app.use(bodyParser.json());
 
 app.use('/api/CoralauthRoutes', CoralauthRoutes);
 app.use('/api/ReportRoutes', ReportRoutes);
+app.use("/api/readings", stationReadingRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
