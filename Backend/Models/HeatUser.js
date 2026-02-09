@@ -38,7 +38,7 @@ const User = sequelize.define("User", {
 export default User; */
 
 const { DataTypes } = require("sequelize");
-const sequelize = require("../Config/sequelize_heat.js");
+const sequelize = require("../Config/sequelize.js");
 
 const User = sequelize.define("User", {
   id: {
