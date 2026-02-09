@@ -26,7 +26,7 @@ const Prediction = sequelize.define("Prediction", {
 export default Prediction; */
 
 const { DataTypes } = require("sequelize");
-const sequelize = require("../Config/sequelize_heat.js");
+const sequelize = require("../Config/sequelize.js"); // Sequelize instance එක require කරන්න
 
 const Prediction = sequelize.define("Prediction", {
   location: {
