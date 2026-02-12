@@ -14,9 +14,9 @@ LOCATIONS = {
     "kesbawa": (6.779, 79.947),
     "rathmalana": (6.819, 79.881),
     "seethawaka": (6.954, 80.205),
-    "thimbirigasyaya": (6.8896, 79.8774),
+    "thimbirigasyaya": (6.896, 79.867),
     "maharagama": (6.848, 79.927),
-    "jayawardanapura": (6.912, 79.883)
+    "jayawardanapura": (6.885, 79.904)
 }
 
 CSV_PATH = "data/Weather_2016-01-01_to_2026-01-24.csv"
