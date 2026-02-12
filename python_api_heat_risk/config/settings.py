@@ -1,6 +1,7 @@
 # config/settings.py
 
-VISUAL_CROSSING_API_KEY = "TLBFB2ZXCKUPZCJGSBFMSBDT6"
+# Open-Meteo does not require an API Key for standard usage.
+VISUAL_CROSSING_API_KEY = None 
 
 LOCATIONS = {
     "homagama": (6.845, 80.015),
@@ -13,10 +14,12 @@ LOCATIONS = {
     "kesbawa": (6.779, 79.947),
     "rathmalana": (6.819, 79.881),
     "seethawaka": (6.954, 80.205),
-    "thimbirigasyaya": (7.7102, 81.6924),
+    "thimbirigasyaya": (6.8896, 79.8774),
     "maharagama": (6.848, 79.927),
     "jayawardanapura": (6.912, 79.883)
 }
 
 CSV_PATH = "data/Weather_2016-01-01_to_2026-01-24.csv"
-BASE_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline"
+
+# Using the Archive API which contains historical data
+BASE_URL = "https://archive-api.open-meteo.com/v1/archive"
