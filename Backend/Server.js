@@ -1,24 +1,56 @@
-// app.js
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const CoralauthRoutes = require('./Routes/CoralUserRoute');
-const ReportRoutes = require('./Routes/ReportRoute');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
+
+
+const CoralauthRoutes = require("./Routes/CoralUserRoute.js");
+const ReportRoutes = require("./Routes/ReportRoute.js");
+const authRoutes = require("./Routes/HeatAuthRouts.js");
+const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
+
+
+const { syncPredictions } = require("./Controllers/heat_controller.js");
+
+dotenv.config();
 
 const app = express();
 
-// CORS configuration
+/* -------------------- MIDDLEWARES -------------------- */
+
 app.use(cors({
-    origin: 'http://localhost:3000', // Allow requests from your frontend
-    credentials: true, // Allow cookies/credentials to be sent
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+  origin: "http://localhost:3000",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-app.use(bodyParser.json());
+app.use(express.json());
 
-app.use('/api/CoralauthRoutes', CoralauthRoutes);
-app.use('/api/ReportRoutes', ReportRoutes);
+/* -------------------- ROUTES -------------------- */
+
+app.get("/", (req, res) => {
+  res.json({ message: "🚀 Backend API running (CommonJS Mode)" });
+});
+
+app.use("/api/coral-auth", CoralauthRoutes);
+app.use("/api/reports", ReportRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/predictions", predictionsRoute);
+
+/* -------------------- SERVER START -------------------- */
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, async () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+
+  // Auto sync predictions
+  try {
+    if (typeof syncPredictions === 'function') {
+      await syncPredictions();
+      console.log("✅ Predictions synced on startup");
+    }
+  } catch (err) {
+    console.error("❌ Prediction sync failed:", err.message);
+  }
+});
