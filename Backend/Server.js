@@ -4,7 +4,9 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const CoralauthRoutes = require('./Routes/CoralUserRoute');
 const ReportRoutes = require('./Routes/ReportRoute');
-const stationReadingRoutes = require('./Routes/fstation.Rute');
+const sequelize = require('./Config/sequelize');
+const waterRoutes = require('./Routes/Wroute');
+
 require('dotenv').config();
 
 const app = express();
@@ -21,6 +23,12 @@ app.use(bodyParser.json());
 
 app.use('/api/CoralauthRoutes', CoralauthRoutes);
 app.use('/api/ReportRoutes', ReportRoutes);
-app.use("/api/readings", stationReadingRoutes);
+app.use('/api/water', waterRoutes);
+
+sequelize.sync({ alter: true })
+  .then(() => {
+   console.log("Database synced");
+ });
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

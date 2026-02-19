@@ -92,7 +92,7 @@ function HeroSection() {
 }
 
 // Module Card Component
-function ModuleCard({ module, isHovered, onHover, onLeave }) {
+function ModuleCard({ module, isHovered, onHover, onLeave }: { module: typeof MODULES[0]; isHovered: boolean; onHover: () => void; onLeave: () => void }) {
   const Icon = module.icon;
 
   return (
@@ -138,7 +138,7 @@ function ModuleCard({ module, isHovered, onHover, onLeave }) {
 
 // Modules Grid Component
 function ModulesGrid() {
-  const [hoveredCard, setHoveredCard] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   return (
     <section className="py-16 px-4 bg-slate-50">
