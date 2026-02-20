@@ -36,7 +36,7 @@ const MODULES = [
     description: 'Urban heat island detection using temperature sensors, satellite data, and ML models.',
     icon: Thermometer,
     image: HeatImg,
-    link: '/urban-heat',
+    link: '/Pages/Heat_risk',
     tag: 'AI • Climate'
   },
   {
