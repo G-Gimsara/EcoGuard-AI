@@ -32,39 +32,41 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data }) => {
 
   const getMaxItem = (field: keyof SummaryRow) => {
     if (todayData.length === 0) return null;
-    return todayData.reduce((max, item) =>
-      (item[field] as number) > (max[field] as number) ? item : max
-    );
+    return todayData.reduce((max, item) => {
+      const itemValue = Number(item[field]);
+      const maxValue = Number(max[field]);
+      return itemValue > maxValue ? item : max;
+    });
   };
 
   const maxHeatItem = getMaxItem("heat_index");
   const maxHeatIndex = maxHeatItem
-    ? maxHeatItem.heat_index.toFixed(1)
+    ? Number(maxHeatItem.heat_index).toFixed(1)
     : "N/A";
   const maxHeatLocation = maxHeatItem ? maxHeatItem.location : "N/A";
   const maxHeatRisk = maxHeatItem
-    ? getRiskLevel(maxHeatItem.heat_index)
+    ? getRiskLevel(Number(maxHeatItem.heat_index))
     : "Unknown";
 
   const maxTempItem = getMaxItem("tempmax");
-  const maxTemp = maxTempItem ? maxTempItem.tempmax.toFixed(1) : "N/A";
+  const maxTemp = maxTempItem ? Number(maxTempItem.tempmax).toFixed(1) : "N/A";
   const maxTempLocation = maxTempItem ? maxTempItem.location : "N/A";
 
   const maxHumidityItem = getMaxItem("humidity");
   const maxHumidity = maxHumidityItem
-    ? maxHumidityItem.humidity.toFixed(1)
+    ? Number(maxHumidityItem.humidity).toFixed(1)
     : "N/A";
   const maxHumidityLocation = maxHumidityItem
     ? maxHumidityItem.location
     : "N/A";
 
   const maxDewItem = getMaxItem("dew");
-  const maxDew = maxDewItem ? maxDewItem.dew.toFixed(1) : "N/A";
+  const maxDew = maxDewItem ? Number(maxDewItem.dew).toFixed(1) : "N/A";
   const maxDewLocation = maxDewItem ? maxDewItem.location : "N/A";
 
   const maxSolarItem = getMaxItem("solarradiation");
   const maxSolar = maxSolarItem
-    ? maxSolarItem.solarradiation.toFixed(1)
+    ? Number(maxSolarItem.solarradiation).toFixed(1)
     : "N/A";
   const maxSolarLocation = maxSolarItem
     ? maxSolarItem.location

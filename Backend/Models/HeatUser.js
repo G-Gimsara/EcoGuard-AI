@@ -69,7 +69,7 @@ const User = sequelize.define("User", {
     type: DataTypes.STRING,
   },
 }, {
-  tableName: "users",
+  tableName: "Heatusers",
   timestamps: true,
   underscored: true, // "createdAt" -> "created_at" mapping  for  Postgres
 });

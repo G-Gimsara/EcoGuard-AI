@@ -1,6 +1,6 @@
 import dynamic from "next/dynamic";
 
-const HeatRiskMap = dynamic(() => import("./HeatRiskMapClient"), {
+const HeatRiskMap = dynamic(() => import("../components/HeatRiskMapClient"), {
   ssr: false,
 });
 

@@ -45,9 +45,9 @@ import type { Metadata } from "next";
 
 import "../Heat_risk/styles/leaflet.css";
 
-import Header from "./components/Header";
+import Header from "../../Header/page";
 import ChatBot from "./components/ChatBot";
-import Foter from "./components/Foter";
+import Foter from "../../Header/page";
 
 export const metadata: Metadata = {
   title: "EcoRisk",

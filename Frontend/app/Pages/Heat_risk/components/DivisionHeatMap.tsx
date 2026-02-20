@@ -110,9 +110,9 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
         peakDate: "N/A",
       };
     }
-    const vals = futureData.map((d) => d[metric] as number);
+    const vals = futureData.map((d) => Number(d[metric]) || 0);
     const maxVal = Math.max(...vals);
-    const peakItem = futureData.find((d) => d[metric] === maxVal);
+    const peakItem = futureData.find((d) => Number(d[metric]) === maxVal);
 
     return {
       avg: (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1),
@@ -205,7 +205,7 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
           {hoverDetail ? (
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-xl font-bold text-indigo-700">
-                {hoverDetail.val.toFixed(1)}
+                {Number(hoverDetail.val).toFixed(1)}
                 {config[metric].unit}
               </span>
               <span className="text-[10px] font-bold text-slate-700 truncate">
@@ -252,7 +252,7 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
                   {loc}
                 </td>
                 {groupedFuture[loc]?.map((item) => {
-                  const val = item[metric] as number;
+                  const val = Number(item[metric]) || 0;
                   return (
                     <td
                       key={item.date}

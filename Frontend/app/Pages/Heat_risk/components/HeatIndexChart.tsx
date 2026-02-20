@@ -85,7 +85,7 @@ const HeatIndexChart: React.FC<HeatIndexChartProps> = ({ data }) => {
     return filteredData.map((item) => {
       const date = new Date(item.date);
       const isFuture = date > today;
-      const heatIndex = Number(item.heat_index.toFixed(1));
+      const heatIndex = Number(Number(item.heat_index).toFixed(1));
 
       return {
         date: format(date, "MMM dd"),

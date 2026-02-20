@@ -43,11 +43,6 @@ def predict_json():
     predictions = run_predictions(df, models)
     return predictions
 
-@app.get("/predict")
-def predict_api():
-    predictions = run_predictions(df, models)
-    return predictions    
-
 
 # -----------------------------
 # Prediction UI
@@ -63,3 +58,4 @@ def predict_ui(request: Request):
             "predictions": predictions
         }
     )
+

@@ -43,21 +43,25 @@ const PredictionsTable: React.FC<PredictionsTableProps> = ({ data }) => {
   });
 
   const getRiskLevel = (temp: number) => {
-    if (temp < 27) return "Normal";
-    if (temp < 33) return "Caution";
-    if (temp < 41) return "Extreme Caution";
-    if (temp < 51) return "Danger";
+    const numTemp = Number(temp);
+    if (isNaN(numTemp)) return "Unknown";
+    if (numTemp < 27) return "Normal";
+    if (numTemp < 33) return "Caution";
+    if (numTemp < 41) return "Extreme Caution";
+    if (numTemp < 51) return "Danger";
     return "Extreme Danger";
   };
 
   const getRiskStyles = (temp: number) => {
-    const level = getRiskLevel(temp);
+    const numTemp = Number(temp);
+    const level = getRiskLevel(numTemp);
     const styles: Record<string, string> = {
       Normal: "bg-emerald-500 text-white border-emerald-600",
       Caution: "bg-amber-500 text-white border-amber-600",
       "Extreme Caution": "bg-orange-500 text-white border-orange-600",
       Danger: "bg-red-500 text-white border-red-600",
       "Extreme Danger": "bg-purple-600 text-white border-purple-700",
+      Unknown: "bg-slate-500 text-white",
     };
     return styles[level] || "bg-slate-500 text-white";
   };
@@ -108,7 +112,7 @@ const PredictionsTable: React.FC<PredictionsTableProps> = ({ data }) => {
           row.dew,
           row.solarradiation,
           row.heat_index,
-          `"${getRiskLevel(row.heat_index)}"`,
+          `"${getRiskLevel(Number(row.heat_index) || 0)}"`,
         ].join(",")
       ),
     ];
@@ -259,24 +263,24 @@ const PredictionsTable: React.FC<PredictionsTableProps> = ({ data }) => {
                         })}
                       </td>
                       <td className="px-6 py-4 font-mono text-sm font-bold text-slate-600">
-                        {row.tempmax?.toFixed(1)}°C
+                        {row.tempmax ? Number(row.tempmax).toFixed(1) : "N/A"}°C
                       </td>
                       <td className="px-6 py-4 font-mono text-sm font-bold text-slate-600">
-                        {row.humidity?.toFixed(1)}%
+                        {row.humidity ? Number(row.humidity).toFixed(1) : "N/A"}%
                       </td>
                       <td className="px-6 py-4 font-mono text-sm text-slate-400">
-                        {row.solarradiation?.toFixed(1)}
+                        {row.solarradiation ? Number(row.solarradiation).toFixed(1) : "N/A"}
                       </td>
                       <td className="px-6 py-4 font-mono text-lg font-black text-blue-600">
-                        {row.heat_index?.toFixed(1)}°C
+                        {row.heat_index ? Number(row.heat_index).toFixed(1) : "N/A"}°C
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span
                           className={`inline-block px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border shadow-sm ${getRiskStyles(
-                            row.heat_index
+                            Number(row.heat_index) || 0
                           )}`}
                         >
-                          {getRiskLevel(row.heat_index)}
+                          {getRiskLevel(Number(row.heat_index) || 0)}
                         </span>
                       </td>
                     </tr>
