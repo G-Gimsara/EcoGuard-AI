@@ -1,3 +1,15 @@
+
+// app.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const CoralauthRoutes = require('./Routes/CoralUserRoute');
+const ReportRoutes = require('./Routes/ReportRoute');
+const sequelize = require('./Config/sequelize');
+const waterRoutes = require('./Routes/Wroute');
+
+require('dotenv').config();
+
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -12,6 +24,7 @@ const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
 const { syncPredictions } = require("./Controllers/heat_controller.js");
 
 dotenv.config();
+
 
 const app = express();
 
@@ -39,6 +52,14 @@ app.use("/api/predictions", predictionsRoute);
 
 /* -------------------- SERVER START -------------------- */
 
+app.use('/api/CoralauthRoutes', CoralauthRoutes);
+app.use('/api/ReportRoutes', ReportRoutes);
+app.use('/api/water', waterRoutes);
+
+sequelize.sync({ alter: true })
+  .then(() => {
+   console.log("Database synced");
+ });
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, async () => {
