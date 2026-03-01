@@ -8,7 +8,9 @@ const CoralauthRoutes = require('./Routes/CoralUserRoute');
 const ReportRoutes = require('./Routes/ReportRoute');
 const sequelize = require('./Config/sequelize');
 const waterRoutes = require('./Routes/Wroute');
-const sensorRoutes = require('./Routes/HeatSensorRoute.js'); // ← NEW
+const sensorRoutes = require('./Routes/HeatSensorRoute.js'); 
+const floodAlertRoute = require('./Routes/FloodMesureRoute.js'); // ← NOT CHANGED
+require('./Models/FloodDangerAlert');                            // ← ADD
 
 require('dotenv').config();
 
@@ -21,9 +23,9 @@ const { syncPredictions } = require("./Controllers/heat_controller.js");
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app);               // ← NEW
-const wss = new WebSocketServer({ server });         // ← NEW
-app.set('wss', wss);                                 // ← NEW
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+app.set('wss', wss);
 
 /* -------------------- MIDDLEWARES -------------------- */
 
@@ -56,7 +58,8 @@ app.use("/api/predictions", predictionsRoute);
 app.use('/api/CoralauthRoutes', CoralauthRoutes);
 app.use('/api/ReportRoutes', ReportRoutes);
 app.use('/api/water', waterRoutes);
-app.use('/api/sensors', sensorRoutes);               // ← NEW
+app.use('/api/sensors', sensorRoutes);   
+app.use('/api/float', floodAlertRoute);
 
 /* -------------------- DATABASE SYNC -------------------- */
 
@@ -69,8 +72,9 @@ sequelize.sync({ alter: true })
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, async () => {                    // ← CHANGED app.listen → server.listen
+server.listen(PORT, '0.0.0.0', async () => {       // ← ADD '0.0.0.0'
   console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🌐 Network: http://10.180.188.181:${PORT}`);
 
   try {
     if (typeof syncPredictions === 'function') {
