@@ -2,23 +2,24 @@
 // app.js
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');
-const CoralauthRoutes = require('./Routes/CoralUserRoute');
+
+
 const ReportRoutes = require('./Routes/ReportRoute');
 const sequelize = require('./Config/sequelize');
 const waterRoutes = require('./Routes/Wroute');
 
 require('dotenv').config();
 
-const express = require("express");
+
 const cors = require("cors");
 const dotenv = require("dotenv");
 
 
 const CoralauthRoutes = require("./Routes/CoralUserRoute.js");
-const ReportRoutes = require("./Routes/ReportRoute.js");
+
 const authRoutes = require("./Routes/HeatAuthRouts.js");
 const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
+const Pollution = require('./Routes/pollutionRoutes');
 
 
 const { syncPredictions } = require("./Controllers/heat_controller.js");
@@ -55,6 +56,7 @@ app.use("/api/predictions", predictionsRoute);
 app.use('/api/CoralauthRoutes', CoralauthRoutes);
 app.use('/api/ReportRoutes', ReportRoutes);
 app.use('/api/water', waterRoutes);
+app.use('/api/pollution', Pollution);
 
 sequelize.sync({ alter: true })
   .then(() => {
