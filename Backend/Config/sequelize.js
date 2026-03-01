@@ -1,14 +1,6 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const sequelize = new Sequelize("flood_alert_db", "postgres", "root", {
-    host: "localhost",
-    dialect: 'postgres',
-     port: 5432,
-  logging: false, 
-});
-
-
 const sequelize = new Sequelize(
   process.env.PG_DATABASE || process.env.DB_NAME,
   process.env.PG_USER || process.env.DB_USER,
@@ -26,7 +18,6 @@ const sequelize = new Sequelize(
     },
   }
 );
-
 
 // Test DB connection
 (async () => {

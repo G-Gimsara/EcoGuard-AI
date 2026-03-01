@@ -1,32 +1,29 @@
-
 // app.js
-const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const http = require('http');                       
+const { WebSocketServer } = require('ws');           
+
 const CoralauthRoutes = require('./Routes/CoralUserRoute');
 const ReportRoutes = require('./Routes/ReportRoute');
 const sequelize = require('./Config/sequelize');
 const waterRoutes = require('./Routes/Wroute');
+const sensorRoutes = require('./Routes/HeatSensorRoute.js'); // ← NEW
 
 require('dotenv').config();
 
 const express = require("express");
-const cors = require("cors");
 const dotenv = require("dotenv");
-
-
-const CoralauthRoutes = require("./Routes/CoralUserRoute.js");
-const ReportRoutes = require("./Routes/ReportRoute.js");
 const authRoutes = require("./Routes/HeatAuthRouts.js");
 const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
-
-
 const { syncPredictions } = require("./Controllers/heat_controller.js");
 
 dotenv.config();
 
-
 const app = express();
+const server = http.createServer(app);               // ← NEW
+const wss = new WebSocketServer({ server });         // ← NEW
+app.set('wss', wss);                                 // ← NEW
 
 /* -------------------- MIDDLEWARES -------------------- */
 
@@ -39,6 +36,13 @@ app.use(cors({
 
 app.use(express.json());
 
+/* -------------------- WEBSOCKET -------------------- */
+
+wss.on('connection', (ws) => {
+  console.log('📡 IoT Dashboard client connected');
+  ws.on('close', () => console.log('📡 IoT Dashboard client disconnected'));
+});
+
 /* -------------------- ROUTES -------------------- */
 
 app.get("/", (req, res) => {
@@ -49,23 +53,25 @@ app.use("/api/coral-auth", CoralauthRoutes);
 app.use("/api/reports", ReportRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/predictions", predictionsRoute);
-
-/* -------------------- SERVER START -------------------- */
-
 app.use('/api/CoralauthRoutes', CoralauthRoutes);
 app.use('/api/ReportRoutes', ReportRoutes);
 app.use('/api/water', waterRoutes);
+app.use('/api/sensors', sensorRoutes);               // ← NEW
+
+/* -------------------- DATABASE SYNC -------------------- */
 
 sequelize.sync({ alter: true })
   .then(() => {
-   console.log("Database synced");
- });
+    console.log("✅ Database synced");
+  });
+
+/* -------------------- SERVER START -------------------- */
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {                    // ← CHANGED app.listen → server.listen
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 
-  // Auto sync predictions
   try {
     if (typeof syncPredictions === 'function') {
       await syncPredictions();
