@@ -27,7 +27,7 @@ const MODULES = [
     description: 'Real-time air quality monitoring with PM2.5, PM10, CO₂ levels and predictive analytics.',
     icon: Wind,
     image: AirImg,
-    link: '/air-quality',
+    link: '/Pages/air-quality/Dashboard',
     tag: 'IoT • Environmental Health'
   },
   {
