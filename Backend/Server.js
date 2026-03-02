@@ -10,7 +10,9 @@ const sequelize = require('./Config/sequelize');
 const waterRoutes = require('./Routes/Wroute');
 const sensorRoutes = require('./Routes/HeatSensorRoute.js'); 
 const floodAlertRoute = require('./Routes/FloodMesureRoute.js'); // ← NOT CHANGED
-require('./Models/FloodDangerAlert');                            // ← ADD
+require('./Models/FloodDangerAlert');            
+const waterLevelRoute = require('./Routes/WaterLevelSensorRoute.js');
+require('./Models/WaterLevelSensor.js');                // ← ADD
 
 require('dotenv').config();
 
@@ -60,6 +62,7 @@ app.use('/api/ReportRoutes', ReportRoutes);
 app.use('/api/water', waterRoutes);
 app.use('/api/sensors', sensorRoutes);   
 app.use('/api/float', floodAlertRoute);
+app.use('/api/water-level', waterLevelRoute);
 
 /* -------------------- DATABASE SYNC -------------------- */
 
