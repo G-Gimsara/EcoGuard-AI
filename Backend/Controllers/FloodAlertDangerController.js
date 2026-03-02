@@ -78,4 +78,6 @@ const getLatestStatus = async (req, res) => {
   }
 };
 
+
+
 module.exports = { receiveFloatStatus, getAlerts, getLatestStatus };
