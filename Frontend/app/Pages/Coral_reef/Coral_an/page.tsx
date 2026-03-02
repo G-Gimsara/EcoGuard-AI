@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Upload, Sparkles, User, Brain, CheckCircle } from "lucide-react";
 import Navbar from "../NavBar/Navbar";
+import Header from "@/app/Header/page";
 
 interface PredictionResult {
   prediction: string;
@@ -66,6 +67,7 @@ export default function AnalyzeCoral() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 text-black">
+      <Header/>
       <Navbar />
 
       <div className="max-w-5xl mx-auto px-6 py-12">

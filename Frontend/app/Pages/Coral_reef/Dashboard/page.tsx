@@ -12,6 +12,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import Header from "@/app/Header/page";
 
 /* ------------------ Reusable Components ------------------ */
 
@@ -58,6 +59,7 @@ export default function CoralReef() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Header/>
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
