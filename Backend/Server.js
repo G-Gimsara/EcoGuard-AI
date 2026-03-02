@@ -1,10 +1,12 @@
 // app.js
 const bodyParser = require('body-parser');
+
 const cors = require('cors');
 const http = require('http');                       
 const { WebSocketServer } = require('ws');           
 
 const CoralauthRoutes = require('./Routes/CoralUserRoute');
+
 const ReportRoutes = require('./Routes/ReportRoute');
 const sequelize = require('./Config/sequelize');
 const waterRoutes = require('./Routes/Wroute');
@@ -16,10 +18,25 @@ require('./Models/WaterLevelSensor.js');                // ← ADD
 
 require('dotenv').config();
 
+
+
+const cors = require("cors");
+const dotenv = require("dotenv");
+
+
+const CoralauthRoutes = require("./Routes/CoralUserRoute.js");
+
+const authRoutes = require("./Routes/HeatAuthRouts.js");
+const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
+const Pollution = require('./Routes/pollutionRoutes');
+
+
+
 const express = require("express");
 const dotenv = require("dotenv");
 const authRoutes = require("./Routes/HeatAuthRouts.js");
 const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
+
 const { syncPredictions } = require("./Controllers/heat_controller.js");
 
 dotenv.config();
@@ -60,11 +77,15 @@ app.use("/api/predictions", predictionsRoute);
 app.use('/api/CoralauthRoutes', CoralauthRoutes);
 app.use('/api/ReportRoutes', ReportRoutes);
 app.use('/api/water', waterRoutes);
+
+app.use('/api/pollution', Pollution);
+
 app.use('/api/sensors', sensorRoutes);   
 app.use('/api/float', floodAlertRoute);
 app.use('/api/water-level', waterLevelRoute);
 
 /* -------------------- DATABASE SYNC -------------------- */
+
 
 sequelize.sync({ alter: true })
   .then(() => {
