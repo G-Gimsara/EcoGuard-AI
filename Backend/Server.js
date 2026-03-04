@@ -17,7 +17,11 @@ const waterLevelRoute = require('./Routes/WaterLevelSensorRoute.js');
 require('./Models/WaterLevelSensor.js');    
 const airSensorRoute = require('./Routes/AirsensorRoute.js');
 require('./Models/GasReading.js');
-require('./Models/Airquality.js');            // ← ADD
+require('./Models/Airquality.js');       
+const waterQualityRoute = require('./Routes/WaterqualityRoute.js');
+require('./Models/Phreading.js');
+require('./Models/Tuberlity.js');
+require('./Models/WaterTempReading.js');     // ← ADD
 
 require('dotenv').config();
 
@@ -81,6 +85,7 @@ app.use('/api/sensors', sensorRoutes);
 app.use('/api/float', floodAlertRoute);
 app.use('/api/water-level', waterLevelRoute);
 app.use('/api', airSensorRoute);
+app.use('/api', waterQualityRoute);
 
 /* -------------------- DATABASE SYNC -------------------- */
 
