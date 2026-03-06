@@ -8,7 +8,7 @@ import os
 from lightgbm import early_stopping
 
 # ===============================
-# PATHS Weather_2016-01-01_to_2025-11-26
+# PATHS
 # ===============================
 DATA_PATH = "data/Weather_2016-01-01_to_2026-01-24.csv"
 MODEL_DIR = "models/"
@@ -42,15 +42,15 @@ def main():
     df["dayofyear"] = df["datetime"].dt.dayofyear
 
     # ===============================
-    # LAG FEATURES
+    # LAG FEATURES   ← removed dew
     # ===============================
-    for col in ["tempmax", "humidity", "dew", "solarradiation"]:
-        df[f"{col}_lag1"] = df.groupby("location")[col].shift(1)
-        df[f"{col}_lag7"] = df.groupby("location")[col].shift(7)
+    for col in ["tempmax", "humidity", "solarradiation"]:
+        df[f"{col}_lag1"]  = df.groupby("location")[col].shift(1)
+        df[f"{col}_lag7"]  = df.groupby("location")[col].shift(7)
         df[f"{col}_lag14"] = df.groupby("location")[col].shift(14)
 
     # ===============================
-    # ROLLING FEATURES (FAST)
+    # ROLLING FEATURES
     # ===============================
     df["temp_roll3"] = (
         df.groupby("location")["tempmax"]
@@ -79,35 +79,27 @@ def main():
     test  = df[df["datetime"] > split_date]
 
     # ===============================
-    # TARGET-WISE FEATURES
+    # TARGET-WISE FEATURES   ← removed dew completely
     # ===============================
     target_columns = {
 
         "tempmax": [
-            "location_enc","month","dayofyear",
-            "tempmax_lag1","tempmax_lag7","tempmax_lag14",
-            "humidity_lag1","humidity_lag7",
-            "dew_lag1","dew_lag7",
-            "temp_roll3","hum_roll3"
+            "location_enc", "month", "dayofyear",
+            "tempmax_lag1", "tempmax_lag7", "tempmax_lag14",
+            "humidity_lag1", "humidity_lag7",
+            "temp_roll3", "hum_roll3"
         ],
 
         "humidity": [
-            "location_enc","month","dayofyear",
-            "humidity_lag1","humidity_lag7","humidity_lag14",
-            "tempmax_lag1","tempmax_lag7",
+            "location_enc", "month", "dayofyear",
+            "humidity_lag1", "humidity_lag7", "humidity_lag14",
+            "tempmax_lag1", "tempmax_lag7",
             "hum_roll3"
         ],
 
-        "dew": [
-            "location_enc","month","dayofyear",
-            "dew_lag1","dew_lag7","dew_lag14",
-            "tempmax_lag1","tempmax_lag7",
-            "humidity"
-        ],
-
         "solarradiation": [
-            "location_enc","month","dayofyear",
-            "solarradiation_lag1","solarradiation_lag7","solarradiation_lag14"
+            "location_enc", "month", "dayofyear",
+            "solarradiation_lag1", "solarradiation_lag7", "solarradiation_lag14"
         ]
     }
 
@@ -137,11 +129,11 @@ def main():
         )
 
         model.fit(
-        X_train, y_train,
+            X_train, y_train,
             eval_set=[(X_test, y_test)],
             eval_metric="rmse",
             callbacks=[early_stopping(stopping_rounds=30)],
-        ) 
+        )
 
         preds = model.predict(X_test)
 
@@ -161,8 +153,5 @@ def main():
     print("\n🎉 Training completed successfully!")
 
 
-# ===============================
-# RUN
-# ===============================
 if __name__ == "__main__":
     main()
