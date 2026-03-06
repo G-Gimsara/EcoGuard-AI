@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Logo from "@/app/Images/logo.png";
+import Link from "next/link";
 
 export default function Header() {
   return (
@@ -9,6 +10,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         
         {/* LEFT: Logo */}
+        <Link href="/" >
         <div className="flex items-center gap-3">
           <div className="relative w-12 h-12">
             <Image
@@ -20,9 +22,9 @@ export default function Header() {
           </div>
           {/* Optional: Logo Text */}
           <span className="font-medium text-sm md:text-base opacity-90 tracking-wide hidden md:inline">
-            ER&R AI SYSTEM
           </span>
         </div>
+        </Link>
 
         {/* CENTER: Title */}
         <div className="flex-1 text-center">
@@ -36,10 +38,7 @@ export default function Header() {
 
         {/* RIGHT: Placeholder for actions/icons */}
         <div className="flex items-center gap-4">
-          {/* Example: future profile icon */}
-          <button className="hidden md:inline px-3 py-1 bg-white/10 rounded hover:bg-white/20 transition">
-            Profile
-          </button>
+       
         </div>
 
       </div>
