@@ -20,7 +20,6 @@ export default function Header() {
           </div>
           {/* Optional: Logo Text */}
           <span className="font-medium text-sm md:text-base opacity-90 tracking-wide hidden md:inline">
-            ER&R AI SYSTEM
           </span>
         </div>
 
@@ -36,10 +35,7 @@ export default function Header() {
 
         {/* RIGHT: Placeholder for actions/icons */}
         <div className="flex items-center gap-4">
-          {/* Example: future profile icon */}
-          <button className="hidden md:inline px-3 py-1 bg-white/10 rounded hover:bg-white/20 transition">
-            Profile
-          </button>
+       
         </div>
 
       </div>
