@@ -14,12 +14,12 @@ import Footer from './Footer/Footer';
 const MODULES = [
   {
     id: 1,
-    title: 'Flood Risk Prediction',
-    description: 'AI-driven flood forecasting using rainfall trends, river levels, and historical disaster data.',
+    title: 'Flood Risk Detection',
+    description: 'AI-driven flood monitoring using real time IoT data from rainfall sensors, river levels, and environmental conditions.',
     icon: Droplets,
     image: FloodImg,
     link: '/Pages/Flood_Risk/Dashboard',
-    tag: 'AI • Hydrology'
+    tag: 'IoT • AI • Hydrology'
   },
   {
     id: 2,
