@@ -1,3 +1,4 @@
+
 # Environment variables
 .env
 
@@ -16,3 +17,10 @@ __pycache__/
 
 # Virtual Environment
 venv/
+
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
