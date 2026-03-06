@@ -109,12 +109,12 @@ export default function LiveMonitoringCard() {
     <div className={`w-full bg-white rounded-3xl shadow-xl border-2 ${config.borderColor} overflow-hidden transition-all duration-300 hover:shadow-2xl`}>
       
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-8 py-4 border-b-2 border-slate-200">
+      <div className="bg-linear-to-r from-slate-50 to-slate-100 px-8 py-4 border-b-2 border-slate-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} rounded-xl blur-md opacity-40 animate-pulse`}></div>
-              <div className={`relative bg-gradient-to-br ${config.gradient} p-3 rounded-xl shadow-lg`}>
+              <div className={`absolute inset-0 bg-linear-to-br ${config.gradient} rounded-xl blur-md opacity-40 animate-pulse`}></div>
+              <div className={`relative bg-linear-to-br ${config.gradient} p-3 rounded-xl shadow-lg`}>
                 <Activity size={24} className="text-white" />
               </div>
             </div>
@@ -165,9 +165,9 @@ export default function LiveMonitoringCard() {
           />
 
           {/* Risk Level */}
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200 flex flex-col justify-between shadow-md hover:shadow-lg transition-all">
+          <div className="bg-linear-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200 flex flex-col justify-between shadow-md hover:shadow-lg transition-all">
             <div className="flex items-center gap-3 mb-3">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${config.gradient} flex items-center justify-center shadow-md`}>
+              <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${config.gradient} flex items-center justify-center shadow-md`}>
                 <Activity size={20} className="text-white" />
               </div>
               <span className="text-slate-600 font-semibold text-sm">Risk Level</span>
@@ -180,9 +180,9 @@ export default function LiveMonitoringCard() {
           </div>
 
           {/* Last Update */}
-          <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200 flex flex-col justify-between shadow-md hover:shadow-lg transition-all">
+          <div className="bg-linear-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200 flex flex-col justify-between shadow-md hover:shadow-lg transition-all">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-slate-600 to-slate-700 flex items-center justify-center shadow-md">
                 <Clock size={20} className="text-white" />
               </div>
               <span className="text-slate-600 font-semibold text-sm">Last Update</span>
@@ -213,9 +213,9 @@ interface MetricCardProps {
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, gradient, large = false }) => (
-  <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200 flex flex-col justify-between shadow-md hover:shadow-lg transition-all">
+  <div className="bg-linear-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border-2 border-slate-200 flex flex-col justify-between shadow-md hover:shadow-lg transition-all">
     <div className="flex items-center gap-3 mb-3">
-      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md`}>
+      <div className={`w-10 h-10 rounded-xl bg-linear-to-br ${gradient} flex items-center justify-center shadow-md`}>
         {icon}
       </div>
       <span className="text-slate-600 font-semibold text-sm">{label}</span>
