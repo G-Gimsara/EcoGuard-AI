@@ -44,53 +44,69 @@ transform = transforms.Compose([
 
 # ── AI suggestions with water quality data ──
 async def get_coral_suggestions(
-    prediction: str,
-    role: str = None,
-    ph_value: str = "",
-    ph_status: str = "",
-    turbidity_ntu: str = "",
-    turbidity_status: str = "",
-    temperature: str = "",
-    temp_status: str = ""
+    prediction, role=None,
+    coral_area="", coast="", rivers="",
+    ph_value="", ph_status="",
+    turbidity_ntu="", turbidity_status="",
+    temperature="", temp_status=""
 ) -> str:
     try:
-        # Build water quality context
+        location_context = ""
+        if coral_area:
+            location_context = f"\nLocation: {coral_area}, {coast}, Sri Lanka"
+        if rivers:
+            location_context += f"\nAffecting rivers: {rivers}"
+
         water_context = ""
         if ph_value or turbidity_ntu or temperature:
             water_context = f"""
-Current live water quality readings from IoT sensors:
-- pH Level      : {ph_value} ({ph_status}) — Safe range: 8.0–8.3
-- Turbidity     : {turbidity_ntu} NTU ({turbidity_status}) — Safe range: 0–10 NTU
-- Water Temp    : {temperature} °C ({temp_status}) — Safe range: 23–29 °C
-"""
+Live IoT river water quality readings:
+- pH         : {ph_value} ({ph_status})        — Coral safe range: 8.0–8.3
+- Turbidity  : {turbidity_ntu} NTU ({turbidity_status}) — Coral safe range: 0–10 NTU
+- Temperature: {temperature}°C ({temp_status})  — Coral safe range: 23–29°C"""
 
-        # Build prompts based on role
         if role == "researcher":
-            system_prompt = "You are a marine biologist. Be concise and scientific."
-            if prediction == "healthy_corals":
-                prompt = f"Coral image shows healthy coral.{water_context}\nGive 3 short scientific monitoring actions considering the water quality data (1 sentence each)."
-            elif prediction == "bleach_1_40":
-                prompt = f"Coral image shows 1-40% bleaching.{water_context}\nGive 3 short scientific research actions considering the water quality data (1 sentence each)."
-            else:
-                prompt = f"Coral image shows 40-100% bleaching (severe).{water_context}\nGive 3 urgent scientific actions considering the water quality data (1 sentence each)."
+            system_prompt = """You are a marine biologist specializing in coral reef ecology in Sri Lanka.
+Use your knowledge and the latest research to give scientific, specific advice.
+Always consider both the image analysis and the live water quality data provided."""
+
+            prompt = f"""Coral image at {coral_area}, Sri Lanka shows: {prediction}.
+{location_context}
+{water_context}
+
+Based on this location, the affecting rivers ({rivers}), and the live water quality:
+1. What are the likely causes of this coral condition at {coral_area}?
+2. Give 3 specific scientific actions researchers should take.
+3. How do the current river water quality readings relate to the coral condition?
+Keep each point to 1-2 sentences."""
 
         elif role == "tourism_guide":
-            system_prompt = "You are a marine conservation expert. Keep advice simple and visitor-friendly."
-            if prediction == "healthy_corals":
-                prompt = f"Coral image shows healthy coral.{water_context}\nGive 3 short tourist-friendly tips considering the water quality (1 sentence each)."
-            elif prediction == "bleach_1_40":
-                prompt = f"Coral image shows 1-40% bleaching.{water_context}\nGive 3 short responsible tourism tips considering the water quality (1 sentence each)."
-            else:
-                prompt = f"Coral image shows 40-100% bleaching (severe).{water_context}\nGive 3 short visitor warnings considering the water quality (1 sentence each)."
+            system_prompt = """You are a marine conservation expert and tourism guide for Sri Lanka coral reefs.
+Give practical, visitor-friendly advice based on the coral condition and water quality."""
+
+            prompt = f"""Coral image at {coral_area}, Sri Lanka shows: {prediction}.
+{location_context}
+{water_context}
+
+Based on this location and current water quality:
+1. What should tourists know about visiting {coral_area} right now?
+2. Give 3 responsible tourism tips to protect this reef.
+3. Is it safe for snorkeling/diving given current water conditions?
+Keep each point to 1-2 sentences."""
 
         else:
-            system_prompt = "You are a marine biologist. Give short, practical, friendly advice."
-            if prediction == "healthy_corals":
-                prompt = f"Coral image shows healthy coral.{water_context}\nGive 3 short tips to protect it considering the water quality (1 sentence each)."
-            elif prediction == "bleach_1_40":
-                prompt = f"Coral image shows 1-40% bleaching.{water_context}\nGive 3 short recovery tips considering the water quality data (1 sentence each)."
-            else:
-                prompt = f"Coral image shows 40-100% bleaching (critical).{water_context}\nGive 3 urgent actions considering the water quality data (1 sentence each)."
+            system_prompt = """You are a friendly marine biologist explaining coral reef health to the public.
+Use simple language and give practical advice about Sri Lanka coral reefs."""
+
+            prompt = f"""Coral image at {coral_area}, Sri Lanka shows: {prediction}.
+{location_context}
+{water_context}
+
+Based on this location and water quality data:
+1. Explain simply what is happening to this coral and why.
+2. Give 3 simple things the public can do to help protect {coral_area}.
+3. How does river water quality affect this coral reef?
+Keep each point to 1-2 sentences."""
 
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
@@ -98,13 +114,29 @@ Current live water quality readings from IoT sensors:
                 {"role": "system", "content": system_prompt},
                 {"role": "user",   "content": prompt}
             ],
-            max_tokens=300,
+            tools=[{
+                "type": "web_search_preview"
+            }],
+            max_tokens=500,
             temperature=0.6
         )
         return response.choices[0].message.content.strip()
 
     except Exception as e:
-        return f"Unable to generate suggestions. Error: {str(e)}"
+        # fallback without web search if not supported
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",   "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.6
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e2:
+            return f"Unable to generate suggestions. Error: {str(e2)}"
 
 
 # ── Prediction endpoint ────────────────────
