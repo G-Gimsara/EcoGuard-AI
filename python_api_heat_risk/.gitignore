@@ -1,0 +1,26 @@
+
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Model files (if large)
+*.pth
+*.pt
+
+# IDE
+.vscode/
+.idea/
+
+# Virtual Environment
+venv/
+
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+

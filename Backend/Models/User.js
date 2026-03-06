@@ -1,4 +1,3 @@
-// models/User.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../Config/sequelize');
 
@@ -23,9 +22,32 @@ const User = sequelize.define('User', {
         allowNull: false
     },
     role: {
-        type: DataTypes.ENUM('researcher', 'farmer', 'tourism_guide', 'marine_authority'),
-        defaultValue: 'researcher'
+        type: DataTypes.ENUM('User', 'farmer', 'tourism_guide', 'marine_authority'),
+        defaultValue: 'User'
+    },
+
+    // ✅ NEW FIELDS
+
+    latitude: {
+        type: DataTypes.DOUBLE,
+        allowNull: true
+    },
+
+    longitude: {
+        type: DataTypes.DOUBLE,
+        allowNull: true
+    },
+
+    city: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+
+    risk_topic: {
+        type: DataTypes.STRING,
+        allowNull: true
     }
+
 }, {
     tableName: 'users',
     timestamps: true

@@ -1,4 +1,6 @@
 const Report = require('../Models/Waterlevel');
+// controllers/floodController.js
+const FloodAlert = require('../Models/FloodAearalrert');
 
 // Categorize based on ranges
 function categorizeLevel(value, type) {
@@ -61,5 +63,52 @@ exports.getReports = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+
+
+
+// Create a new alert
+exports.createFloodAlert = async (req, res) => {
+    try {
+        const { river_rise, alert_level, first_affected, next_affected, further_affected, widespread_zones } = req.body;
+
+        const alert = await FloodAlert.create({
+            river_rise,
+            alert_level,
+            first_affected,
+            next_affected,
+            further_affected,
+            widespread_zones
+        });
+
+        res.status(201).json(alert);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Get all alerts
+exports.getAllFloodAlerts = async (req, res) => {
+    try {
+        const alerts = await FloodAlert.findAll({ order: [['id', 'ASC']] });
+        res.json(alerts);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+// Get alert by ID
+exports.getFloodAlertById = async (req, res) => {
+    try {
+        const alert = await FloodAlert.findByPk(req.params.id);
+        if (!alert) return res.status(404).json({ message: "Alert not found" });
+        res.json(alert);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
     }
 };
