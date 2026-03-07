@@ -142,11 +142,12 @@ const evacuationZones: EvacuationZone[] = [
 ];
 
 const emergencyContacts: EmergencyContact[] = [
-  { label: "Disaster Management Center", number: "117", colorClass: "text-red-600", bgClass: "bg-red-50", borderClass: "border-red-200" },
-  { label: "Regional/Irregular Dept.", number: "N/A", colorClass: "text-gray-500", bgClass: "bg-gray-100", borderClass: "border-gray-300" },
-  { label: "National Emergency", number: "119", colorClass: "text-orange-600", bgClass: "bg-orange-50", borderClass: "border-orange-200" },
-  { label: "Police Emergency", number: "118", colorClass: "text-yellow-600", bgClass: "bg-yellow-50", borderClass: "border-yellow-200" },
-  { label: "Medical Emergency", number: "1990", colorClass: "text-green-700", bgClass: "bg-green-50", borderClass: "border-green-200" },
+  { label: "Disaster Management Centre (DMC)", number: "117", colorClass: "text-red-600", bgClass: "bg-red-50", borderClass: "border-red-200" },
+  { label: "DMC Emergency Ops Center", number: "011 2136222", colorClass: "text-red-600", bgClass: "bg-red-50", borderClass: "border-red-200" },
+  { label: "Police Special Ops Room", number: "011 2421820", colorClass: "text-yellow-600", bgClass: "bg-yellow-50", borderClass: "border-yellow-200" },
+  { label: "Police Emergency", number: "119", colorClass: "text-orange-600", bgClass: "bg-orange-50", borderClass: "border-orange-200" },
+  { label: "Fire & Rescue (Ambulance)", number: "110", colorClass: "text-green-700", bgClass: "bg-green-50", borderClass: "border-green-200" },
+  { label: "Suwa Seriya Ambulance", number: "1990", colorClass: "text-blue-700", bgClass: "bg-blue-50", borderClass: "border-blue-200" },
 ];
 
 // ─── Component ───────────────────────────────────────────
@@ -261,16 +262,10 @@ const SafetyGuidancePage = () => {
                 <p className="font-bold text-gray-800 text-sm uppercase tracking-wide mb-3">Emergency Hotlines</p>
                 {emergencyContacts.map((c, i) => (
                   <div key={i} className={`rounded-xl border ${c.borderClass} ${c.bgClass} px-4 py-3 flex items-center justify-between`}>
-                    <p className="text-xs text-gray-600 leading-tight max-w-[130px]">{c.label}</p>
+                    <p className="text-xs text-gray-600 leading-tight max-w-[140px]">{c.label}</p>
                     <span className={`text-2xl font-black font-mono tracking-tight ${c.colorClass}`}>{c.number}</span>
                   </div>
                 ))}
-
-                <div className="bg-blue-900 text-white p-6 rounded-xl mt-3">
-                  <p className="text-sm uppercase tracking-wider opacity-80">Primary Hotline</p>
-                  <p className="text-4xl font-mono font-bold mt-1">117</p>
-                  <p className="mt-2 text-sm opacity-90">Disaster Management Center (DMC)</p>
-                </div>
               </div>
             </div>
           </div>
