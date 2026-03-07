@@ -11,16 +11,95 @@ interface SensorData {
   risk_level: string;
 }
 
+interface Location {
+  lat: number;
+  lon: number;
+}
+
+const locations: Record<string, Location> = {
+  kaduwela: { lat: 6.936, lon: 79.984 },
+  homagama: { lat: 6.845, lon: 80.015 },
+  kolonnawa: { lat: 6.933, lon: 79.885 },
+  colombo: { lat: 6.932, lon: 79.846 },
+  moratuwa: { lat: 6.779, lon: 79.883 },
+  padukka: { lat: 6.841, lon: 80.093 },
+  dehiwala: { lat: 6.851, lon: 79.866 },
+  kesbawa: { lat: 6.779, lon: 79.947 },
+  rathmalana: { lat: 6.819, lon: 79.881 },
+  seethawaka: { lat: 6.954, lon: 80.205 },
+  thimbirigasyaya: { lat: 6.896, lon: 79.867 },
+  maharagama: { lat: 6.848, lon: 79.927 },
+  jayawardanapura: { lat: 6.885, lon: 79.904 },
+};
+
+function calculateHeatIndex(tempC: number, humidity: number): { heatIndexC: string; heatIndexF: number } {
+  const tempF = tempC * 9 / 5 + 32;
+  let heatIndexF = -42.379 + 2.04901523 * tempF + 10.14333127 * humidity - 0.22475541 * tempF * humidity - 0.00683783 * tempF * tempF - 0.05481717 * humidity * humidity + 0.00122874 * tempF * tempF * humidity + 0.00085282 * tempF * humidity * humidity - 0.00000199 * tempF * tempF * humidity * humidity;
+
+  if (humidity < 13 && tempF >= 80 && tempF <= 112) {
+    const adj = ((13 - humidity) / 4) * Math.sqrt((17 - Math.abs(tempF - 95)) / 17);
+    heatIndexF -= adj;
+  } else if (humidity > 85 && tempF >= 80 && tempF <= 87) {
+    const adj = ((humidity - 85) / 10) * ((87 - tempF) / 5);
+    heatIndexF += adj;
+  }
+
+  // If temperature is below 80°F, heat index is not typically calculated; approximate to temperature
+  if (tempF < 80) {
+    heatIndexF = tempF;
+  }
+
+  const heatIndexC = (heatIndexF - 32) * 5 / 9;
+  return { heatIndexC: heatIndexC.toFixed(1), heatIndexF };
+}
+
 export default function LiveMonitoringCard() {
   const [data, setData] = useState<SensorData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string>("kaduwela");
 
   const fetchData = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/sensors/latest");
-      const json = await res.json();
-      // Get the first sensor or aggregate data as needed
-      setData(json[0] || null);
+      let sensorData: SensorData | null = null;
+
+      if (selectedLocation === "kaduwela") {
+        const res = await fetch("http://localhost:5000/api/sensors/latest");
+        const json = await res.json();
+        sensorData = json[0] || null;
+      } else {
+        const { lat, lon } = locations[selectedLocation];
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&timezone=auto`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const current = json.current;
+        const temp = parseFloat(current.temperature_2m);
+        const humidity = parseFloat(current.relative_humidity_2m);
+        const { heatIndexC, heatIndexF } = calculateHeatIndex(temp, humidity);
+
+        let risk_level: string;
+        if (heatIndexF < 80) {
+          risk_level = "Normal";
+        } else if (heatIndexF < 90) {
+          risk_level = "Caution";
+        } else if (heatIndexF < 103) {
+          risk_level = "Extreme Caution";
+        } else if (heatIndexF < 125) {
+          risk_level = "Danger";
+        } else {
+          risk_level = "Extreme Danger";
+        }
+
+        sensorData = {
+          id: 0,
+          device_id: selectedLocation,
+          temperature: temp.toFixed(1),
+          humidity: humidity.toFixed(0),
+          heat_index: heatIndexC,
+          risk_level,
+        };
+      }
+
+      setData(sensorData);
       setLastUpdate(new Date());
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -31,7 +110,7 @@ export default function LiveMonitoringCard() {
     fetchData();
     const interval = setInterval(fetchData, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedLocation]);
 
   const getRiskConfig = (riskLevel: string) => {
     const level = riskLevel?.toLowerCase();
@@ -122,6 +201,17 @@ export default function LiveMonitoringCard() {
               <h2 className="text-slate-900 font-bold text-xl">Live Environmental Data</h2>
               <p className="text-slate-500 text-sm">Real-time monitoring system</p>
             </div>
+            <select
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              className="ml-4 bg-white border-2 border-slate-200 rounded-xl p-2 text-slate-700 font-medium text-sm"
+            >
+              {Object.keys(locations).map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc.charAt(0).toUpperCase() + loc.slice(1)}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Live Status Badge */}
