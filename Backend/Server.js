@@ -71,7 +71,7 @@ app.use("/api/predictions", predictionsRoute);
 app.use("/api/water", waterRoutes);
 app.use("/api/pollution", Pollution);
 app.use("/api/sensors", sensorRoutes);
-app.use("/api/float", floodAlertRoute);
+app.use("/api/flood", floodAlertRoute);
 // app.use("/api/water-level", waterLevelRoute); // Commented out until file is created
 app.use("/api/air", airSensorRoute);
 app.use("/api/water-quality", waterQualityRoute);
