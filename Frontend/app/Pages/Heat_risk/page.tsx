@@ -43,8 +43,7 @@ const HomePage = () => {
           </h1>
           
           <p className="text-slate-600 text-lg md:text-xl max-w-3xl mx-auto font-normal leading-relaxed mb-12">
-            Utilizing high-frequency meteorological data and AI-driven models to 
-            visualize urban thermal hazards before they impact your community.
+            “Utilizing high-frequency meteorological data, IoT-based environmental sensors, and AI-driven predictive models to monitor and visualize urban thermal hazards before they impact communities”
           </p>
 
           {/* Primary CTA: Full Width Dashboard Entry */}
@@ -105,7 +104,7 @@ const HomePage = () => {
               <p className="text-slate-600 text-lg leading-relaxed mb-8">
                 Our prediction engine processes a combination of atmospheric physics 
                 and urban topography. Understanding these three pillars is key to 
-                predicting the &quot;Heat Island&quot; effect.
+                predicting the &quot;Heat Risk&quot; effect.
               </p>
               <div className="flex items-center gap-4 p-5 bg-linear-to-br from-orange-50 to-red-50 rounded-2xl border-2 border-orange-200/60 shadow-sm">
                 <div className="p-2 bg-linear-to-br from-orange-500 to-red-500 rounded-lg text-white shadow-md">
