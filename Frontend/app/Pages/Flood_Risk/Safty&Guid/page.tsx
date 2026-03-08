@@ -6,7 +6,6 @@ import Header from "@/app/Header/page";
 import {
   ShieldCheck,
   AlertTriangle,
-  Waves,
   MapPin,
   PhoneCall,
   Zap,
@@ -20,8 +19,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
+// ─── Types ───────────────────────────────────────────
 interface SafetyLevel {
   level: string;
   code: string;
@@ -52,8 +50,7 @@ interface EmergencyContact {
   borderClass: string;
 }
 
-// ─── Static Data ──────────────────────────────────────────────────────────────
-
+// ─── Data ───────────────────────────────────────────
 const safetyLevels: SafetyLevel[] = [
   {
     level: "NORMAL",
@@ -146,13 +143,13 @@ const evacuationZones: EvacuationZone[] = [
 
 const emergencyContacts: EmergencyContact[] = [
   { label: "Disaster Management Center", number: "117", colorClass: "text-red-600", bgClass: "bg-red-50", borderClass: "border-red-200" },
+  { label: "Regional/Irregular Dept.", number: "N/A", colorClass: "text-gray-500", bgClass: "bg-gray-100", borderClass: "border-gray-300" },
   { label: "National Emergency", number: "119", colorClass: "text-orange-600", bgClass: "bg-orange-50", borderClass: "border-orange-200" },
   { label: "Police Emergency", number: "118", colorClass: "text-yellow-600", bgClass: "bg-yellow-50", borderClass: "border-yellow-200" },
   { label: "Medical Emergency", number: "1990", colorClass: "text-green-700", bgClass: "bg-green-50", borderClass: "border-green-200" },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
+// ─── Component ───────────────────────────────────────────
 const SafetyGuidancePage = () => {
   const [activeLevel, setActiveLevel] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -164,15 +161,13 @@ const SafetyGuidancePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-
-      {/* ── ORIGINAL HEADER & NAVBAR — UNCHANGED ── */}
       <Header />
       <Navbar />
 
       <main className="p-6 lg:p-8 flex-grow">
         <div className="max-w-7xl mx-auto space-y-8">
 
-          {/* ── Page Heading ── */}
+          {/* Page Heading */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <ShieldCheck size={40} className="text-blue-800 shrink-0" />
@@ -181,7 +176,8 @@ const SafetyGuidancePage = () => {
                 <p className="text-gray-600 text-sm">Based on Flood Risk Level Monitor Thresholds</p>
               </div>
             </div>
-            {/* Live clock pill */}
+
+            {/* Live Clock */}
             <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm text-sm text-gray-500 self-start sm:self-auto">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               <Clock size={13} />
@@ -192,15 +188,12 @@ const SafetyGuidancePage = () => {
             </div>
           </div>
 
-          {/* ── Alert Level Cards ── */}
+          {/* Alert Levels */}
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Radio size={14} className="text-blue-700" />
-              <h2 className="text-sm font-bold text-blue-700 uppercase tracking-widest">
-                Alert Levels & Response Protocols
-              </h2>
+              <h2 className="text-sm font-bold text-blue-700 uppercase tracking-widest">Alert Levels & Response Protocols</h2>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
               {safetyLevels.map((item, index) => {
                 const isActive = activeLevel === index;
@@ -208,137 +201,81 @@ const SafetyGuidancePage = () => {
                   <button
                     key={index}
                     onClick={() => setActiveLevel(isActive ? null : index)}
-                    className={`
-                      text-left rounded-r-xl rounded-l-sm p-5 relative overflow-hidden
-                      transition-all duration-300 cursor-pointer
-                      ${item.borderLeft}
-                      ${isActive
-                        ? `${item.bgActive} shadow-lg ${item.glowClass} scale-[1.02]`
-                        : "bg-white shadow-sm hover:shadow-md hover:scale-[1.01]"
-                      }
-                    `}
+                    className={`relative overflow-hidden rounded-xl p-5 text-left transition-all duration-300 cursor-pointer
+                      ${item.borderLeft} ${isActive ? `${item.bgActive} shadow-lg ${item.glowClass} scale-[1.02]` : "bg-white shadow-sm hover:shadow-md hover:scale-[1.01]"}`}
                   >
-                    {/* Code badge */}
-                    <span className={`absolute top-0 right-0 text-[9px] font-black px-2 py-1 rounded-bl-xl ${item.badgeBg} ${item.badgeText}`}>
-                      {item.code}
-                    </span>
-
-                    {/* Icon + Title */}
+                    <span className={`absolute top-0 right-0 text-[9px] font-black px-2 py-1 rounded-bl-xl ${item.badgeBg} ${item.badgeText}`}>{item.code}</span>
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.textClass} bg-gray-100`}>
-                        {item.icon}
-                      </div>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.textClass} bg-gray-100`}>{item.icon}</div>
                       <div>
                         <p className="text-[10px] text-gray-400 uppercase tracking-wider">{item.status}</p>
                         <h3 className={`font-black text-lg leading-tight ${item.textClass}`}>{item.level}</h3>
                       </div>
                     </div>
-
-                    {/* Trigger pill */}
                     <div className={`inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 mb-3 bg-gray-100 ${item.textClass}`}>
-                      <Zap size={9} />
-                      TRIGGER: {item.threshold}
+                      <Zap size={9} /> TRIGGER: {item.threshold}
                     </div>
-
-                    {/* Actions */}
                     <ul className="space-y-1.5">
                       {item.actions.map((action, i) => (
                         <li key={i} className="flex items-start gap-2 text-[11px] text-gray-600 leading-snug">
-                          <ChevronRight size={10} className={`mt-0.5 shrink-0 ${item.textClass}`} />
-                          {action}
+                          <ChevronRight size={10} className={`mt-0.5 shrink-0 ${item.textClass}`} /> {action}
                         </li>
                       ))}
                     </ul>
-
-                    {isActive && (
-                      <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${item.badgeBg} opacity-40`} />
-                    )}
+                    {isActive && <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${item.badgeBg} opacity-40`} />}
                   </button>
                 );
               })}
             </div>
           </section>
 
-          {/* ── Emergency Action Plan ── */}
+          {/* Emergency Action Plan */}
           <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200">
-            <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2">
-              <PhoneCall size={24} />
-              Emergency Action Plan
-            </h2>
-
+            <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2"><PhoneCall size={24} /> Emergency Action Plan</h2>
             <div className="grid lg:grid-cols-3 gap-8">
 
               {/* Evacuation Centres */}
-              <div className="lg:col-span-2">
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin size={15} className="text-red-500" />
-                  <p className="font-bold text-gray-800 text-sm uppercase tracking-wide">Evacuation Centres</p>
-                </div>
-                <div className="space-y-2">
-                  {evacuationZones.map((zone, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
-                          <Home size={13} className="text-gray-500" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-800">{zone.name}</p>
-                          <div className="flex items-center gap-3 mt-0.5">
-                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                              <Users size={9} />{zone.capacity}
-                            </span>
-                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                              <MapPin size={9} />{zone.distance}
-                            </span>
-                          </div>
+              <div className="lg:col-span-2 space-y-2">
+                <div className="flex items-center gap-2 mb-3"><MapPin size={15} className="text-red-500" /><p className="font-bold text-gray-800 text-sm uppercase tracking-wide">Evacuation Centres</p></div>
+                {evacuationZones.map((zone, i) => (
+                  <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
+                        <Home size={13} className="text-gray-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{zone.name}</p>
+                        <div className="flex items-center gap-3 mt-0.5 text-[10px] text-gray-400">
+                          <span className="flex items-center gap-1"><Users size={9} /> {zone.capacity}</span>
+                          <span className="flex items-center gap-1"><MapPin size={9} /> {zone.distance}</span>
                         </div>
                       </div>
-                      <span
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
-                          zone.status === "Open"
-                            ? "text-green-700 bg-green-50 border-green-200"
-                            : "text-yellow-700 bg-yellow-50 border-yellow-200"
-                        }`}
-                      >
-                        {zone.status.toUpperCase()}
-                      </span>
                     </div>
-                  ))}
-                </div>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${zone.status === "Open" ? "text-green-700 bg-green-50 border-green-200" : "text-yellow-700 bg-yellow-50 border-yellow-200"}`}>{zone.status.toUpperCase()}</span>
+                  </div>
+                ))}
               </div>
 
-              {/* Hotlines */}
-              <div>
+              {/* Emergency Hotlines */}
+              <div className="space-y-2">
                 <p className="font-bold text-gray-800 text-sm uppercase tracking-wide mb-3">Emergency Hotlines</p>
-                <div className="space-y-2">
-                  {emergencyContacts.map((c, i) => (
-                    <div
-                      key={i}
-                      className={`rounded-xl border ${c.borderClass} ${c.bgClass} px-4 py-3 flex items-center justify-between`}
-                    >
-                      <p className="text-xs text-gray-600 leading-tight max-w-[130px]">{c.label}</p>
-                      <span className={`text-2xl font-black font-mono tracking-tight ${c.colorClass}`}>
-                        {c.number}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                {emergencyContacts.map((c, i) => (
+                  <div key={i} className={`rounded-xl border ${c.borderClass} ${c.bgClass} px-4 py-3 flex items-center justify-between`}>
+                    <p className="text-xs text-gray-600 leading-tight max-w-[130px]">{c.label}</p>
+                    <span className={`text-2xl font-black font-mono tracking-tight ${c.colorClass}`}>{c.number}</span>
+                  </div>
+                ))}
 
-                {/* Original DMC block */}
                 <div className="bg-blue-900 text-white p-6 rounded-xl mt-3">
                   <p className="text-sm uppercase tracking-wider opacity-80">Primary Hotline</p>
                   <p className="text-4xl font-mono font-bold mt-1">117</p>
                   <p className="mt-2 text-sm opacity-90">Disaster Management Center (DMC)</p>
                 </div>
               </div>
-
             </div>
           </div>
 
-          {/* ── Do's & Don'ts ── */}
+          {/* Do's & Don'ts */}
           <div className="grid md:grid-cols-2 gap-6">
             {[
               {
@@ -375,15 +312,11 @@ const SafetyGuidancePage = () => {
               },
             ].map((section, i) => (
               <div key={i} className={`rounded-xl ${section.borderLeft} ${section.bg} p-6 shadow-sm`}>
-                <div className={`flex items-center gap-2 mb-4 ${section.text}`}>
-                  {section.icon}
-                  <h3 className="font-bold text-sm uppercase tracking-wide">{section.title}</h3>
-                </div>
+                <div className={`flex items-center gap-2 mb-4 ${section.text}`}>{section.icon}<h3 className="font-bold text-sm uppercase tracking-wide">{section.title}</h3></div>
                 <ul className="space-y-2.5">
                   {section.items.map((item, j) => (
                     <li key={j} className="flex items-start gap-3 text-sm text-gray-700 leading-snug">
-                      <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${section.dot}`} />
-                      {item}
+                      <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${section.dot}`} />{item}
                     </li>
                   ))}
                 </ul>
