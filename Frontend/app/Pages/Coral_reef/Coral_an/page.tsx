@@ -173,7 +173,7 @@ export default function AnalyzeCoral() {
     formData.append("temperature",      String(waterQuality.temperature      ?? ""));
     formData.append("temp_status",      String(waterQuality.temp_status      ?? ""));
     try {
-      const res  = await fetch("http://localhost:8000/predict", { method: "POST", body: formData });
+      const res  = await fetch("http://localhost:8001/predict", { method: "POST", body: formData });
       const data: PredictionResult = await res.json();
       setResult(data); setShowBanner(true); setShowRivers(true);
     } catch (err) {

@@ -14,7 +14,6 @@ const waterRoutes = require('./Routes/Wroute');
 const sensorRoutes = require('./Routes/HeatSensorRoute.js'); 
 const floodAlertRoute = require('./Routes/FloodMesureRoute.js'); // ← NOT CHANGED
 require('./Models/FloodDangerAlert.js');            
-const waterLevelRoute = require('./Routes/WaterLevelSensorRoute.js');
 require('./Models/WaterLevelSensor.js');    
 const airSensorRoute = require('./Routes/AirsensorRoute.js');
 require('./Models/GasReading.js');
@@ -100,31 +99,16 @@ refreshHeatWarning();
 
 // ────────────────────────────────────────────────
 
-const express = require("express");
-const cors = require("cors");
-const http = require("http");
-const { WebSocketServer } = require("ws");
-const dotenv = require("dotenv");
-const sequelize = require("./Config/sequelize");
+
+
 
 dotenv.config();
 
-/* -------------------- ROUTES -------------------- */
-const CoralauthRoutes = require("./Routes/CoralUserRoute");
-const ReportRoutes = require("./Routes/ReportRoute");
-const waterRoutes = require("./Routes/Wroute"); // Fixed: Matches Wroute.js
-const sensorRoutes = require("./Routes/HeatSensorRoute.js");
-const floodAlertRoute = require("./Routes/FloodMesureRoute.js");
 
 
 // const waterLevelRoute = require("./Routes/WaterLevelSensorRoute.js"); 
 
-const airSensorRoute = require("./Routes/AirsensorRoute.js");
-const waterQualityRoute = require("./Routes/WaterqualityRoute.js");
 
-const authRoutes = require("./Routes/HeatAuthRouts.js"); // Fixed: Matches HeatAuthRouts.js
-const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
-const Pollution = require("./Routes/pollutionRoutes.js"); // Added .js for consistency
 
 /* -------------------- MODELS -------------------- */
 require("./Models/FloodDangerAlert.js");
@@ -137,7 +121,7 @@ require("./Models/WaterTempReading.js");
 
 /* -------------------- CONTROLLERS -------------------- */
 // Fixed: Matches heat_controller.js
-const { syncPredictions } = require("./Controllers/heat_controller.js"); 
+
 
 /* -------------------- APP INIT -------------------- */
 const app = express();
@@ -179,7 +163,7 @@ app.use('/api/pollution', Pollution);
 
 app.use('/api/sensors', sensorRoutes);   
 app.use('/api/float', floodAlertRoute);
-app.use('/api/water-level', waterLevelRoute);
+
 app.use('/api', airSensorRoute);
 
 app.use('/api', waterQualityRoute);
@@ -223,19 +207,20 @@ sequelize.sync({ alter: true })
 /* -------------------- SERVER START -------------------- */
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, '0.0.0.0', async () => {
-
 server.listen(PORT, "0.0.0.0", async () => {
 
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running: http://localhost:${PORT}`);
   console.log(`🌐 Network: http://10.180.188.181:${PORT}`);
 
   try {
+
     if (typeof syncPredictions === "function") {
       await syncPredictions();
-      console.log("✅ Predictions synced on startup");
+      console.log("✅ Predictions synced");
     }
+
   } catch (err) {
     console.error("❌ Prediction sync failed:", err.message);
   }
+
 });
