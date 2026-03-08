@@ -7,6 +7,7 @@ import SummaryCards from "../components/SummaryCards"; // ← Add this
 import DivisionHeatMap from "../components/DivisionHeatMap";
 import HistoricalForecastChart from "../components/HistoricalForecastChart";
 import Navigation from "../components/Navigation";
+import HeatSensor from "../components/HeatSensor";
 
 export default function PredictionPage() {
   const [tableData, setTableData] = useState([]);
@@ -44,6 +45,8 @@ export default function PredictionPage() {
           
           {/* Summary Cards at the very top */}
           <SummaryCards data={tableData} />
+          <HeatSensor />
+
 
           {/* Chart */}
           {/*<HeatIndexChart data={tableData} />*/}

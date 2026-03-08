@@ -14,20 +14,20 @@ import Footer from './Footer/Footer';
 const MODULES = [
   {
     id: 1,
-    title: 'Flood Risk Prediction',
-    description: 'AI-driven flood forecasting using rainfall trends, river levels, and historical disaster data.',
+    title: 'Flood Risk Detection',
+    description: 'AI-driven flood monitoring using real time IoT data from rainfall sensors, river levels, and environmental conditions.',
     icon: Droplets,
     image: FloodImg,
     link: '/Pages/Flood_Risk/Dashboard',
-    tag: 'AI • Hydrology'
+    tag: 'IoT • AI • Hydrology'
   },
   {
     id: 2,
     title: 'Air Quality Management',
-    description: 'Real-time air quality monitoring with PM2.5, PM10, CO₂ levels and predictive analytics.',
+    description: 'Real-time air quality monitoring with PM2.5, PM10, CO₂ levels and health recomendations system.',
     icon: Wind,
     image: AirImg,
-    link: '/Pages/air-quality/Dashboard',
+    link: '/Pages/air_quality/Dashboard',
     tag: 'IoT • Environmental Health'
   },
   {
@@ -45,7 +45,7 @@ const MODULES = [
     description: 'Marine ecosystem analysis using water temperature, pH levels, and coral bleaching indices.',
     icon: Waves,
     image: CoralImg,
-    link: '/Pages/Coral_reef/login',
+    link: '/Pages/Coral_reef/Dashboard',
     tag: 'IoT • Marine AI'
   }
 ];

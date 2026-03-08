@@ -1,70 +1,104 @@
-const GasReading = require('../Models/GasReading');
-const AirQuality = require('../Models/Airquality');
+// controllers/airSensorController.js
+const GasReading = require("../Models/GasReading");
+const DustReading = require("../Models/DustReading");
+const TemSensor = require("../Models/TemSensor");
 
-const receiveGas = async (req, res) => {
+exports.addDust = async (req, res) => {
   try {
-    const { device_id, gas_ppm, voltage, raw_value } = req.body;
-    const now = new Date();
+    const data = await DustReading.create(req.body);
 
-    const wss = req.app.get('wss');
-    if (wss) wss.clients.forEach(c => c.readyState === 1 && c.send(JSON.stringify({
-      type: 'GAS_DATA',
-      data: { device_id, gas_ppm, voltage, timestamp: now.toISOString() }
-    })));
+    const wss = req.app.get("wss");
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.readyState === 1) {
+          client.send(
+            JSON.stringify({
+              type: "DUST_UPDATE",
+              data: data.toJSON(), // <-- FIX: send plain JSON
+            })
+          );
+        }
+      });
+    }
 
-    await GasReading.create({ device_id, gas_ppm, voltage, raw_value, recorded_at: now });
-    console.log(`[${device_id}] Gas: ${gas_ppm} PPM saved`);
-    res.json({ success: true });
-
-  } catch (err) {
-    console.error('Gas error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-const getGas = async (req, res) => {
-  try {
-    const data = await GasReading.findAll({
-      order: [['recorded_at', 'DESC']],
-      limit: 100,
-    });
-    res.json(data);
+    res.status(201).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-const receiveAirQuality = async (req, res) => {
+exports.addGas = async (req, res) => {
   try {
-    const { device_id, temperature, humidity } = req.body;
-    const now = new Date();
+    const data = await GasReading.create(req.body);
 
-    const wss = req.app.get('wss');
-    if (wss) wss.clients.forEach(c => c.readyState === 1 && c.send(JSON.stringify({
-      type: 'AIR_QUALITY',
-      data: { device_id, temperature, humidity, timestamp: now.toISOString() }
-    })));
+    const wss = req.app.get("wss");
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.readyState === 1) {
+          client.send(
+            JSON.stringify({
+              type: "GAS_UPDATE",
+              data: data.toJSON(), // <-- FIX
+            })
+          );
+        }
+      });
+    }
 
-    await AirQuality.create({ device_id, temperature, humidity, recorded_at: now });
-    console.log(`[${device_id}] Temp: ${temperature}C Hum: ${humidity}% saved`);
-    res.json({ success: true });
-
-  } catch (err) {
-    console.error('Air quality error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-};
-
-const getAirQuality = async (req, res) => {
-  try {
-    const data = await AirQuality.findAll({
-      order: [['recorded_at', 'DESC']],
-      limit: 100,
-    });
-    res.json(data);
+    res.status(201).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-module.exports = { receiveGas, getGas, receiveAirQuality, getAirQuality };
+exports.addTempHum = async (req, res) => {
+  try {
+    const data = await TemSensor.create(req.body);
+
+    const wss = req.app.get("wss");
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.readyState === 1) {
+          client.send(
+            JSON.stringify({
+              type: "TEMP_UPDATE",
+              data: data.toJSON(), // <-- FIX
+            })
+          );
+        }
+      });
+    }
+
+    res.status(201).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// GET endpoints (no change needed)
+exports.getDust = async (req, res) => {
+  try {
+    const data = await DustReading.findAll({ order: [["createdAt", "DESC"]] });
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getGas = async (req, res) => {
+  try {
+    const data = await GasReading.findAll({ order: [["createdAt", "DESC"]] });
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getTempHum = async (req, res) => {
+  try {
+    const data = await TemSensor.findAll({ order: [["createdAt", "DESC"]] });
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
