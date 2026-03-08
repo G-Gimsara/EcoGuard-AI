@@ -8,145 +8,182 @@ import torch.nn as nn
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
+from typing import Optional
 
-# Load environment variables from .env file
 load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("OPENAI_API_KEY not found in .env file")
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 app = FastAPI()
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend origin
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Load model once
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-num_classes = 2  # number of classes used in training
+device     = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+num_classes = 3
+class_names = ["healthy_corals", "bleach_1_40", "bleach_40_100"]
+
 model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 model.fc = nn.Linear(model.fc.in_features, num_classes)
-model.load_state_dict(torch.load("coral_model.pth", map_location=device))
+model.load_state_dict(torch.load("my_model.pth", map_location=device))
 model = model.to(device)
 model.eval()
-class_names = ["bleached_corals", "healthy_corals"]
 
 transform = transforms.Compose([
-    transforms.Resize((224,224)),
+    transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225])
 ])
 
-# Initialize OpenAI client
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY not found in environment variables. Please set it in .env file.")
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
-
-async def get_coral_suggestions(prediction: str, role: str = None) -> str:
-    """Get AI-generated suggestions based on coral health prediction and user role"""
+# ── AI suggestions with water quality data ──
+async def get_coral_suggestions(
+    prediction, role=None,
+    coral_area="", coast="", rivers="",
+    ph_value="", ph_status="",
+    turbidity_ntu="", turbidity_status="",
+    temperature="", temp_status=""
+) -> str:
     try:
-        # Researcher-specific instructions
+        location_context = ""
+        if coral_area:
+            location_context = f"\nLocation: {coral_area}, {coast}, Sri Lanka"
+        if rivers:
+            location_context += f"\nAffecting rivers: {rivers}"
+
+        water_context = ""
+        if ph_value or turbidity_ntu or temperature:
+            water_context = f"""
+Live IoT river water quality readings:
+- pH         : {ph_value} ({ph_status})        — Coral safe range: 8.0–8.3
+- Turbidity  : {turbidity_ntu} NTU ({turbidity_status}) — Coral safe range: 0–10 NTU
+- Temperature: {temperature}°C ({temp_status})  — Coral safe range: 23–29°C"""
+
         if role == "researcher":
-            if prediction == "healthy_corals":
-                prompt = """When a coral image is uploaded, classify the coral as Healthy or Bleached.
-Provide a scientific explanation of visible signs (color loss, tissue damage).
-Suggest possible environmental causes based on known coral bleaching research.
-Give research-oriented recommendations for monitoring or further study.
-Keep the output concise, factual, and suitable for academic use.
+            system_prompt = """You are a marine biologist specializing in coral reef ecology in Sri Lanka.
+Use your knowledge and the latest research to give scientific, specific advice.
+Always consider both the image analysis and the live water quality data provided."""
 
-Based on the analysis showing healthy corals, provide:
-1. Scientific explanation of visible signs indicating healthy coral status
-2. Possible environmental factors contributing to coral health
-3. Research-oriented recommendations for monitoring or further study
-4. Key indicators to track for long-term health assessment
-Keep the response concise, factual, and suitable for academic use (around 200-250 words)."""
-            else:  # bleached_corals
-                prompt = """When a coral image is uploaded, classify the coral as Healthy or Bleached.
-Provide a scientific explanation of visible signs (color loss, tissue damage).
-Suggest possible environmental causes based on known coral bleaching research.
-Give research-oriented recommendations for monitoring or further study.
-Keep the output concise, factual, and suitable for academic use.
+            prompt = f"""Coral image at {coral_area}, Sri Lanka shows: {prediction}.
+{location_context}
+{water_context}
 
-Based on the analysis showing bleached corals, provide:
-1. Scientific explanation of visible signs (color loss, tissue damage) observed
-2. Possible environmental causes based on known coral bleaching research
-3. Research-oriented recommendations for monitoring or further study
-4. Key research questions and data collection priorities
-Keep the response concise, factual, and suitable for academic use (around 250-300 words)."""
-            system_prompt = "You are a marine biologist and coral reef research expert. Provide scientific, research-oriented analysis suitable for academic use."
-            # Tourism Guide instructions
+Based on this location, the affecting rivers ({rivers}), and the live water quality:
+1. What are the likely causes of this coral condition at {coral_area}?
+2. Give 3 specific scientific actions researchers should take.
+3. How do the current river water quality readings relate to the coral condition?
+Keep each point to 1-2 sentences."""
+
         elif role == "tourism_guide":
-            if prediction == "healthy_corals":
-                prompt = """Based on the analysis showing healthy corals:
-1. Explain the reef condition in simple, tourist-friendly language
-2. Confirm suitability for tourism activities (snorkeling, diving, boat tours)
-3. Provide 2-3 responsible tourism tips
-4. Include a short conservation awareness message guides can share with tourists
-Keep the response simple and clear (120-150 words)."""
-            else:  # bleached_corals
-                prompt = """Based on the analysis showing bleached corals:
-1. Explain coral bleaching in simple, non-technical language
-2. Advise whether tourism activities should be limited or avoided
-3. Suggest alternative responsible actions guides can take
-4. Provide a short conservation awareness message for tourists
-Keep the response clear, respectful, and practical (150-180 words)."""
+            system_prompt = """You are a marine conservation expert and tourism guide for Sri Lanka coral reefs.
+Give practical, visitor-friendly advice based on the coral condition and water quality."""
 
-            system_prompt = (
-                "You are a marine conservation expert assisting beachside tourism guides. "
-                "Use simple language, avoid technical terms, and focus on responsible tourism "
-                "and conservation awareness."
-            )
+            prompt = f"""Coral image at {coral_area}, Sri Lanka shows: {prediction}.
+{location_context}
+{water_context}
+
+Based on this location and current water quality:
+1. What should tourists know about visiting {coral_area} right now?
+2. Give 3 responsible tourism tips to protect this reef.
+3. Is it safe for snorkeling/diving given current water conditions?
+Keep each point to 1-2 sentences."""
+
         else:
-            # General user instructions (non-researcher)
-            if prediction == "healthy_corals":
-                prompt = """Based on the analysis showing healthy corals, provide:
-1. Brief explanation of what healthy corals indicate
-2. 3-4 actionable recommendations to maintain coral health
-3. Environmental factors to monitor
-Keep the response concise and practical (around 150-200 words)."""
-            else:  # bleached_corals
-                prompt = """Based on the analysis showing bleached corals, provide:
-1. Brief explanation of coral bleaching and its causes
-2. 3-4 urgent recommendations to help recover the coral reef
-3. Immediate actions that can be taken
-4. Long-term strategies for coral reef restoration
-Keep the response concise and practical (around 200-250 words)."""
-            system_prompt = "You are a marine biologist and coral reef conservation expert. Provide practical, science-based advice."
-        
+            system_prompt = """You are a friendly marine biologist explaining coral reef health to the public.
+Use simple language and give practical advice about Sri Lanka coral reefs."""
+
+            prompt = f"""Coral image at {coral_area}, Sri Lanka shows: {prediction}.
+{location_context}
+{water_context}
+
+Based on this location and water quality data:
+1. Explain simply what is happening to this coral and why.
+2. Give 3 simple things the public can do to help protect {coral_area}.
+3. How does river water quality affect this coral reef?
+Keep each point to 1-2 sentences."""
+
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
+                {"role": "user",   "content": prompt}
             ],
-            max_tokens=400 if role == "researcher" else 300,
-            temperature=0.7
+            tools=[{
+                "type": "web_search_preview"
+            }],
+            max_tokens=500,
+            temperature=0.6
         )
-        
         return response.choices[0].message.content.strip()
-    except Exception as e:
-        return f"Unable to generate suggestions at this time. Error: {str(e)}"
 
+    except Exception as e:
+        # fallback without web search if not supported
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",   "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.6
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e2:
+            return f"Unable to generate suggestions. Error: {str(e2)}"
+
+
+# ── Prediction endpoint ────────────────────
 @app.post("/predict")
-async def predict(file: UploadFile = File(...), role: str = Form(None)):
+async def predict(
+    file:              UploadFile       = File(...),
+    role:              str              = Form(None),
+    ph_value:          Optional[str]    = Form(""),
+    ph_status:         Optional[str]    = Form(""),
+    turbidity_ntu:     Optional[str]    = Form(""),
+    turbidity_status:  Optional[str]    = Form(""),
+    temperature:       Optional[str]    = Form(""),
+    temp_status:       Optional[str]    = Form(""),
+):
     try:
-        image = Image.open(file.file).convert("RGB")
-        img = transform(image).unsqueeze(0).to(device)
+        image      = Image.open(file.file).convert("RGB")
+        img_tensor = transform(image).unsqueeze(0).to(device)
+
         with torch.no_grad():
-            output = model(img)
-            pred_idx = torch.argmax(output,1).item()
-        
-        prediction = class_names[pred_idx]
-        
-        # Get AI suggestions based on prediction and user role
-        suggestions = await get_coral_suggestions(prediction, role)
-        
+            outputs  = model(img_tensor)
+            pred_idx = torch.argmax(outputs, 1).item()
+
+        friendly_messages = {
+            "healthy_corals": "Healthy coral",
+            "bleach_1_40":    "Coral bleached 1–40%",
+            "bleach_40_100":  "Coral bleached 40–100%"
+        }
+
+        raw_prediction = class_names[pred_idx]
+        prediction     = friendly_messages.get(raw_prediction, raw_prediction)
+
+        # Pass water quality to AI suggestions
+        suggestions = await get_coral_suggestions(
+            raw_prediction,
+            role,
+            ph_value,
+            ph_status,
+            turbidity_ntu,
+            turbidity_status,
+            temperature,
+            temp_status
+        )
+
         return JSONResponse({
-            "prediction": prediction,
+            "prediction":  prediction,
             "suggestions": suggestions
         })
+
     except Exception as e:
         return JSONResponse({"error": str(e)})

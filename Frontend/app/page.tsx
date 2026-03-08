@@ -45,7 +45,7 @@ const MODULES = [
     description: 'Marine ecosystem analysis using water temperature, pH levels, and coral bleaching indices.',
     icon: Waves,
     image: CoralImg,
-    link: '/Pages/Coral_reef/login',
+    link: '/Pages/Coral_reef/Dashboard',
     tag: 'IoT • Marine AI'
   }
 ];
