@@ -10,8 +10,8 @@ const Navbar: React.FC = () => {
   // Navigation links
   const navLinks = [
     { name: "Home", path: "/Pages/Flood_Risk/Dashboard" },
-    { name: "Alert", path: "/Pages/Flood_Risk/about" },
-    { name: "Report ", path: "/Pages/Flood_Risk/Guide" },
+    { name: "Alert", path: "/Pages/Flood_Risk/Alert" },
+    { name: "Report ", path: "/Pages/Flood_Risk/Report" },
   ] as const;
 
   return (
