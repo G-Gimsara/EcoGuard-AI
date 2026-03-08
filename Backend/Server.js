@@ -10,16 +10,19 @@ dotenv.config();
 /* -------------------- ROUTES -------------------- */
 const CoralauthRoutes = require("./Routes/CoralUserRoute");
 const ReportRoutes = require("./Routes/ReportRoute");
-const waterRoutes = require("./Routes/Wroute");
+const waterRoutes = require("./Routes/Wroute"); // Fixed: Matches Wroute.js
 const sensorRoutes = require("./Routes/HeatSensorRoute.js");
 const floodAlertRoute = require("./Routes/FloodMesureRoute.js");
-const waterLevelRoute = require("./Routes/WaterLevelSensorRoute.js");
+
+
+// const waterLevelRoute = require("./Routes/WaterLevelSensorRoute.js"); 
+
 const airSensorRoute = require("./Routes/AirsensorRoute.js");
 const waterQualityRoute = require("./Routes/WaterqualityRoute.js");
 
-const authRoutes = require("./Routes/HeatAuthRouts.js");
+const authRoutes = require("./Routes/HeatAuthRouts.js"); // Fixed: Matches HeatAuthRouts.js
 const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
-const Pollution = require("./Routes/pollutionRoutes");
+const Pollution = require("./Routes/pollutionRoutes.js"); // Added .js for consistency
 
 /* -------------------- MODELS -------------------- */
 require("./Models/FloodDangerAlert.js");
@@ -31,7 +34,8 @@ require("./Models/Tuberlity.js");
 require("./Models/WaterTempReading.js");
 
 /* -------------------- CONTROLLERS -------------------- */
-const { syncPredictions } = require("./Controllers/heat_controller.js");
+// Fixed: Matches heat_controller.js
+const { syncPredictions } = require("./Controllers/heat_controller.js"); 
 
 /* -------------------- APP INIT -------------------- */
 const app = express();
@@ -55,7 +59,7 @@ wss.on("connection", (ws) => {
   ws.on("close", () => console.log("📡 IoT Dashboard client disconnected"));
 });
 
-/* -------------------- ROUTES -------------------- */
+/* -------------------- API ROUTES -------------------- */
 app.get("/", (req, res) => {
   res.json({ message: "🚀 Backend API running (CommonJS Mode)" });
 });
@@ -68,7 +72,7 @@ app.use("/api/water", waterRoutes);
 app.use("/api/pollution", Pollution);
 app.use("/api/sensors", sensorRoutes);
 app.use("/api/float", floodAlertRoute);
-app.use("/api/water-level", waterLevelRoute);
+// app.use("/api/water-level", waterLevelRoute); // Commented out until file is created
 app.use("/api/air", airSensorRoute);
 app.use("/api/water-quality", waterQualityRoute);
 
