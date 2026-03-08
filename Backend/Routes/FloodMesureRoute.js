@@ -1,13 +1,15 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const {
-  receiveFloatStatus,
-  getAlerts,
-  getLatestStatus,
-} = require('../Controllers/FloodAlertDangerController');
+const { createMeasurement, getMeasurements,receiveFloatStatus,getFloatStatuses,getLatestFloatStatus } = require("../Controllers/FloodController");
 
-router.post('/',        receiveFloatStatus);  // ESP32 posts here
-router.get('/alerts',   getAlerts);           // get all danger alerts
-router.get('/latest',   getLatestStatus);     // get latest per device
+// POST /api/flood - add new measurement
+router.post("/", createMeasurement);
+
+// GET /api/flood - get all measurements
+router.get("/", getMeasurements);
+
+router.post('/float', receiveFloatStatus);
+router.get('/float', getFloatStatuses);
+router.get('/float/latest', getLatestFloatStatus);
 
 module.exports = router;

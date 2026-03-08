@@ -1,9 +1,13 @@
+
 const GasReading  = require('../Models/GasReading');
 const AirQuality  = require('../Models/Airquality');
+
+const GasReading = require('../Models/GasReading');
+const AirQuality = require('../Models/Airquality');
+
 const DustReading = require('../Models/Dustreading');
 
 // ── Gas ───────────────────────────────────
-
 const receiveGas = async (req, res) => {
   try {
     const { device_id, gas_ppm, voltage, raw_value } = req.body;
@@ -54,7 +58,6 @@ const getGas = async (req, res) => {
 
 
 // ── Air Quality ───────────────────────────
-
 const receiveAirQuality = async (req, res) => {
   try {
     const { device_id, temperature, humidity } = req.body;
@@ -94,6 +97,10 @@ const getAirQuality = async (req, res) => {
       order: [['recorded_at', 'DESC']],
       limit: 100
     });
+
+
+    res.json(data);
+
 
     res.json(data);
 
@@ -146,11 +153,20 @@ const getDust = async (req, res) => {
 
     res.json(data);
 
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+
+=======
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── Export Controllers ────────────────────
 
 module.exports = {
   receiveGas,

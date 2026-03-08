@@ -10,9 +10,8 @@ const Navbar: React.FC = () => {
   // Navigation links
   const navLinks = [
     { name: "Home", path: "/Pages/Coral_reef/Dashboard" },
-    { name: "Map", path: "/Pages/Coral_reef/ViewAlllIn" },
-    { name: "Analyze Coral Image", path: "/Pages/Coral_reef/Coral_an" },
-    { name: "Report Incident", path: "/Pages/Coral_reef/Report" },
+
+    { name: "Analyze Coral Image", path: "/Pages/Coral_reef/Coral_an" }
   ] as const;
 
   return (
