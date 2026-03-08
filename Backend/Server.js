@@ -10,15 +10,29 @@ const CoralauthRoutes = require('./Routes/CoralUserRoute');
 
 const ReportRoutes = require('./Routes/ReportRoute');
 const sequelize = require('./Config/sequelize');
-const waterRoutes = require('./Routes/Wroute');
+
 const sensorRoutes = require('./Routes/HeatSensorRoute.js'); 
+<<<<<<< HEAD
+
+require('./Models/FloodDangerAlert');            
+
+=======
 const floodAlertRoute = require('./Routes/FloodMesureRoute.js'); // ← NOT CHANGED
 require('./Models/FloodDangerAlert.js');            
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
 require('./Models/WaterLevelSensor.js');    
 const airSensorRoute = require('./Routes/AirsensorRoute.js');
+const floodMeasurementRoute = require('./Routes/FloodMeasurementRoute');
+
 require('./Models/GasReading.js');
+<<<<<<< HEAD
+require('./Models/TemSensor.js');
+require('./Models/DustReading.js');  
+require('./Models/FloodMeasurement.js');             // ← ADD
+=======
 
 require('./Models/Airquality.js');            // ← ADD
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
 
 require('./Models/Airquality.js');       
 const waterQualityRoute = require('./Routes/WaterqualityRoute.js');
@@ -34,6 +48,12 @@ const authRoutes = require("./Routes/HeatAuthRouts.js");
 const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
 const Pollution = require('./Routes/pollutionRoutes');
 
+<<<<<<< HEAD
+
+
+
+=======
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
 const express = require("express");
 const dotenv = require("dotenv");
 
@@ -157,14 +177,20 @@ app.use("/api/predictions", predictionsRoute);
 
 app.use('/api/CoralauthRoutes', CoralauthRoutes);
 app.use('/api/ReportRoutes', ReportRoutes);
-app.use('/api/water', waterRoutes);
+
 
 app.use('/api/pollution', Pollution);
 
 app.use('/api/sensors', sensorRoutes);   
+<<<<<<< HEAD
+=======
 app.use('/api/float', floodAlertRoute);
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
 
 app.use('/api', airSensorRoute);
+app.use('/api/flood', floodMeasurementRoute);
+
+
 
 app.use('/api', waterQualityRoute);
 app.use('/api', heatAlertRoutes);
@@ -186,6 +212,12 @@ app.get('/api/heat-warning', async (req, res) => {
 /* -------------------- DATABASE SYNC -------------------- */
 
 
+<<<<<<< HEAD
+///sequelize.sync({ alter: true })
+ // .then(() => {
+ //  console.log("✅ Database synced");
+ //  });
+=======
 app.use("/api/water", waterRoutes);
 app.use("/api/pollution", Pollution);
 app.use("/api/sensors", sensorRoutes);
@@ -203,6 +235,7 @@ sequelize.sync({ alter: true })
   .catch((err) => {
     console.error("❌ Database sync error:", err);
   });
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
 
 /* -------------------- SERVER START -------------------- */
 const PORT = process.env.PORT || 5000;

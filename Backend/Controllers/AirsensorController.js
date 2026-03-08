@@ -1,13 +1,38 @@
+<<<<<<< HEAD
+// controllers/airSensorController.js
+const GasReading = require("../Models/GasReading");
+const DustReading = require("../Models/DustReading");
+const TemSensor = require("../Models/TemSensor");
+
+exports.addDust = async (req, res) => {
+=======
 const GasReading  = require('../Models/GasReading');
 const AirQuality  = require('../Models/Airquality');
 const DustReading = require('../Models/Dustreading');
 
 // ── Gas ───────────────────────────────────
 const receiveGas = async (req, res) => {
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
   try {
-    const { device_id, gas_ppm, voltage, raw_value } = req.body;
-    const now = new Date();
+    const data = await DustReading.create(req.body);
 
+<<<<<<< HEAD
+    const wss = req.app.get("wss");
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.readyState === 1) {
+          client.send(
+            JSON.stringify({
+              type: "DUST_UPDATE",
+              data: data.toJSON(), // <-- FIX: send plain JSON
+            })
+          );
+        }
+      });
+    }
+
+    res.status(201).json(data);
+=======
     const wss = req.app.get('wss');
     if (wss) {
       wss.clients.forEach(c => {
@@ -44,17 +69,38 @@ const getGas = async (req, res) => {
       limit: 100
     });
     res.json(data);
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+<<<<<<< HEAD
+exports.addGas = async (req, res) => {
+=======
 // ── Air Quality ───────────────────────────
 const receiveAirQuality = async (req, res) => {
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
   try {
-    const { device_id, temperature, humidity } = req.body;
-    const now = new Date();
+    const data = await GasReading.create(req.body);
 
+<<<<<<< HEAD
+    const wss = req.app.get("wss");
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.readyState === 1) {
+          client.send(
+            JSON.stringify({
+              type: "GAS_UPDATE",
+              data: data.toJSON(), // <-- FIX
+            })
+          );
+        }
+      });
+    }
+
+    res.status(201).json(data);
+=======
     const wss = req.app.get('wss');
     if (wss) {
       wss.clients.forEach(c => {
@@ -90,11 +136,28 @@ const getAirQuality = async (req, res) => {
       limit: 100
     });
     res.json(data);
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+<<<<<<< HEAD
+exports.addTempHum = async (req, res) => {
+  try {
+    const data = await TemSensor.create(req.body);
+
+    const wss = req.app.get("wss");
+    if (wss) {
+      wss.clients.forEach((client) => {
+        if (client.readyState === 1) {
+          client.send(
+            JSON.stringify({
+              type: "TEMP_UPDATE",
+              data: data.toJSON(), // <-- FIX
+            })
+          );
+=======
 // ── Dust ──────────────────────────────────
 const receiveDust = async (req, res) => {
   try {
@@ -109,10 +172,14 @@ const receiveDust = async (req, res) => {
             type: 'DUST_DATA',
             data: { device_id, dust_density, timestamp: now.toISOString() }
           }));
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
         }
       });
     }
 
+<<<<<<< HEAD
+    res.status(201).json(data);
+=======
     await DustReading.create({
       device_id,
       dust_density,
@@ -135,11 +202,40 @@ const getDust = async (req, res) => {
       limit: 100
     });
     res.json(data);
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+<<<<<<< HEAD
+// GET endpoints (no change needed)
+exports.getDust = async (req, res) => {
+  try {
+    const data = await DustReading.findAll({ order: [["createdAt", "DESC"]] });
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getGas = async (req, res) => {
+  try {
+    const data = await GasReading.findAll({ order: [["createdAt", "DESC"]] });
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getTempHum = async (req, res) => {
+  try {
+    const data = await TemSensor.findAll({ order: [["createdAt", "DESC"]] });
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+=======
 // ── Export Controllers ────────────────────
 module.exports = {
   receiveGas,
@@ -148,4 +244,5 @@ module.exports = {
   getAirQuality,
   receiveDust,
   getDust
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
 };
