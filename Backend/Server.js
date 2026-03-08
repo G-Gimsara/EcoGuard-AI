@@ -25,31 +25,79 @@ const waterQualityRoute = require('./Routes/WaterqualityRoute.js');
 require('./Models/Phreading.js');
 require('./Models/Tuberlity.js');
 require('./Models/WaterTempReading.js');     // ← ADD
+const heatAlertRoutes = require('./Routes/heatAlertRoutes');
 
 
 require('dotenv').config();
-
-
-
-
-
-
-
-
-
 
 const authRoutes = require("./Routes/HeatAuthRouts.js");
 const predictionsRoute = require("./Routes/heat_predictionRoutes.js");
 const Pollution = require('./Routes/pollutionRoutes');
 
-
-
 const express = require("express");
 const dotenv = require("dotenv");
 
-
-
 const { syncPredictions } = require("./Controllers/heat_controller.js");
+
+// ────────────────────────────────────────────────
+// NEW: Heat alert cache & background refresh
+const { getHeatWarning, getRawDangerData } = require('./Controllers/HeatAlertController');
+
+// In-memory cache
+let cachedWarning = null;
+let lastDangerSignature = null;
+let lastRefreshTime = 0;
+const REFRESH_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+
+// Helper: create signature to detect meaningful changes
+function getDangerSignature(dangerData) {
+  if (!dangerData || dangerData.length === 0) return 'empty';
+  return dangerData
+    .map(d => `${d.location.toLowerCase()}|${d.datetime.split('T')[0]}|${Math.round(d.heat_index_C || 0)}`)
+    .sort()
+    .join('||');
+}
+
+// Background refresh job
+async function refreshHeatWarning() {
+  console.log('[HeatCache] Refresh started...');
+  try {
+    const dangerData = await getRawDangerData();
+    const currentSignature = getDangerSignature(dangerData);
+
+    // Only regenerate if danger set changed
+    const needsRegenerate = !lastDangerSignature || lastDangerSignature !== currentSignature;
+
+    if (!needsRegenerate && cachedWarning) {
+      console.log('[HeatCache] No significant change → keeping existing warning');
+      lastRefreshTime = Date.now();
+      return;
+    }
+
+    console.log('[HeatCache] Changes detected → regenerating warning');
+
+    const fakeReq = {};
+    const fakeRes = {
+      json: (data) => { cachedWarning = data; },
+      status: (code) => ({ json: (err) => console.error('[HeatCache] Error:', err) })
+    };
+
+    await getHeatWarning(fakeReq, fakeRes);
+    lastDangerSignature = currentSignature;
+    lastRefreshTime = Date.now();
+
+    console.log('[HeatCache] Refresh completed');
+  } catch (err) {
+    console.error('[HeatCache] Refresh failed:', err.message);
+  }
+}
+
+// Start the cycle
+setInterval(refreshHeatWarning, REFRESH_INTERVAL_MS);
+// Run once at startup
+refreshHeatWarning();
+
+// ────────────────────────────────────────────────
 
 dotenv.config();
 
@@ -98,10 +146,23 @@ app.use('/api/water-level', waterLevelRoute);
 app.use('/api', airSensorRoute);
 
 app.use('/api', waterQualityRoute);
+app.use('/api', heatAlertRoutes);
 
+// ────────────────────────────────────────────────
+// UPDATED: Heat warning route with cache support
+app.get('/api/heat-warning', async (req, res) => {
+  const ageMinutes = (Date.now() - lastRefreshTime) / 60000;
+
+  if (cachedWarning && ageMinutes < 12) {
+    console.log(`[HeatCache] Serving cached result (age: ${ageMinutes.toFixed(1)} min)`);
+    return res.json(cachedWarning);
+  }
+
+  console.log('[HeatCache] Cache stale → generating fresh');
+  await getHeatWarning(req, res);
+});
 
 /* -------------------- DATABASE SYNC -------------------- */
-
 
 sequelize.sync({ alter: true })
  .then(() => {
@@ -112,7 +173,7 @@ sequelize.sync({ alter: true })
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, '0.0.0.0', async () => {       // ← ADD '0.0.0.0'
+server.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`🌐 Network: http://10.180.188.181:${PORT}`);
 
