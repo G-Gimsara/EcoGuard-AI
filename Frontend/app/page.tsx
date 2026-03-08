@@ -32,12 +32,12 @@ const MODULES = [
   },
   {
     id: 3,
-    title: 'Urban Heat Management',
+    title: 'Urban Heat Risk Monitoring ',
     description: 'Urban heat island detection using temperature sensors, satellite data, and ML models.',
     icon: Thermometer,
     image: HeatImg,
     link: '/Pages/Heat_risk',
-    tag: 'AI • Climate'
+    tag: 'IoT • AI • Climate'
   },
   {
     id: 4,
@@ -72,7 +72,7 @@ const TECH_STACK = [
 // Hero Section Component
 function HeroSection() {
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white text-center">
+    <section className="py-20 bg-linear-to-br from-slate-900 via-blue-900 to-slate-900 text-white text-center">
       <h1 className="text-5xl font-bold mb-4">Environmental Risk & Resource Management</h1>
       <p className="text-xl text-slate-200 max-w-3xl mx-auto">
         An AI + IoT powered platform for predictive environmental risk analysis, real-time monitoring, and sustainable resource management.
@@ -224,7 +224,7 @@ function ObjectivesSection() {
         <div className="space-y-4">
           {RESEARCH_OBJECTIVES.map((objective, idx) => (
             <div key={idx} className="flex gap-4 items-start">
-              <span className="text-green-500 font-bold text-xl mt-1 flex-shrink-0">✔</span>
+              <span className="text-green-500 font-bold text-xl mt-1 shrink-0">✔</span>
               <p className="text-lg text-slate-700">{objective}</p>
             </div>
           ))}
@@ -237,7 +237,7 @@ function ObjectivesSection() {
 // Impact Section Component
 function ImpactSection() {
   return (
-    <section className="py-16 px-4 bg-gradient-to-r from-blue-50 to-slate-50">
+    <section className="py-16 px-4 bg-linear-to-r from-blue-50 to-slate-50">
       <div className="max-w-4xl mx-auto bg-white p-10 rounded-lg shadow-md">
         <h2 className="text-3xl font-bold text-slate-900 mb-6">Expected Impact</h2>
         <p className="text-lg text-slate-700 leading-relaxed">

@@ -7,3 +7,5 @@ lightgbm
 joblib
 python-multipart
 requests
+jinja2
+APScheduler==3.11.2

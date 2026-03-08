@@ -21,5 +21,11 @@ LOCATIONS = {
 
 CSV_PATH = "data/Weather_2016-01-01_to_2026-01-24.csv"
 
-# Using the Archive API which contains historical data
-BASE_URL = "https://archive-api.open-meteo.com/v1/archive"
+
+# Open-Meteo API endpoints
+FORECAST_BASE = "https://api.open-meteo.com/v1/forecast"
+ARCHIVE_BASE  = "https://archive-api.open-meteo.com/v1/archive"
+
+# Backend API configuration
+BACKEND_SENSOR_URL = "http://localhost:5000/api/sensors" 
+KADUWELA_DEVICE_ID = "esp32-device-1" 

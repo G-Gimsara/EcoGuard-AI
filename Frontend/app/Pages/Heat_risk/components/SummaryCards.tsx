@@ -8,7 +8,6 @@ interface SummaryRow {
   heat_index: number;
   tempmax: number;
   humidity: number;
-  dew: number;
   solarradiation: number;
 }
 
@@ -17,8 +16,11 @@ interface SummaryCardsProps {
 }
 
 const SummaryCards: React.FC<SummaryCardsProps> = ({ data }) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const todayData = useMemo(
     () =>
@@ -60,10 +62,6 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data }) => {
     ? maxHumidityItem.location
     : "N/A";
 
-  const maxDewItem = getMaxItem("dew");
-  const maxDew = maxDewItem ? Number(maxDewItem.dew).toFixed(1) : "N/A";
-  const maxDewLocation = maxDewItem ? maxDewItem.location : "N/A";
-
   const maxSolarItem = getMaxItem("solarradiation");
   const maxSolar = maxSolarItem
     ? Number(maxSolarItem.solarradiation).toFixed(1)
@@ -73,12 +71,12 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data }) => {
     : "N/A";
 
   function getRiskLevel(temp: number) {
-    if (isNaN(temp)) return "Unknown";
-    if (temp < 27) return "Normal";
-    if (temp < 33) return "Caution";
-    if (temp < 41) return "Extreme Caution";
-    if (temp < 51) return "Danger";
-    return "Extreme Danger";
+   if (temp < 27) return "Normal";
+  if (temp < 33) return "Caution";
+  if (temp < 41) return "Extreme Caution";
+  if (temp < 51) return "Danger";
+
+  return "Extreme Danger";
   }
 
   function getRiskColor(level: string) {
@@ -112,7 +110,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data }) => {
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
       {/* Card 1: Max Heat Index */}
       <div
         className={`${getHeatCardBg(
@@ -171,22 +169,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data }) => {
         </p>
       </div>
 
-      {/* Card 4: Max Dew Point */}
-      <div className="bg-linear-to-br from-indigo-50 to-violet-50 rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Max Dew Point Today
-          </h3>
-        </div>
-        <p className="text-3xl font-bold text-indigo-700">
-          {maxDew}°C
-        </p>
-        <p className="mt-2 text-sm text-gray-600">
-          In {maxDewLocation} on {todayDateStr}
-        </p>
-      </div>
-
-      {/* Card 5: Max Solar Radiation */}
+      {/* Card 4: Max Solar Radiation */}
       <div className="bg-linear-to-br from-yellow-50 to-amber-50 rounded-2xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">
@@ -205,4 +188,3 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data }) => {
 };
 
 export default SummaryCards;
-
