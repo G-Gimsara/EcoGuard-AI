@@ -1,6 +1,6 @@
 // seed/floodSeed.js
 const sequelize = require('../Config/sequelize');
-const FloodAlert = require('../Models/FloodAearalrert');
+const FloodAlert = require('../Models/FloodAear');
 
 const floodData = [
   {
