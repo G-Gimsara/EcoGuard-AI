@@ -73,7 +73,7 @@ const HeatAlert: React.FC = () => {
 
   if (!data?.hasDanger) {
     return (
-      <div className="p-8 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl shadow-lg text-center">
+      <div className="p-8 bg-linear-to-br from-green-50 to-green-100 rounded-2xl shadow-lg text-center">
         <h2 className="text-2xl font-bold text-green-800 mb-3">All Clear – No Heat Danger</h2>
         <p className="text-green-700">No "Danger" level heat risk predicted in the next 15 days.</p>
       </div>
@@ -83,7 +83,7 @@ const HeatAlert: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 md:py-8">
       {/* Main Header */}
-      <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white rounded-2xl shadow-2xl p-6 md:p-8 mb-8">
+      <div className="bg-linear-to-r from-red-600 via-red-700 to-red-800 text-white rounded-2xl shadow-2xl p-6 md:p-8 mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -116,7 +116,7 @@ const HeatAlert: React.FC = () => {
 
       {/* Heat Index Classification Table */}
       <div className="mb-10 bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-5">
+        <div className="bg-linear-to-r from-amber-500 to-orange-600 text-white p-5">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <ThermometerSun className="h-6 w-6" />
             Heat Index Risk Levels (NOAA / National Weather Service)
@@ -172,7 +172,7 @@ const HeatAlert: React.FC = () => {
       </div>
 
       {/* Footer reminder */}
-      <div className="mt-10 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl text-center border border-blue-100">
+      <div className="mt-10 p-6 bg-linear-to-r from-blue-50 to-cyan-50 rounded-2xl text-center border border-blue-100">
         <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-700 font-medium">
           <div className="flex items-center gap-2">
             <Droplets className="h-5 w-5 text-blue-600" /> Stay hydrated every 15–20 min
