@@ -4,142 +4,138 @@ import React from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
-  UserPlus,
   Thermometer,
   Droplets,
   Sun,
-  Wind,
+  ArrowRight,
+  ShieldCheck,
+  Activity,
+  Waves,
+  Navigation,
 } from "lucide-react";
 
 const HomePage = () => {
   return (
-    <main className="relative min-h-screen w-full flex flex-col items-center justify-center text-white font-sans overflow-x-hidden">
-      {/* Background Image with Dark Overlay */}
-      <div
-        className="fixed "
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1449156001447-fd698256f5bb?q=80&w=2070&auto=format&fit=crop')",
-        }}
-      >
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-      </div>
+    <main className="relative min-h-screen w-full flex flex-col items-center text-slate-900 font-sans overflow-x-hidden bg-linear-to-b from-slate-50 via-white to-slate-50">
+      
+      {/* Decorative Background Elements */}
+      <div className="absolute top-20 left-[10%] w-96 h-96 bg-linear-to-br from-orange-200/30 to-red-200/20 rounded-full blur-[120px] -z-10" />
+      <div className="absolute top-40 right-[10%] w-96 h-96 bg-linear-to-br from-blue-200/30 to-cyan-200/20 rounded-full blur-[120px] -z-10" />
+      <div className="absolute bottom-40 left-[20%] w-80 h-80 bg-linear-to-br from-amber-200/20 to-orange-200/15 rounded-full blur-[100px] -z-10" />
 
-      {/* Content Container */}
-      <div className="relative z-10 container mx-auto px-6 py-12 flex flex-col items-center">
-        {/* Main Heading */}
-        <header className="text-center mb-16 animate-fadeIn">
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight bg-clip-text text-transparent bg-linear-to-r from-orange-400 via-red-500 to-yellow-400 mb-4">
-            Heat Island Risk Prediction <br /> &amp; Alert System
+      {/* Hero Section */}
+      <div className="relative z-10 container mx-auto px-6 pt-24 pb-16 flex flex-col items-center">
+        
+        <header className="text-center mb-12 animate-fadeIn">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-linear-to-r from-orange-50 to-red-50 border border-orange-200/50 shadow-sm text-orange-700 text-xs font-bold uppercase tracking-widest mb-8">
+            <Activity size={14} className="text-orange-500 animate-pulse" />
+            <span>Live Environmental Monitoring</span>
+          </div>
+          
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-8 leading-[1.1]">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-orange-500 via-red-500 to-amber-500">
+              Heat Risk
+            </span> 
+            <br />
+            <span className="text-blue-600">
+              Prediction & Alert System
+            </span>
           </h1>
-          <p className="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto font-light">
-            Advanced meteorological analysis to protect communities from
-            extreme thermal conditions.
+          
+          <p className="text-slate-600 text-lg md:text-xl max-w-3xl mx-auto font-normal leading-relaxed mb-12">
+            “Utilizing high-frequency meteorological data, IoT-based environmental sensors, and AI-driven predictive models to monitor and visualize urban thermal hazards before they impact communities”
           </p>
+
+          {/* Primary CTA: Full Width Dashboard Entry */}
+          <div className="w-full max-w-2xl mx-auto">
+            <Link href="/Pages/Heat_risk/prediction" className="group">
+              <div className="relative overflow-hidden bg-linear-to-br from-slate-900 to-slate-800 text-white p-1 rounded-[2.5rem] shadow-2xl shadow-slate-900/20 transition-all duration-500 hover:scale-[1.02] hover:shadow-3xl">
+                <div className="flex items-center justify-between px-8 py-6 bg-linear-to-br from-slate-900 to-slate-800 rounded-[2.3rem] border border-white/10 group-hover:border-white/20 transition-all">
+                  <div className="flex items-center gap-6 text-left">
+                    <div className="hidden sm:flex bg-linear-to-br from-orange-500 to-red-500 w-16 h-16 rounded-2xl items-center justify-center shadow-lg shadow-orange-500/30">
+                      <LayoutDashboard size={32} />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold">Open Analytics Dashboard</h2>
+                      <p className="text-slate-300 text-sm">Real-time heat maps & predictive modeling</p>
+                    </div>
+                  </div>
+                  <div className="bg-white/10 p-4 rounded-full group-hover:bg-linear-to-br group-hover:from-orange-500 group-hover:to-red-500 transition-all group-hover:-rotate-45">
+                    <ArrowRight size={24} />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
         </header>
 
-        {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mb-20">
-          {/* Dashboard Card */}
-          <Link href="/Pages/Heat_risk/prediction" className="group">
-            <div className="cursor-pointer bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl hover:bg-white/20 transition-all duration-300 hover:-translate-y-2">
-              <div className="bg-orange-500 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <LayoutDashboard size={32} />
-              </div>
-              <h2 className="text-2xl font-bold mb-3">View Dashboard</h2>
-              <p className="text-gray-300 mb-6">
-                Access real-time data monitoring for future risk predictions
-                and detailed analysis.
-              </p>
-              <button className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-orange-500 hover:text-white transition-colors">
-                Open Dashboard
-              </button>
-            </div>
-          </Link>
-
-          {/* Register Card */}
-          <Link href="/Pages/Heat_risk/register" className="group">
-            <div className="cursor-pointer bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl hover:bg-white/20 transition-all duration-300 hover:-translate-y-2">
-              <div className="bg-blue-500 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <UserPlus size={32} />
-              </div>
-              <h2 className="text-2xl font-bold mb-3">Register</h2>
-              <p className="text-gray-300 mb-6">
-                Register with our system to get critical risk alerts sent
-                directly to your mobile device.
-              </p>
-              <button className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20">
-                Join Now
-              </button>
-            </div>
-          </Link>
+        {/* Feature Grid: Why This Matters */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl mt-12 mb-20">
+          <FeatureCard 
+            icon={<Navigation className="text-orange-500" />}
+            title="Localized Precision"
+            desc="Hyper-local data tracking down to specific neighborhood micro-climates."
+            gradient="from-orange-50 to-red-50"
+            borderColor="border-orange-100"
+          />
+          <FeatureCard 
+            icon={<ShieldCheck className="text-blue-500" />}
+            title="Public Safety"
+            desc="Early warning detection to reduce heat-related health emergencies."
+            gradient="from-blue-50 to-cyan-50"
+            borderColor="border-blue-100"
+          />
+          <FeatureCard 
+            icon={<Waves className="text-emerald-500" />}
+            title="Impact Analysis"
+            desc="Detailed reports on how humidity and radiation affect urban cooling."
+            gradient="from-emerald-50 to-teal-50"
+            borderColor="border-emerald-100"
+          />
         </div>
 
-        {/* Info Section: Why Heat is Dangerous */}
-        <section className="w-full max-w-5xl bg-black/40 border border-white/10 rounded-[2.5rem] p-10 backdrop-blur-sm">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Why Heat is Dangerous
-            </h2>
-            <div className="h-1 w-20 bg-orange-500 mx-auto rounded-full" />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <p className="text-gray-300 leading-relaxed text-lg">
-                Your body cools itself by sweating. When <strong>heat and humidity</strong> combine,
-                sweat cannot evaporate effectively. This failure in natural
-                cooling can quickly lead to{" "}
-                <span className="text-orange-400 font-semibold">
-                  heat exhaustion
-                </span>{" "}
-                or{" "}
-                <span className="text-red-500 font-semibold">heatstroke</span>.
+        {/* Detailed Metrics Breakdown */}
+        <section className="w-full max-w-6xl border-t-2 border-slate-200 pt-20">
+          <div className="flex flex-col lg:flex-row gap-16 items-start">
+            <div className="lg:w-1/2 lg:sticky lg:top-24">
+              <h2 className="text-4xl font-extrabold text-slate-900 mb-6">
+                Environmental <br /> Risk Factors
+              </h2>
+              <p className="text-slate-600 text-lg leading-relaxed mb-8">
+                Our prediction engine processes a combination of atmospheric physics 
+                and urban topography. Understanding these three pillars is key to 
+                predicting the &quot;Heat Risk&quot; effect.
               </p>
-              <p className="text-gray-400 italic">
-                Our tool combines multiple complex factors to give you a true
-                personal Heat Risk assessment so you can plan your day safely.
-              </p>
+              <div className="flex items-center gap-4 p-5 bg-linear-to-br from-orange-50 to-red-50 rounded-2xl border-2 border-orange-200/60 shadow-sm">
+                <div className="p-2 bg-linear-to-br from-orange-500 to-red-500 rounded-lg text-white shadow-md">
+                  <Activity size={20} />
+                </div>
+                <span className="text-orange-900 font-semibold">Active Monitoring Enabled</span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                <div className="flex items-center gap-3 mb-2 text-orange-400 font-bold">
-                  <Thermometer size={20} /> Heat Index
-                </div>
-                <p className="text-sm text-gray-400">
-                  The &quot;Feels-like&quot; temperature combining air temp and
-                  humidity.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                <div className="flex items-center gap-3 mb-2 text-blue-400 font-bold">
-                  <Droplets size={20} /> Humidity
-                </div>
-                <p className="text-sm text-gray-400">
-                  High moisture content that prevents sweat-based cooling.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                <div className="flex items-center gap-3 mb-2 text-green-400 font-bold">
-                  <Wind size={20} /> Dew Point
-                </div>
-                <p className="text-sm text-gray-400">
-                  The best measure of mugginess. Higher values feel more
-                  oppressive.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                <div className="flex items-center gap-3 mb-2 text-yellow-400 font-bold">
-                  <Sun size={20} /> Solar Radiation
-                </div>
-                <p className="text-sm text-gray-400">
-                  Direct sun adds 10–15°F to what you actually feel.
-                </p>
-              </div>
+            <div className="lg:w-1/2 grid grid-cols-1 gap-4">
+              <MetricRow 
+                icon={<Thermometer size={24} className="text-orange-500" />}
+                title="Heat Index"
+                desc="A composite value representing what the air feels like when humidity is combined with the air temperature."
+                bgGradient="from-orange-50 to-red-50"
+                iconBg="bg-gradient-to-br from-orange-100 to-red-100"
+              />
+              <MetricRow 
+                icon={<Droplets size={24} className="text-blue-500" />}
+                title="Relative Humidity"
+                desc="Measures the moisture in the air. High humidity prevents sweat from evaporating, the body's primary cooling method."
+                bgGradient="from-blue-50 to-cyan-50"
+                iconBg="bg-gradient-to-br from-blue-100 to-cyan-100"
+              />
+              <MetricRow 
+                icon={<Sun size={24} className="text-amber-500" />}
+                title="Solar Radiation"
+                desc="Direct energy from the sun that heats asphalt and concrete, creating long-term thermal retention in urban areas."
+                bgGradient="from-amber-50 to-yellow-50"
+                iconBg="bg-gradient-to-br from-amber-100 to-yellow-100"
+              />
             </div>
           </div>
         </section>
@@ -147,22 +143,63 @@ const HomePage = () => {
 
       <style jsx>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         .animate-fadeIn {
-          animation: fadeIn 1s ease-out forwards;
+          animation: fadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
     </main>
   );
 };
 
-export default HomePage;
+/* Component for the Feature Cards */
+const FeatureCard = ({ 
+  icon, 
+  title, 
+  desc, 
+  gradient, 
+  borderColor 
+}: { 
+  icon: React.ReactNode, 
+  title: string, 
+  desc: string,
+  gradient: string,
+  borderColor: string
+}) => (
+  <div className={`bg-linear-to-br ${gradient} border-2 ${borderColor} p-8 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}>
+    <div className="mb-4 w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm">
+      {icon}
+    </div>
+    <h3 className="text-lg font-bold text-slate-900 mb-2">{title}</h3>
+    <p className="text-slate-600 text-sm leading-relaxed">{desc}</p>
+  </div>
+);
 
+/* Component for Metric Detailed Rows */
+const MetricRow = ({ 
+  icon, 
+  title, 
+  desc,
+  bgGradient,
+  iconBg
+}: { 
+  icon: React.ReactNode, 
+  title: string, 
+  desc: string,
+  bgGradient: string,
+  iconBg: string
+}) => (
+  <div className={`group bg-linear-to-br ${bgGradient} border-2 border-slate-200/60 p-6 rounded-3xl shadow-md hover:shadow-xl transition-all duration-300 flex gap-6 items-start hover:-translate-y-1`}>
+    <div className={`p-4 ${iconBg} rounded-2xl shadow-sm group-hover:shadow-md transition-all`}>
+      {icon}
+    </div>
+    <div>
+      <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>
+      <p className="text-slate-600 text-sm leading-relaxed">{desc}</p>
+    </div>
+  </div>
+);
+
+export default HomePage;

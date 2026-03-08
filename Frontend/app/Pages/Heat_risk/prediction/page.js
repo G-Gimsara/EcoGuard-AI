@@ -42,10 +42,18 @@ export default function PredictionPage() {
 
       {!loading && !error && tableData.length > 0 && (
         <>
-          
+       <div className="mb-8">
+          <HeatSensor />
+        </div>
+         
           {/* Summary Cards at the very top */}
+<<<<<<< HEAD
           <SummaryCards data={tableData} />
           <HeatSensor />
+=======
+           {/* <SummaryCards data={tableData} />  */}
+          
+>>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
 
 
           {/* Chart */}

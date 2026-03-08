@@ -18,7 +18,7 @@ interface PredictionRow {
   date: string;
   tempmax: number;
   humidity: number;
-  dew: number;
+  
   solarradiation: number;
   heat_index: number;
 }
@@ -96,7 +96,7 @@ const PredictionsTable: React.FC<PredictionsTableProps> = ({ data }) => {
       "Date",
       "Temp Max",
       "Humidity",
-      "Dew Point",
+     
       "Solar Radiation",
       "Heat Index",
       "Risk Level",
@@ -109,7 +109,7 @@ const PredictionsTable: React.FC<PredictionsTableProps> = ({ data }) => {
           row.date,
           row.tempmax,
           row.humidity,
-          row.dew,
+          
           row.solarradiation,
           row.heat_index,
           `"${getRiskLevel(Number(row.heat_index) || 0)}"`,

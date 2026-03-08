@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "app/Pages/Heat_risk/components/HeatSensor.tsx"  ],
   "exclude": ["node_modules"]
 }
