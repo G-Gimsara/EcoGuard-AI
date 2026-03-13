@@ -12,7 +12,7 @@ const Navbar: React.FC = () => {
     { name: "Home", path: "/Pages/Flood_Risk/Dashboard" },
     { name: "Alert", path: "/Pages/Flood_Risk/Alert" },
     { name: "Report ", path: "/Pages/Flood_Risk/Report" },
-    { name: "Safty&Guid ", path: "/Pages/Flood_Risk/Safty&Guid" },
+    { name: "Safety ", path: "/Pages/Flood_Risk/Safety" },
   ] as const;
 
   return (

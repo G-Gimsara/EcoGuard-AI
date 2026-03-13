@@ -194,8 +194,10 @@ const emergencyContacts: EmergencyContact[] = [
 const SafetyGuidancePage = () => {
   const [activeLevel, setActiveLevel] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const clock = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(clock);
   }, []);
@@ -222,7 +224,7 @@ const SafetyGuidancePage = () => {
             <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm text-sm text-gray-500 self-start sm:self-auto">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               <Clock size={14} />
-              <span className="font-mono font-medium text-gray-700 text-sm">{currentTime.toLocaleTimeString()}</span>
+              <span className="font-mono font-medium text-gray-700 text-sm">{mounted ? currentTime.toLocaleTimeString() : '--:--:-- --'}</span>
               <span className="text-gray-300">|</span>
               <Radio size={14} className="text-blue-500" />
               <span className="text-blue-600 font-semibold text-xs">LIVE</span>
