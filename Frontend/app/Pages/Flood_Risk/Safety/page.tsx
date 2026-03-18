@@ -62,7 +62,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeText: "text-white",
     glowClass: "shadow-green-200",
     threshold: "0 mm",
-    icon: <ShieldCheck size={22} />,
+    icon: <ShieldCheck size={26} />,
     status: "ALL CLEAR",
     actions: [
       "Monitor local weather forecasts daily",
@@ -82,7 +82,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeText: "text-black",
     glowClass: "shadow-yellow-200",
     threshold: "55 mm",
-    icon: <Eye size={22} />,
+    icon: <Eye size={26} />,
     status: "WATCH",
     actions: [
       "Pre-flood ankle-deep water possible",
@@ -102,7 +102,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeText: "text-white",
     glowClass: "shadow-amber-200",
     threshold: "70 – 90 mm",
-    icon: <AlertTriangle size={22} />,
+    icon: <AlertTriangle size={26} />,
     status: "MINOR FLOOD",
     actions: [
       "Minor flooding possible in low-lying areas",
@@ -122,7 +122,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeText: "text-white",
     glowClass: "shadow-orange-200",
     threshold: "100 – 150 mm",
-    icon: <TriangleAlert size={22} />,
+    icon: <TriangleAlert size={26} />,
     status: "WARNING",
     actions: [
       "Water entering home entry points — act now",
@@ -142,7 +142,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeText: "text-white",
     glowClass: "shadow-red-200",
     threshold: "150 – 200 mm",
-    icon: <Siren size={22} />,
+    icon: <Siren size={26} />,
     status: "SEVERE WARNING",
     actions: [
       "Severe flooding likely in vulnerable zones",
@@ -162,7 +162,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeText: "text-white",
     glowClass: "shadow-red-200",
     threshold: "200 – 300+ mm",
-    icon: <Siren size={22} />,
+    icon: <Siren size={26} />,
     status: "EVACUATE NOW",
     actions: [
       "EVACUATE IMMEDIATELY do not delay",
@@ -247,29 +247,25 @@ const SafetyGuidancePage = () => {
                     className={`relative overflow-hidden rounded-xl p-5 text-left transition-all duration-300 cursor-pointer
                       ${item.borderLeft} ${isActive ? `${item.bgActive} shadow-lg ${item.glowClass} scale-[1.02]` : "bg-white shadow-sm hover:shadow-md hover:scale-[1.01]"}`}
                   >
-                    {/* Badge — was text-[9px], now text-xs */}
-                    <span className={`absolute top-0 right-0 text-xs font-black px-2 py-1 rounded-bl-xl ${item.badgeBg} ${item.badgeText}`}>{item.code}</span>
+                    {/* Badge */}
+                    <span className={`absolute top-0 right-0 text-sm font-black px-2 py-1 rounded-bl-xl ${item.badgeBg} ${item.badgeText}`}>{item.code}</span>
 
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${item.textClass} bg-gray-100`}>{item.icon}</div>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${item.textClass} bg-gray-100`}>{item.icon}</div>
                       <div>
-                        {/* Status label — was text-[10px], now text-xs */}
-                        <p className="text-xs text-gray-400 uppercase tracking-wider">{item.status}</p>
-                        {/* Level name — was text-lg, now text-xl */}
-                        <h3 className={`font-black text-xl leading-tight ${item.textClass}`}>{item.level}</h3>
+                        <p className="text-sm text-gray-400 uppercase tracking-wider">{item.status}</p>
+                        <h3 className={`font-black text-2xl leading-tight ${item.textClass}`}>{item.level}</h3>
                       </div>
                     </div>
 
-                    {/* Threshold badge — was text-[10px], now text-xs */}
-                    <div className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1 mb-3 bg-gray-100 ${item.textClass}`}>
-                      <Zap size={11} /> TRIGGER: {item.threshold}
+                    <div className={`inline-flex items-center gap-1 text-sm font-semibold rounded-full px-3 py-1 mb-3 bg-gray-100 ${item.textClass}`}>
+                      <Zap size={12} /> TRIGGER: {item.threshold}
                     </div>
 
-                    {/* Action items — was text-[11px], now text-xs */}
                     <ul className="space-y-2">
                       {item.actions.map((action, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-gray-600 leading-snug">
-                          <ChevronRight size={12} className={`mt-0.5 shrink-0 ${item.textClass}`} /> {action}
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700 leading-snug">
+                          <ChevronRight size={14} className={`mt-0.5 shrink-0 ${item.textClass}`} /> {action}
                         </li>
                       ))}
                     </ul>
@@ -301,16 +297,13 @@ const SafetyGuidancePage = () => {
                         <Home size={15} className="text-gray-500" />
                       </div>
                       <div>
-                        {/* Zone name — was text-sm, kept text-sm (already readable) */}
                         <p className="text-sm font-semibold text-gray-800">{zone.name}</p>
-                        {/* Zone meta — was text-[10px], now text-xs */}
                         <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
                           <span className="flex items-center gap-1"><Users size={11} /> {zone.capacity}</span>
                           <span className="flex items-center gap-1"><MapPin size={11} /> {zone.distance}</span>
                         </div>
                       </div>
                     </div>
-                    {/* Status badge — was text-[10px], now text-xs */}
                     <span className={`text-xs font-bold px-3 py-1 rounded-full border ${zone.status === "Open" ? "text-green-700 bg-green-50 border-green-200" : "text-yellow-700 bg-yellow-50 border-yellow-200"}`}>
                       {zone.status.toUpperCase()}
                     </span>
@@ -323,9 +316,7 @@ const SafetyGuidancePage = () => {
                 <p className="font-bold text-gray-800 text-sm uppercase tracking-wide mb-3">Emergency Hotlines</p>
                 {emergencyContacts.map((c, i) => (
                   <div key={i} className={`rounded-xl border ${c.borderClass} ${c.bgClass} px-4 py-3 flex items-center justify-between`}>
-                    {/* Contact label — was text-xs, kept text-xs */}
-                    <p className="text-xs text-gray-600 leading-tight max-w-[150px]">{c.label}</p>
-                    {/* Phone number — was text-2xl, kept text-2xl (already prominent) */}
+                    <p className="text-sm md:text-base text-gray-600 leading-tight max-w-[180px]">{c.label}</p>
                     <span className={`text-2xl font-black font-mono tracking-tight ${c.colorClass}`}>{c.number}</span>
                   </div>
                 ))}
@@ -342,7 +333,7 @@ const SafetyGuidancePage = () => {
                 bg: "bg-green-50",
                 dot: "bg-green-500",
                 text: "text-green-700",
-                icon: <ShieldCheck size={18} />,
+                icon: <ShieldCheck size={20} />,
                 items: [
                   "Move to highest ground or upper floors immediately",
                   "Follow all instructions from local authorities",
@@ -358,7 +349,7 @@ const SafetyGuidancePage = () => {
                 bg: "bg-red-50",
                 dot: "bg-red-500",
                 text: "text-red-700",
-                icon: <AlertTriangle size={18} />,
+                icon: <AlertTriangle size={20} />,
                 items: [
                   "Never walk through moving floodwater (6 in can knock you down)",
                   "Do not drive through flooded roads under any circumstance",
@@ -372,12 +363,11 @@ const SafetyGuidancePage = () => {
               <div key={i} className={`rounded-xl ${section.borderLeft} ${section.bg} p-6 shadow-sm`}>
                 <div className={`flex items-center gap-2 mb-4 ${section.text}`}>
                   {section.icon}
-                  {/* Section title — was text-sm, kept text-sm */}
-                  <h3 className="font-bold text-sm uppercase tracking-wide">{section.title}</h3>
+                  <h3 className="font-bold text-base uppercase tracking-wide">{section.title}</h3>
                 </div>
                 <ul className="space-y-3">
                   {section.items.map((item, j) => (
-                    <li key={j} className="flex items-start gap-3 text-sm text-gray-700 leading-snug">
+                    <li key={j} className="flex items-start gap-3 text-base text-gray-700 leading-snug">
                       <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${section.dot}`} />{item}
                     </li>
                   ))}
