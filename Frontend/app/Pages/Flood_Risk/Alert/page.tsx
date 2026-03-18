@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Header from "@/app/Header/page";
 import Navbar from "../NavBar/Navbar";
 
@@ -27,6 +27,10 @@ export default function FloodLevelsPage() {
   const [currentSeverity, setCurrentSeverity] = useState("");
   const [riseLevel, setRiseLevel] = useState(0);
 
+  // 🔊 Ref for audio
+  const audioRef = useRef<HTMLAudioElement>(null);
+  // 🔊 Ref for audio
+
   useEffect(() => {
     const fetchData = async () => {
       const res = await fetch("http://localhost:5000/api/flood");
@@ -48,6 +52,17 @@ export default function FloodLevelsPage() {
     };
     return () => ws.close();
   }, []);
+
+  // 🔊 Play alarm if Major or Critical
+  useEffect(() => {
+    if ((currentSeverity === "Major" || currentSeverity === "Critical") && audioRef.current) {
+      audioRef.current.play().catch((err) => console.log("Audio play error:", err));
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [currentSeverity]);
+  // 🔊 Play alarm if Major or Critical
 
   const getColor = (name: string) => {
     switch (name) {
@@ -85,64 +100,79 @@ export default function FloodLevelsPage() {
     }
   };
 
+  const feetRanges: Record<string, string> = {
+    Normal: "(0 - 4 Feet)",
+    Alert: "(4 - 5 Feet)",
+    Minor: "(5 - 6.5 Feet)",
+    Moderate: "(6.5 - 7 Feet)",
+    Major: "(7 - 8 Feet)",
+    Critical: "(8+ Feet)",
+  };
+
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 text-black overflow-x-hidden">
+      <div className="min-h-screen bg-gray-50 text-black overflow-x-hidden text-lg">
         <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold mb-3">Flood Risk Level Monitor</h1>
-          <p className="text-md mb-6">
+
+        {/* 🔊 Audio element */}
+        <audio ref={audioRef} src="/FloodAlarm.mp3" preload="auto" />
+        {/* 🔊 Audio element */}
+
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <h1 className="text-4xl font-bold mb-4">Flood Risk Level Monitor</h1>
+
+          <p className="text-lg mb-6">
             Current Water Rise Level :
-            <span className="ml-2 font-bold text-blue-600">{riseLevel} mm</span>
+            <span className="ml-2 font-bold text-blue-600 text-xl">{riseLevel} mm</span>
           </p>
 
           {(currentSeverity === "Major" || currentSeverity === "Critical") && (
-            <div className="mb-6 p-3 rounded-lg bg-red-600 text-white text-md font-semibold animate-pulse shadow flex items-center">
-              <span className="mr-2 text-xl">⚠️</span>
+            <div className="mb-6 p-4 rounded-lg bg-red-600 text-white text-lg font-semibold animate-pulse shadow flex items-center">
+              <span className="mr-3 text-2xl">⚠️</span>
               Flood Warning — Evacuate Low Areas Immediately
             </div>
           )}
 
-          {/* Grid container */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {levels.map((level) => {
               const isActive = currentSeverity === level.name;
               return (
                 <div
                   key={level.name}
                   className={`border-l-4 ${getColor(level.name)}
-                    rounded-xl p-5 shadow hover:shadow-lg transition-all duration-300
+                    rounded-xl p-6 shadow hover:shadow-lg transition-all duration-300
                     flex flex-col justify-between
                     ${isActive ? `scale-105 ring-2 ring-blue-500 ${getActiveGradient(level.name)}` : "bg-white"}`}
                 >
-                  <div className="flex items-center mb-3">
-                    <span className="text-2xl mr-3">{level.icon}</span>
-                    <h2 className="text-lg font-bold">{level.name}</h2>
+                  <div className="flex items-center mb-4">
+                    <span className="text-3xl mr-3">{level.icon}</span>
+                    <h2 className="text-xl font-bold">{level.name}</h2>
+                    <span className="ml-3 text-xl font-bold">{feetRanges[level.name]}</span>
                   </div>
 
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold mb-2 ${getBadge(level.name)}`}>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold mb-3 ${getBadge(level.name)}`}>
                     {level.name}
                   </span>
 
-                  <p className="text-xs mb-2 text-gray-700">Threshold: {level.threshold} mm</p>
+                  <p className="text-sm mb-3 text-gray-700">Threshold: {level.threshold} mm</p>
 
-                  <p className="font-semibold text-sm mb-1">First Affected Areas</p>
-                  <pre className="whitespace-pre-wrap text-xs">{level.firstAffected}</pre>
+                  <p className="font-semibold text-base mb-1">First Affected Areas</p>
+                  <pre className="whitespace-pre-wrap text-sm">{level.firstAffected}</pre>
 
                   {level.nextAffected && (
                     <>
-                      <p className="font-semibold text-sm mt-2 mb-1">Next Affected</p>
-                      <pre className="whitespace-pre-wrap text-xs">{level.nextAffected}</pre>
+                      <p className="font-semibold text-base mt-3 mb-1">Next Affected</p>
+                      <pre className="whitespace-pre-wrap text-sm">{level.nextAffected}</pre>
                     </>
                   )}
 
-                  <p className="mt-2 font-semibold text-blue-600 text-sm">
+                  <p className="mt-3 font-semibold text-blue-600 text-base">
                     Estimated Flood Depth: {level.floodFeet} ft
                   </p>
 
                   {isActive && (
-                    <div className="mt-2 p-1 bg-blue-600 text-white rounded text-center text-xs font-bold animate-bounce">
+                    <div className="mt-3 p-2 bg-blue-600 text-white rounded text-center text-sm font-bold animate-bounce">
                       CURRENT LEVEL
                     </div>
                   )}
