@@ -143,7 +143,7 @@ function ModulesGrid() {
   return (
     <section className="py-16 px-4 bg-slate-50">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-4xl font-bold text-center text-slate-900 mb-12">Core Monitoring Modules</h2>
+        <h2 className="text-4xl font-bold text-center text-slate-900 mb-12">AI & IoT Environmental Monitoring Modules</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {MODULES.map((module) => (
             <ModuleCard
