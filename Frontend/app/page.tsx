@@ -62,7 +62,7 @@ const TECH_STACK = [
   'Next.js & React',
   'Node.js & Express',
   'Python (ML Models)',
-  'MongoDB',
+  'PostgreSQL',
   'IoT Sensors',
   'Cloud Computing',
   'REST APIs',
