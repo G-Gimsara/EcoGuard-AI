@@ -14,8 +14,8 @@ import Footer from './Footer/Footer';
 const MODULES = [
   {
     id: 1,
-    title: 'Flood Risk Detection',
-    description: 'AI-driven flood monitoring using real-time IoT data from ultrasonic water level and float switch sensors to detect rising water levels and trigger alerts.',
+    title: 'Real-Time Flood Risk Monitoring',
+    description: 'Flood monitoring uses real-time IoT data from ultrasonic and float sensors to measure water levels and trigger alerts.',
     icon: Droplets,
     image: FloodImg,
     link: '/Pages/Flood_Risk/Dashboard',
