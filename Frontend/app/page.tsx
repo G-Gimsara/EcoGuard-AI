@@ -15,7 +15,7 @@ const MODULES = [
   {
     id: 1,
     title: 'Flood Risk Detection',
-    description: 'AI-driven flood monitoring using real time IoT data from rainfall sensors, river levels, and environmental conditions.',
+    description: 'AI-driven flood monitoring using real-time IoT data from ultrasonic water level and float switch sensors to detect rising water levels and trigger alerts.',
     icon: Droplets,
     image: FloodImg,
     link: '/Pages/Flood_Risk/Dashboard',
