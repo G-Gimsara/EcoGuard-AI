@@ -9,19 +9,10 @@ const Navbar: React.FC = () => {
 
   // Navigation links
   const navLinks = [
-    { name: "Home", path: "/Pages/Flood_Risk/Dashboard" },
- HEAD
-    { name: "Alert", path: "/Pages/Flood_Risk/about" },
-    { name: "Report ", path: "/Pages/Flood_Risk/Guide" },
-
-    { name: "Alert", path: "/Pages/Flood_Risk/Alert" },
-    { name: "Report ", path: "/Pages/Flood_Risk/Report" },
- flood-risk-prediction-alert-system
-    { name: "Safety ", path: "/Pages/Flood_Risk/Safety" },
-
-    { name: "Safty&Guid ", path: "/Pages/Flood_Risk/Safty&Guid" },
- 2ae796edc070db97a5c1dea88bf78fe17705f627
- main
+    { name: "Home", path: "/Pages/air_quality/Dashboard" },
+    { name: "Recommendations", path: "/Pages/air_quality/Recommendations" },
+    { name: "Recommendations Guide", path: "/Pages/air_quality/Guide" },
+    { name: "Report ", path: "/Pages/air_quality/Report" },
   ] as const;
 
   return (
