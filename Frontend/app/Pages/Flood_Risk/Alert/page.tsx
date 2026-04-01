@@ -76,6 +76,7 @@ export default function FloodLevelsPage() {
     }
   };
 
+  
   const getBadge = (name: string) => {
     switch (name) {
       case "Normal": return "bg-green-100 text-green-700";
