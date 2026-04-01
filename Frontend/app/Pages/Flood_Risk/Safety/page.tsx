@@ -19,6 +19,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
+
 // ─── Types ───────────────────────────────────────────
 interface SafetyLevel {
   level: string;
