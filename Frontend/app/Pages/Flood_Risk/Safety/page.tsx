@@ -324,6 +324,7 @@ const SafetyGuidancePage = () => {
               </div>
             </div>
           </div>
+          
 
           {/* Do's & Don'ts */}
           <div className="grid md:grid-cols-2 gap-6">
