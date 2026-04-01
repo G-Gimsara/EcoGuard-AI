@@ -259,6 +259,7 @@ const SafetyGuidancePage = () => {
                       </div>
                     </div>
 
+
                     <div className={`inline-flex items-center gap-1 text-sm font-semibold rounded-full px-3 py-1 mb-3 bg-gray-100 ${item.textClass}`}>
                       <Zap size={12} /> TRIGGER: {item.threshold}
                     </div>
