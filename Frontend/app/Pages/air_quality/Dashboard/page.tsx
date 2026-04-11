@@ -20,13 +20,30 @@ interface AirReading {
   id: number;
   device_id: string;
   dust?: number;
+  dust_density?: number;
   gas_ppm?: number;
   temperature?: number;
   humidity?: number;
   air_status?: string;
   temp_status?: string;
   humidity_status?: string;
-  createdAt: string;
+  createdAt?: string;
+  recorded_at?: string;
+  /** Present on some WebSocket payloads from the backend */
+  timestamp?: string;
+}
+
+function asReadingArray(data: unknown): AirReading[] {
+  return Array.isArray(data) ? data : [];
+}
+
+function readingTime(r: AirReading): number {
+  const t = r.createdAt ?? r.recorded_at ?? r.timestamp;
+  return t ? new Date(t).getTime() : 0;
+}
+
+function dustValue(r: AirReading): number | undefined {
+  return r.dust ?? r.dust_density;
 }
 
 export default function Dashboard() {
@@ -40,27 +57,42 @@ export default function Dashboard() {
 
   const router = useRouter();
 
-  // Load initial data
+  // Load initial data (API returns an array of rows, or { error } on failure)
   useEffect(() => {
     fetch("http://localhost:5000/api/dust")
       .then((res) => res.json())
-      .then((data: AirReading[]) => {
-        setLatestDust(data[0]);
-        setDustHistory(data.slice(0, 50));
+      .then((data: unknown) => {
+        const rows = asReadingArray(data);
+        setLatestDust(rows[0] ?? null);
+        setDustHistory(rows.slice(0, 50));
+      })
+      .catch(() => {
+        setLatestDust(null);
+        setDustHistory([]);
       });
 
     fetch("http://localhost:5000/api/gas")
       .then((res) => res.json())
-      .then((data: AirReading[]) => {
-        setLatestGas(data[0]);
-        setGasHistory(data.slice(0, 50));
+      .then((data: unknown) => {
+        const rows = asReadingArray(data);
+        setLatestGas(rows[0] ?? null);
+        setGasHistory(rows.slice(0, 50));
+      })
+      .catch(() => {
+        setLatestGas(null);
+        setGasHistory([]);
       });
 
-    fetch("http://localhost:5000/api/temp_hum")
+    fetch("http://localhost:5000/api/air-quality")
       .then((res) => res.json())
-      .then((data: AirReading[]) => {
-        setLatestTempHum(data[0]);
-        setTempHumHistory(data.slice(0, 50));
+      .then((data: unknown) => {
+        const rows = asReadingArray(data);
+        setLatestTempHum(rows[0] ?? null);
+        setTempHumHistory(rows.slice(0, 50));
+      })
+      .catch(() => {
+        setLatestTempHum(null);
+        setTempHumHistory([]);
       });
   }, []);
 
@@ -70,17 +102,20 @@ export default function Dashboard() {
 
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      if (message.type === "DUST_UPDATE") {
-        setLatestDust(message.data);
-        setDustHistory((prev) => [...prev.slice(-49), message.data]);
+      if (message.type === "DUST_DATA" || message.type === "DUST_UPDATE") {
+        const row = message.data as AirReading;
+        setLatestDust(row);
+        setDustHistory((prev) => [...prev.slice(-49), row]);
       }
-      if (message.type === "GAS_UPDATE") {
-        setLatestGas(message.data);
-        setGasHistory((prev) => [...prev.slice(-49), message.data]);
+      if (message.type === "GAS_DATA" || message.type === "GAS_UPDATE") {
+        const row = message.data as AirReading;
+        setLatestGas(row);
+        setGasHistory((prev) => [...prev.slice(-49), row]);
       }
-      if (message.type === "TEMP_UPDATE") {
-        setLatestTempHum(message.data);
-        setTempHumHistory((prev) => [...prev.slice(-49), message.data]);
+      if (message.type === "AIR_QUALITY" || message.type === "TEMP_UPDATE") {
+        const row = message.data as AirReading;
+        setLatestTempHum(row);
+        setTempHumHistory((prev) => [...prev.slice(-49), row]);
       }
     };
 
@@ -108,7 +143,8 @@ export default function Dashboard() {
     if (!latestDust || !latestGas || !latestTempHum)
       return { label: "Unknown", color: "bg-gray-100 text-gray-600" };
 
-    const dustScore = latestDust.dust! > 150 ? 3 : latestDust.dust! > 75 ? 2 : 1;
+    const d = dustValue(latestDust) ?? 0;
+    const dustScore = d > 150 ? 3 : d > 75 ? 2 : 1;
     const gasScore = latestGas.gas_ppm! > 150 ? 3 : latestGas.gas_ppm! > 75 ? 2 : 1;
     const tempScore = latestTempHum.temperature! > 35 ? 3 : latestTempHum.temperature! > 30 ? 2 : 1;
     const total = dustScore + gasScore + tempScore;
@@ -122,16 +158,26 @@ export default function Dashboard() {
   const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
 
   const chartData = dustHistory
-    .filter((d) => new Date(d.createdAt).getTime() >= fiveMinutesAgo)
-    .map((d) => ({ time: new Date(d.createdAt).toLocaleTimeString(), dust: d.dust }));
+    .filter((d) => readingTime(d) >= fiveMinutesAgo)
+    .map((d) => ({
+      time: new Date(readingTime(d) || Date.now()).toLocaleTimeString(),
+      dust: dustValue(d),
+    }));
 
   const gasChartData = gasHistory
-    .filter((d) => new Date(d.createdAt).getTime() >= fiveMinutesAgo)
-    .map((d) => ({ time: new Date(d.createdAt).toLocaleTimeString(), gas: d.gas_ppm }));
+    .filter((d) => readingTime(d) >= fiveMinutesAgo)
+    .map((d) => ({
+      time: new Date(readingTime(d) || Date.now()).toLocaleTimeString(),
+      gas: d.gas_ppm,
+    }));
 
   const tempChartData = tempHumHistory
-    .filter((d) => new Date(d.createdAt).getTime() >= fiveMinutesAgo)
-    .map((d) => ({ time: new Date(d.createdAt).toLocaleTimeString(), temperature: d.temperature, humidity: d.humidity }));
+    .filter((d) => readingTime(d) >= fiveMinutesAgo)
+    .map((d) => ({
+      time: new Date(readingTime(d) || Date.now()).toLocaleTimeString(),
+      temperature: d.temperature,
+      humidity: d.humidity,
+    }));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -152,7 +198,7 @@ export default function Dashboard() {
             title="Dust Sensor"
             subtitle="PM2.5 Levels"
             subtext="Location: Malabe"
-            value={latestDust?.dust}
+            value={latestDust ? dustValue(latestDust) : undefined}
             status={latestDust?.air_status}
             unit="µg/m³"
             alert={latestDust?.air_status === "High" ? "High dust detected! Wear a mask." : undefined}
