@@ -1,0 +1,290 @@
+"use client";
+
+import React, { useEffect, useState, useRef } from "react";
+import Link from "next/link";
+import Header from "@/app/Header/page";
+import Navbar from "../../NavBar/Navbar";
+import {
+  levels,
+  levelWarnings,
+  safetyGuidelines,
+  feetRanges,
+  getLevelRow,
+  type LevelName,
+} from "../floodLevelConfig";
+
+interface FloodMeasurement {
+  id: number;
+  riseLevel: number;
+  severity: string;
+  firstAffected: string;
+  nextAffected?: string;
+  floodFeet: number;
+  createdAt: string;
+}
+
+/** Shared chrome so all three panels feel like one dashboard, not three random boxes */
+function liveChrome(level: LevelName): {
+  bar: string;
+  iconRing: string;
+  pill: string;
+  statChip: string;
+} {
+  switch (level) {
+    case "Normal":
+      return {
+        bar: "bg-emerald-500",
+        iconRing: "bg-emerald-50 ring-emerald-200/80 text-emerald-800",
+        pill: "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200/60",
+        statChip: "bg-emerald-50/90 text-emerald-900 ring-1 ring-emerald-100",
+      };
+    case "Alert":
+      return {
+        bar: "bg-amber-400",
+        iconRing: "bg-amber-50 ring-amber-200/80 text-amber-900",
+        pill: "bg-amber-100 text-amber-950 ring-1 ring-amber-200/70",
+        statChip: "bg-amber-50/90 text-amber-950 ring-1 ring-amber-100",
+      };
+    case "Minor":
+      return {
+        bar: "bg-orange-400",
+        iconRing: "bg-orange-50 ring-orange-200/80 text-orange-900",
+        pill: "bg-orange-100 text-orange-950 ring-1 ring-orange-200/60",
+        statChip: "bg-orange-50/90 text-orange-950 ring-1 ring-orange-100",
+      };
+    case "Moderate":
+      return {
+        bar: "bg-orange-600",
+        iconRing: "bg-orange-50 ring-orange-200/80 text-orange-950",
+        pill: "bg-orange-100 text-orange-950 ring-1 ring-orange-200/60",
+        statChip: "bg-orange-50/90 text-orange-950 ring-1 ring-orange-100",
+      };
+    case "Major":
+      return {
+        bar: "bg-red-500",
+        iconRing: "bg-red-50 ring-red-200/80 text-red-900",
+        pill: "bg-red-100 text-red-950 ring-1 ring-red-200/60",
+        statChip: "bg-red-50/90 text-red-950 ring-1 ring-red-100",
+      };
+    case "Critical":
+      return {
+        bar: "bg-gradient-to-r from-red-700 via-rose-700 to-red-800 shadow-[inset_0_-1px_0_rgba(0,0,0,0.15)]",
+        iconRing: "bg-red-100 ring-2 ring-red-300/70 text-red-950",
+        pill: "bg-red-600 text-white ring-1 ring-red-800/30",
+        statChip: "bg-red-50 text-red-950 ring-1 ring-red-200",
+      };
+    default:
+      return {
+        bar: "bg-slate-400",
+        iconRing: "bg-slate-50 ring-slate-200 text-slate-800",
+        pill: "bg-slate-100 text-slate-800 ring-1 ring-slate-200",
+        statChip: "bg-slate-50 text-slate-800 ring-1 ring-slate-200",
+      };
+  }
+}
+
+export default function FloodLiveAlertPage() {
+  // Real-time values from backend; used to drive all live UI sections.
+  const [currentSeverity, setCurrentSeverity] = useState("");
+  const [riseLevel, setRiseLevel] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    // Bootstrap with the latest saved measurement.
+    const fetchData = async () => {
+      const res = await fetch("http://localhost:5000/api/flood");
+      const data: FloodMeasurement[] = await res.json();
+      if (data.length > 0) {
+        setCurrentSeverity(data[0].severity);
+        setRiseLevel(data[0].riseLevel);
+      }
+    };
+    fetchData();
+
+    // Keep this screen synchronized with sensor updates in real time.
+    const ws = new WebSocket("ws://localhost:5000");
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === "FLOOD_UPDATE") {
+        setCurrentSeverity(msg.data.severity);
+        setRiseLevel(msg.data.riseLevel);
+      }
+    };
+    return () => ws.close();
+  }, []);
+
+  useEffect(() => {
+    // Audible alert is enabled only for Major/Critical to avoid alert fatigue.
+    if ((currentSeverity === "Major" || currentSeverity === "Critical") && audioRef.current) {
+      audioRef.current.play().catch((err) => console.log("Audio play error:", err));
+    } else if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [currentSeverity]);
+
+  // Build a single typed "active level" model from backend severity text.
+  const activeLevel = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
+  const warning = activeLevel ? levelWarnings[activeLevel] : null;
+  const guidelines = activeLevel ? safetyGuidelines[activeLevel] : [];
+  const levelRow = activeLevel ? getLevelRow(activeLevel) : undefined;
+  const chrome = activeLevel ? liveChrome(activeLevel) : null;
+
+  return (
+    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900">
+      <Header />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <Navbar />
+        <audio ref={audioRef} src="/FloodAlarm.mp3" preload="auto" />
+
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pb-4 pt-3 sm:px-6 sm:pb-5 sm:pt-4 lg:overflow-hidden lg:px-10 lg:pb-6 xl:px-14 2xl:px-20">
+          {/* Top bar: identity, current measurement, and navigation back to full overview. */}
+          <header className="mb-4 flex shrink-0 flex-col gap-3 rounded-2xl bg-white/95 p-4 shadow-sm ring-1 ring-slate-200/80 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:p-5 lg:mb-5">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl lg:text-[1.75rem] xl:text-4xl">
+                  Live flood status
+                </h1>
+                {activeLevel ? (
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide sm:text-sm ${chrome?.pill}`}
+                  >
+                    {activeLevel}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 text-sm text-slate-500 sm:text-base">
+                Advisory, safety checklist, and affected areas for the active level only.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 sm:shrink-0 sm:gap-6">
+              <div className="rounded-xl bg-slate-50 px-4 py-2 ring-1 ring-slate-200/80">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Water rise</p>
+                <p className="text-xl font-semibold tabular-nums text-[#123985] sm:text-2xl lg:text-3xl">
+                  {riseLevel}
+                  <span className="ml-1 text-sm font-medium text-slate-500 sm:text-base">mm</span>
+                </p>
+              </div>
+              <Link
+                href="/Pages/Flood_Risk/Alert"
+                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 sm:text-base"
+              >
+                All levels overview
+              </Link>
+            </div>
+          </header>
+
+          {!warning && (
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200/80">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl">📡</div>
+              <p className="mt-4 text-lg font-medium text-slate-700 sm:text-xl">Waiting for flood data</p>
+              <p className="mt-1 max-w-md text-sm text-slate-500 sm:text-base">
+                When the sensor connects, your level, advisory, and maps will appear here.
+              </p>
+            </div>
+          )}
+
+          {/* Three-card live dashboard: advisory, actions, and impact details. */}
+          {warning && activeLevel && levelRow && chrome && (
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-1 lg:gap-5 lg:overflow-hidden xl:gap-6">
+              {/* Advisory */}
+              <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/80 lg:col-span-4">
+                <div className={`h-1.5 shrink-0 ${chrome.bar} ${activeLevel === "Critical" ? "animate-pulse" : ""}`} />
+                <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-5 lg:overflow-y-auto lg:overscroll-contain">
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl ring-1 sm:h-16 sm:w-16 sm:text-4xl ${chrome.iconRing}`}
+                      aria-hidden
+                    >
+                      {levelRow.icon}
+                    </div>
+                    <div className="min-w-0 pt-0.5">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Advisory</p>
+                      <p className="mt-1 text-xl font-semibold leading-snug text-slate-900 sm:text-2xl">{warning.headline}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed text-slate-600 sm:text-base lg:text-[1.05rem] lg:leading-relaxed">
+                    {warning.detail}
+                  </p>
+                </div>
+              </section>
+
+              {/* Safety */}
+              <section
+                className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/80 lg:col-span-4"
+                aria-labelledby="live-safety-heading"
+              >
+                <div className={`h-1.5 shrink-0 ${chrome.bar}`} />
+                <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-5">
+                  <h2
+                    id="live-safety-heading"
+                    className="shrink-0 text-lg font-semibold text-slate-900 sm:text-xl"
+                  >
+                    Safety checklist
+                  </h2>
+                  <ul className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-1 sm:space-y-4">
+                    {guidelines.map((item) => (
+                      <li key={item} className="flex gap-3 text-sm leading-relaxed text-slate-700 sm:text-base">
+                        <span
+                          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${activeLevel === "Critical" ? "bg-red-600" : "bg-[#123985]"}`}
+                          aria-hidden
+                        >
+                          ✓
+                        </span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+
+              {/* Impact */}
+              <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/80 lg:col-span-4">
+                <div className={`h-1.5 shrink-0 ${chrome.bar}`} />
+                <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-5">
+                  <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="text-3xl sm:text-4xl" aria-hidden>
+                        {levelRow.icon}
+                      </span>
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">{levelRow.name}</h2>
+                        <p className="text-sm font-medium text-slate-500 sm:text-base">
+                          {feetRanges[levelRow.name as LevelName]}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex shrink-0 flex-wrap gap-2">
+                    <span className={`rounded-lg px-3 py-2 text-sm font-medium ${chrome.statChip}`}>
+                      Threshold <span className="tabular-nums">{levelRow.threshold}</span> mm
+                    </span>
+                    <span className={`rounded-lg px-3 py-2 text-sm font-medium ${chrome.statChip}`}>
+                      Est. depth <span className="tabular-nums">{levelRow.floodFeet}</span> ft
+                    </span>
+                  </div>
+                  <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain border-t border-slate-100 pt-4">
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">First affected</h3>
+                      <pre className="mt-2 whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700 sm:text-base">
+                        {levelRow.firstAffected}
+                      </pre>
+                    </div>
+                    {levelRow.nextAffected ? (
+                      <div>
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Next affected</h3>
+                        <pre className="mt-2 whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700 sm:text-base">
+                          {levelRow.nextAffected}
+                        </pre>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </section>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
