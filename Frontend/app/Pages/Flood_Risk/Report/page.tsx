@@ -16,29 +16,35 @@ interface FloodMeasurement {
 }
 
 export default function Reports() {
+  // Raw flood history loaded from backend; rendered as a paginated table.
   const [measurements, setMeasurements] = useState<FloodMeasurement[]>([]);
   const [filterYear, setFilterYear] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Fixed page size keeps pagination predictable .
   const rowsPerPage = 10;
 
   useEffect(() => {
+    // Load historical measurements once on mount.
     fetch("http://localhost:5000/api/flood")
       .then((res) => res.json())
       .then((data) => setMeasurements(data))
       .catch((err) => console.error(err));
   }, []);
 
+  // Year filter is applied in-memory on the fetched dataset.
   const filteredData = measurements.filter((m) => {
     const date = new Date(m.createdAt);
     return filterYear === "" || date.getFullYear() === parseInt(filterYear);
   });
 
+  // Pagination window derived from the filtered dataset.
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
 
+  // Visual severity mapping so each risk stage is instantly recognizable.
   const severityColors: Record<string, { bg: string; text: string }> = {
     Normal: { bg: "bg-green-100", text: "text-green-700" },
     Alert: { bg: "bg-yellow-100", text: "text-yellow-700" },
