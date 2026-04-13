@@ -51,7 +51,7 @@ interface EmergencyContact {
   borderClass: string;
 }
 
-// ─── Data ───────────────────────────────────────────
+// Static guidance data: each safety card represents one flood severity level.
 const safetyLevels: SafetyLevel[] = [
   {
     level: "NORMAL",
@@ -82,7 +82,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeBg: "bg-yellow-400",
     badgeText: "text-black",
     glowClass: "shadow-yellow-200",
-    threshold: "55 mm",
+    threshold: "40 mm",
     icon: <Eye size={26} />,
     status: "WATCH",
     actions: [
@@ -102,7 +102,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeBg: "bg-amber-500",
     badgeText: "text-white",
     glowClass: "shadow-amber-200",
-    threshold: "70 – 90 mm",
+    threshold: " 75 mm",
     icon: <AlertTriangle size={26} />,
     status: "MINOR FLOOD",
     actions: [
@@ -122,7 +122,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeBg: "bg-orange-500",
     badgeText: "text-white",
     glowClass: "shadow-orange-200",
-    threshold: "100 – 150 mm",
+    threshold: "110 mm",
     icon: <TriangleAlert size={26} />,
     status: "WARNING",
     actions: [
@@ -142,7 +142,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeBg: "bg-red-500",
     badgeText: "text-white",
     glowClass: "shadow-red-200",
-    threshold: "150 – 200 mm",
+    threshold: "145 mm",
     icon: <Siren size={26} />,
     status: "SEVERE WARNING",
     actions: [
@@ -162,7 +162,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeBg: "bg-red-600",
     badgeText: "text-white",
     glowClass: "shadow-red-200",
-    threshold: "200 – 300+ mm",
+    threshold: "180 + mm",
     icon: <Siren size={26} />,
     status: "EVACUATE NOW",
     actions: [
@@ -193,12 +193,16 @@ const emergencyContacts: EmergencyContact[] = [
 
 // ─── Component ───────────────────────────────────────────
 const SafetyGuidancePage = () => {
+  // Selected card index; null means "all cards collapsed" state.
   const [activeLevel, setActiveLevel] = useState<number | null>(null);
+  // Live clock is for situational awareness in operations view.
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Avoid hydration mismatch: render time only after client mounts.
     setMounted(true);
+    // Update the incident clock every second.
     const clock = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(clock);
   }, []);
@@ -232,7 +236,7 @@ const SafetyGuidancePage = () => {
             </div>
           </div>
 
-          {/* Alert Levels */}
+          {/* Flood level protocol matrix (click a card to highlight/expand context). */}
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Radio size={15} className="text-blue-700" />
@@ -279,7 +283,7 @@ const SafetyGuidancePage = () => {
             </div>
           </section>
 
-          {/* Emergency Action Plan */}
+          {/* Operational response section: shelters + hotline numbers. */}
           <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200">
             <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2">
               <PhoneCall size={26} /> Emergency Action Plan
@@ -327,7 +331,7 @@ const SafetyGuidancePage = () => {
           </div>
           
 
-          {/* Do's & Don'ts */}
+          {/* Quick behavioral checklist for public communication during flood events. */}
           <div className="grid md:grid-cols-2 gap-6">
             {[
               {
