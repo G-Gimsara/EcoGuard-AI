@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Navbar from "../NavBar/Navbar";
-import { Clock, Droplets, AlertTriangle, MapPin } from "lucide-react";
+import { Download, Droplets } from "lucide-react";
 import Header from "@/app/Header/page";
 
 interface FloodMeasurement {
@@ -43,6 +43,75 @@ export default function Reports() {
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+
+  const handleDownloadReport = async () => {
+    if (filteredData.length === 0) return;
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const generatedAt = new Date().toLocaleString("en-GB");
+    const reportRows = filteredData.map((m, index) => [
+      String(index + 1),
+      m.riseLevel.toFixed(1),
+      String(m.floodFeet),
+      m.severity,
+      m.firstAffected || "-",
+      m.nextAffected || "-",
+      new Date(m.createdAt).toLocaleString("en-GB"),
+    ]);
+
+    doc.setFillColor(13, 71, 161);
+    doc.rect(0, 0, 297, 28, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.text("Flood Monitoring Report", 14, 12);
+    doc.setFontSize(10);
+    doc.text(`Year filter: ${filterYear || "All Years"}`, 14, 19);
+    doc.text(`Generated: ${generatedAt}`, 14, 24);
+
+    doc.setTextColor(40, 40, 40);
+    autoTable(doc, {
+      startY: 34,
+      head: [["#", "Rise (mm)", "Rise (ft)", "Severity", "First Affected", "Next Affected", "Date / Time"]],
+      body: reportRows,
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 2.5,
+        overflow: "linebreak",
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [25, 118, 210],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 10 },
+        1: { halign: "right", cellWidth: 20 },
+        2: { halign: "right", cellWidth: 18 },
+        3: { halign: "center", cellWidth: 25 },
+        4: { cellWidth: 78 },
+        5: { cellWidth: 78 },
+        6: { cellWidth: 38 },
+      },
+      alternateRowStyles: { fillColor: [245, 248, 252] },
+      margin: { left: 10, right: 10, bottom: 14 },
+    });
+
+    const pages = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
+    for (let i = 1; i <= pages; i += 1) {
+      doc.setPage(i);
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Page ${i} of ${pages}`, 287, 205, { align: "right" });
+    }
+
+    doc.save(`flood-report-${filterYear || "all-years"}.pdf`);
+  };
 
   // Visual severity mapping so each risk stage is instantly recognizable.
   const severityColors: Record<string, { bg: string; text: string }> = {
@@ -94,6 +163,14 @@ export default function Reports() {
               )}
             </select>
           </div>
+          <button
+            onClick={handleDownloadReport}
+            disabled={filteredData.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold shadow-md hover:from-blue-700 hover:to-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            <Download size={16} />
+            Download Report
+          </button>
         </div>
 
         {/* Table Card */}
