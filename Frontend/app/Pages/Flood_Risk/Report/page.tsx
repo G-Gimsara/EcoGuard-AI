@@ -16,29 +16,29 @@ interface FloodMeasurement {
 }
 
 export default function Reports() {
-  // Raw flood history loaded from backend; rendered as a paginated table.
+  // Flood history from backend; the UI derives filter + pagination from this single source of truth.
   const [measurements, setMeasurements] = useState<FloodMeasurement[]>([]);
   const [filterYear, setFilterYear] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Fixed page size keeps pagination predictable .
+  // Keep page size fixed so the report table/pagination remain stable.
   const rowsPerPage = 10;
 
   useEffect(() => {
-    // Load historical measurements once on mount.
+    // Fetch once on mount. This endpoint is assumed to return an array of `FloodMeasurement`.
     fetch("http://localhost:5000/api/flood")
       .then((res) => res.json())
       .then((data) => setMeasurements(data))
       .catch((err) => console.error(err));
   }, []);
 
-  // Year filter is applied in-memory on the fetched dataset.
+  // Apply year filter in-memory (fast enough for typical report sizes).
   const filteredData = measurements.filter((m) => {
     const date = new Date(m.createdAt);
     return filterYear === "" || date.getFullYear() === parseInt(filterYear);
   });
 
-  // Pagination window derived from the filtered dataset.
+  // Pagination operates on the filtered dataset so the UI and PDF export stay consistent.
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = filteredData.slice(indexOfFirstRow, indexOfLastRow);
@@ -46,6 +46,7 @@ export default function Reports() {
 
   const handleDownloadReport = async () => {
     if (filteredData.length === 0) return;
+    // Lazy-load PDF libs only when needed to keep initial page load light.
     const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
       import("jspdf"),
       import("jspdf-autotable"),
@@ -53,6 +54,15 @@ export default function Reports() {
 
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const generatedAt = new Date().toLocaleString("en-GB");
+    // PDF-only severity styling (RGB); separate from Tailwind classes used in the on-screen table.
+    const pdfSeverityColors: Record<string, { fill: [number, number, number]; text: [number, number, number] }> = {
+      Normal: { fill: [220, 252, 231], text: [21, 128, 61] },
+      Alert: { fill: [254, 249, 195], text: [161, 98, 7] },
+      Minor: { fill: [255, 237, 213], text: [194, 65, 12] },
+      Moderate: { fill: [254, 215, 170], text: [154, 52, 18] },
+      Major: { fill: [254, 226, 226], text: [185, 28, 28] },
+      Critical: { fill: [185, 28, 28], text: [255, 255, 255] },
+    };
     const reportRows = filteredData.map((m, index) => [
       String(index + 1),
       m.riseLevel.toFixed(1),
@@ -63,6 +73,7 @@ export default function Reports() {
       new Date(m.createdAt).toLocaleString("en-GB"),
     ]);
 
+    // Header bar at the top of the PDF for branding + metadata.
     doc.setFillColor(13, 71, 161);
     doc.rect(0, 0, 297, 28, "F");
     doc.setTextColor(255, 255, 255);
@@ -89,6 +100,7 @@ export default function Reports() {
         textColor: 255,
         fontStyle: "bold",
       },
+      // Column widths tuned for landscape A4 so long place names wrap instead of overflowing.
       columnStyles: {
         0: { halign: "center", cellWidth: 10 },
         1: { halign: "right", cellWidth: 20 },
@@ -100,8 +112,21 @@ export default function Reports() {
       },
       alternateRowStyles: { fillColor: [245, 248, 252] },
       margin: { left: 10, right: 10, bottom: 14 },
+      // Color-code the Severity cells to match the on-screen semantics (Normal/Alert/...).
+      didParseCell: (data: any) => {
+        if (data.section === "body" && data.column.index === 3) {
+          const severity = String(data.cell.raw);
+          const colors = pdfSeverityColors[severity];
+          if (colors) {
+            data.cell.styles.fillColor = colors.fill;
+            data.cell.styles.textColor = colors.text;
+            data.cell.styles.fontStyle = "bold";
+          }
+        }
+      },
     });
 
+    // Add page numbers after the table renders (autoTable may create multiple pages).
     const pages = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
     for (let i = 1; i <= pages; i += 1) {
       doc.setPage(i);
