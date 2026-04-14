@@ -171,7 +171,7 @@ export default function FloodLiveAlertPage() {
     }
   }, [currentSeverity]);
 
-  // Build a single typed "active level" model from backend severity text.
+  // Convert backend severity text to a typed level model used by all three panels.
   const activeLevel = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
   const warning = activeLevel ? levelWarnings[activeLevel] : null;
   const guidelines = activeLevel ? safetyGuidelines[activeLevel] : [];

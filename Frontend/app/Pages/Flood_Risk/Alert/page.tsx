@@ -30,6 +30,7 @@ export default function FloodLevelsPage() {
   const [currentSeverity, setCurrentSeverity] = useState("");
   const [riseLevel, setRiseLevel] = useState(0);
 
+  // Alarm audio element controlled by severity changes.
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -66,7 +67,7 @@ export default function FloodLevelsPage() {
     }
   }, [currentSeverity]);
 
-  // Resolve backend severity string into typed config for banner, guidance, and cards.
+  // Map current backend severity into reusable config blocks for UI sections.
   const activeLevel = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
   const warning = activeLevel ? levelWarnings[activeLevel] : null;
   const guidelines = activeLevel ? safetyGuidelines[activeLevel] : [];

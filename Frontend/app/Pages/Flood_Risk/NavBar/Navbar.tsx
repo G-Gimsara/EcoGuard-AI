@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 const Navbar: React.FC = () => {
   const pathname = usePathname();
 
-  // Navigation links
+  // Central route list for Flood Risk module tabs.
   const navLinks = [
     { name: "Home", path: "/Pages/Flood_Risk/Dashboard" },
     { name: "Alert", path: "/Pages/Flood_Risk/Alert" },
@@ -19,6 +19,7 @@ const Navbar: React.FC = () => {
     <nav className="w-full flex justify-center py-4 relative z-20">
       <div className="flex flex-wrap items-center justify-center gap-0 border-b border-white/5">
         {navLinks.map((link) => {
+          // Alert tab stays active for nested route: /Alert/Live.
           const isActive =
             pathname === link.path ||
             (link.path === "/Pages/Flood_Risk/Alert" && pathname.startsWith("/Pages/Flood_Risk/Alert"));

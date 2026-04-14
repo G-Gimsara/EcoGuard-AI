@@ -1,5 +1,5 @@
-// Master flood severity ladder used by all Flood Risk screens.
-// Keep thresholds in ascending order; UI and backend mapping assume this order.
+// Flood alert configuration used by Alert pages.
+// Keep thresholds in ascending order.
 export const levels = [
   { threshold: 0, name: "Normal", firstAffected: "No areas affected", nextAffected: "", floodFeet: 0, icon: "🌿" },
   { threshold: 40, name: "Alert", firstAffected: "Megoda Kolonnawa GND — 1 ft ankle-deep", nextAffected: "", floodFeet: 4, icon: "⚠️" },
@@ -11,7 +11,7 @@ export const levels = [
 
 export type LevelName = (typeof levels)[number]["name"];
 
-// Human-readable warning copy shown in alert banners for each level.
+// Warning message shown for each level.
 export const levelWarnings: Record<LevelName, { headline: string; detail: string; bannerClass: string }> = {
   Normal: {
     headline: "Conditions stable",
@@ -45,7 +45,7 @@ export const levelWarnings: Record<LevelName, { headline: string; detail: string
   },
 };
 
-// Level-specific safety checklist used in both overview and live pages.
+// Safety guidance shown for each level.
 export const safetyGuidelines: Record<LevelName, string[]> = {
   Normal: [
     "Keep emergency contacts and a battery-powered radio or charged phone handy during heavy rain.",
@@ -79,7 +79,7 @@ export const safetyGuidelines: Record<LevelName, string[]> = {
   ],
 };
 
-// Quick range label displayed next to each severity title.
+// Flood depth range label for each level.
 export const feetRanges: Record<LevelName, string> = {
   Normal: "(0 - 4 Feet)",
   Alert: "(4 - 5 Feet)",
@@ -89,6 +89,7 @@ export const feetRanges: Record<LevelName, string> = {
   Critical: "(8+ Feet)",
 };
 
+// Returns left border color class for each level.
 export function getColor(name: string) {
   switch (name) {
     case "Normal": return "border-green-500";
@@ -101,6 +102,7 @@ export function getColor(name: string) {
   }
 }
 
+// Returns badge color class for each level.
 export function getBadge(name: string) {
   switch (name) {
     case "Normal": return "bg-green-100 text-green-700";
@@ -113,6 +115,7 @@ export function getBadge(name: string) {
   }
 }
 
+// Returns highlight style for the active level card.
 export function getActiveGradient(name: string) {
   switch (name) {
     case "Normal": return "bg-gradient-to-br from-green-200 to-green-400";
@@ -126,6 +129,6 @@ export function getActiveGradient(name: string) {
 }
 
 export function getLevelRow(severity: string) {
-  // Returns full level metadata for the current backend severity string.
+  // Returns full level details for a severity value.
   return levels.find((l) => l.name === severity);
 }
