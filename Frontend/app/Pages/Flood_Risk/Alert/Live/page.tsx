@@ -29,6 +29,12 @@ function liveChrome(level: LevelName): {
   iconRing: string;
   pill: string;
   statChip: string;
+  metricCard: string;
+  metricValue: string;
+  checklistDot: string;
+  overviewBtn: string;
+  panelBg: string;
+  topPanelBg: string;
 } {
   switch (level) {
     case "Normal":
@@ -37,6 +43,12 @@ function liveChrome(level: LevelName): {
         iconRing: "bg-emerald-50 ring-emerald-200/80 text-emerald-800",
         pill: "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200/60",
         statChip: "bg-emerald-50/90 text-emerald-900 ring-1 ring-emerald-100",
+        metricCard: "bg-emerald-50 ring-emerald-200/80",
+        metricValue: "text-emerald-800",
+        checklistDot: "bg-emerald-600",
+        overviewBtn: "bg-emerald-700 hover:bg-emerald-800",
+        panelBg: "bg-emerald-100",
+        topPanelBg: "bg-emerald-100",
       };
     case "Alert":
       return {
@@ -44,6 +56,12 @@ function liveChrome(level: LevelName): {
         iconRing: "bg-amber-50 ring-amber-200/80 text-amber-900",
         pill: "bg-amber-100 text-amber-950 ring-1 ring-amber-200/70",
         statChip: "bg-amber-50/90 text-amber-950 ring-1 ring-amber-100",
+        metricCard: "bg-amber-50 ring-amber-200/80",
+        metricValue: "text-amber-900",
+        checklistDot: "bg-amber-500",
+        overviewBtn: "bg-amber-700 hover:bg-amber-800",
+        panelBg: "bg-amber-100",
+        topPanelBg: "bg-amber-100",
       };
     case "Minor":
       return {
@@ -51,6 +69,12 @@ function liveChrome(level: LevelName): {
         iconRing: "bg-orange-50 ring-orange-200/80 text-orange-900",
         pill: "bg-orange-100 text-orange-950 ring-1 ring-orange-200/60",
         statChip: "bg-orange-50/90 text-orange-950 ring-1 ring-orange-100",
+        metricCard: "bg-orange-50 ring-orange-200/80",
+        metricValue: "text-orange-900",
+        checklistDot: "bg-orange-500",
+        overviewBtn: "bg-orange-700 hover:bg-orange-800",
+        panelBg: "bg-orange-100",
+        topPanelBg: "bg-orange-100",
       };
     case "Moderate":
       return {
@@ -58,6 +82,12 @@ function liveChrome(level: LevelName): {
         iconRing: "bg-orange-50 ring-orange-200/80 text-orange-950",
         pill: "bg-orange-100 text-orange-950 ring-1 ring-orange-200/60",
         statChip: "bg-orange-50/90 text-orange-950 ring-1 ring-orange-100",
+        metricCard: "bg-orange-50 ring-orange-200/80",
+        metricValue: "text-orange-950",
+        checklistDot: "bg-orange-600",
+        overviewBtn: "bg-orange-800 hover:bg-orange-900",
+        panelBg: "bg-orange-200",
+        topPanelBg: "bg-orange-200",
       };
     case "Major":
       return {
@@ -65,6 +95,12 @@ function liveChrome(level: LevelName): {
         iconRing: "bg-red-50 ring-red-200/80 text-red-900",
         pill: "bg-red-100 text-red-950 ring-1 ring-red-200/60",
         statChip: "bg-red-50/90 text-red-950 ring-1 ring-red-100",
+        metricCard: "bg-red-50 ring-red-200/80",
+        metricValue: "text-red-900",
+        checklistDot: "bg-red-600",
+        overviewBtn: "bg-red-700 hover:bg-red-800",
+        panelBg: "bg-red-200",
+        topPanelBg: "bg-red-200",
       };
     case "Critical":
       return {
@@ -72,6 +108,12 @@ function liveChrome(level: LevelName): {
         iconRing: "bg-red-100 ring-2 ring-red-300/70 text-red-950",
         pill: "bg-red-600 text-white ring-1 ring-red-800/30",
         statChip: "bg-red-50 text-red-950 ring-1 ring-red-200",
+        metricCard: "bg-red-100 ring-red-300/80",
+        metricValue: "text-red-950",
+        checklistDot: "bg-red-700",
+        overviewBtn: "bg-red-800 hover:bg-red-900",
+        panelBg: "bg-red-300",
+        topPanelBg: "bg-red-300",
       };
     default:
       return {
@@ -79,6 +121,12 @@ function liveChrome(level: LevelName): {
         iconRing: "bg-slate-50 ring-slate-200 text-slate-800",
         pill: "bg-slate-100 text-slate-800 ring-1 ring-slate-200",
         statChip: "bg-slate-50 text-slate-800 ring-1 ring-slate-200",
+        metricCard: "bg-slate-50 ring-slate-200/80",
+        metricValue: "text-slate-800",
+        checklistDot: "bg-slate-700",
+        overviewBtn: "bg-slate-900 hover:bg-slate-800",
+        panelBg: "bg-white",
+        topPanelBg: "bg-white/95",
       };
   }
 }
@@ -139,7 +187,7 @@ export default function FloodLiveAlertPage() {
 
         <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pb-4 pt-3 sm:px-6 sm:pb-5 sm:pt-4 lg:overflow-hidden lg:px-10 lg:pb-6 xl:px-14 2xl:px-20">
           {/* Top bar: identity, current measurement, and navigation back to full overview. */}
-          <header className="mb-4 flex shrink-0 flex-col gap-3 rounded-2xl bg-white/95 p-4 shadow-sm ring-1 ring-slate-200/80 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:p-5 lg:mb-5">
+          <header className={`mb-4 flex shrink-0 flex-col gap-3 rounded-2xl p-4 shadow-sm ring-1 ring-slate-200/80 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:p-5 lg:mb-5 ${chrome?.topPanelBg ?? "bg-white/95"}`}>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl lg:text-[1.75rem] xl:text-4xl">
@@ -158,16 +206,16 @@ export default function FloodLiveAlertPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4 sm:shrink-0 sm:gap-6">
-              <div className="rounded-xl bg-slate-50 px-4 py-2 ring-1 ring-slate-200/80">
+              <div className={`rounded-xl px-4 py-2 ring-1 ${chrome?.metricCard ?? "bg-slate-50 ring-slate-200/80"}`}>
                 <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Water rise</p>
-                <p className="text-xl font-semibold tabular-nums text-[#123985] sm:text-2xl lg:text-3xl">
+                <p className={`text-xl font-semibold tabular-nums sm:text-2xl lg:text-3xl ${chrome?.metricValue ?? "text-[#123985]"}`}>
                   {riseLevel}
                   <span className="ml-1 text-sm font-medium text-slate-500 sm:text-base">mm</span>
                 </p>
               </div>
               <Link
                 href="/Pages/Flood_Risk/Alert"
-                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 sm:text-base"
+                className={`inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition sm:text-base ${chrome?.overviewBtn ?? "bg-slate-900 hover:bg-slate-800"}`}
               >
                 All levels overview
               </Link>
@@ -188,7 +236,7 @@ export default function FloodLiveAlertPage() {
           {warning && activeLevel && levelRow && chrome && (
             <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-1 lg:gap-5 lg:overflow-hidden xl:gap-6">
               {/* Advisory */}
-              <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/80 lg:col-span-4">
+              <section className={`flex min-h-0 flex-col overflow-hidden rounded-2xl shadow-md ring-1 ring-slate-200/80 lg:col-span-4 ${chrome.panelBg}`}>
                 <div className={`h-1.5 shrink-0 ${chrome.bar} ${activeLevel === "Critical" ? "animate-pulse" : ""}`} />
                 <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-5 lg:overflow-y-auto lg:overscroll-contain">
                   <div className="flex items-start gap-4">
@@ -211,7 +259,7 @@ export default function FloodLiveAlertPage() {
 
               {/* Safety */}
               <section
-                className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/80 lg:col-span-4"
+                className={`flex min-h-0 flex-col overflow-hidden rounded-2xl shadow-md ring-1 ring-slate-200/80 lg:col-span-4 ${chrome.panelBg}`}
                 aria-labelledby="live-safety-heading"
               >
                 <div className={`h-1.5 shrink-0 ${chrome.bar}`} />
@@ -226,7 +274,7 @@ export default function FloodLiveAlertPage() {
                     {guidelines.map((item) => (
                       <li key={item} className="flex gap-3 text-sm leading-relaxed text-slate-700 sm:text-base">
                         <span
-                          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${activeLevel === "Critical" ? "bg-red-600" : "bg-[#123985]"}`}
+                          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${chrome.checklistDot}`}
                           aria-hidden
                         >
                           ✓
@@ -239,7 +287,7 @@ export default function FloodLiveAlertPage() {
               </section>
 
               {/* Impact */}
-              <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200/80 lg:col-span-4">
+              <section className={`flex min-h-0 flex-col overflow-hidden rounded-2xl shadow-md ring-1 ring-slate-200/80 lg:col-span-4 ${chrome.panelBg}`}>
                 <div className={`h-1.5 shrink-0 ${chrome.bar}`} />
                 <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-5">
                   <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
