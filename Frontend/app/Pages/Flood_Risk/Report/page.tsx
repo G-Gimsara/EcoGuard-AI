@@ -77,9 +77,9 @@ export default function Reports() {
     doc.setFillColor(13, 71, 161);
     doc.rect(0, 0, 297, 28, "F");
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
+    doc.setFontSize(20);
     doc.text("Flood Monitoring Report", 14, 12);
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     doc.text(`Year filter: ${filterYear || "All Years"}`, 14, 19);
     doc.text(`Generated: ${generatedAt}`, 14, 24);
 
@@ -90,8 +90,8 @@ export default function Reports() {
       body: reportRows,
       theme: "grid",
       styles: {
-        fontSize: 9,
-        cellPadding: 2.5,
+        fontSize: 11,
+        cellPadding: 3,
         overflow: "linebreak",
         valign: "middle",
       },
@@ -99,6 +99,7 @@ export default function Reports() {
         fillColor: [25, 118, 210],
         textColor: 255,
         fontStyle: "bold",
+        fontSize: 11,
       },
       // Column widths tuned for landscape A4 so long place names wrap instead of overflowing.
       columnStyles: {
@@ -130,7 +131,7 @@ export default function Reports() {
     const pages = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
     for (let i = 1; i <= pages; i += 1) {
       doc.setPage(i);
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
       doc.text(`Page ${i} of ${pages}`, 287, 205, { align: "right" });
     }
