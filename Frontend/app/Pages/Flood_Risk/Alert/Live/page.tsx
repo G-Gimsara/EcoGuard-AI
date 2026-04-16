@@ -9,9 +9,11 @@ import {
   levelWarnings,
   safetyGuidelines,
   feetRanges,
+  webAlertPolicies,
   getLevelRow,
   type LevelName,
 } from "../floodLevelConfig";
+import { useFloodNotifications } from "../../Notifications/hooks/useFloodNotifications";
 
 interface FloodMeasurement {
   id: number;
@@ -135,6 +137,8 @@ export default function FloodLiveAlertPage() {
   // Real-time values from backend; used to drive all live UI sections.
   const [currentSeverity, setCurrentSeverity] = useState("");
   const [riseLevel, setRiseLevel] = useState(0);
+  const [criticalAcknowledged, setCriticalAcknowledged] = useState(false);
+  const previousSeverityRef = useRef<string>("");
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -171,12 +175,57 @@ export default function FloodLiveAlertPage() {
     }
   }, [currentSeverity]);
 
+  useEffect(() => {
+    const level = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
+    if (!level) return;
+    const policy = webAlertPolicies[level];
+    const levelChanged = previousSeverityRef.current !== level;
+    if (level !== "Critical") {
+      setCriticalAcknowledged(false);
+    }
+
+    if (typeof window === "undefined" || typeof Notification === "undefined") {
+      previousSeverityRef.current = level;
+      return;
+    }
+
+    const notify = (title: string, body: string) => {
+      if (Notification.permission === "granted") {
+        new Notification(title, { body, icon: "/favicon.ico" });
+      }
+    };
+
+    if (levelChanged && (level === "Major" || level === "Critical")) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            notify(`${level} Flood Alert`, `${levelWarnings[level].detail} Rise level: ${riseLevel} mm.`);
+          }
+        });
+      } else {
+        notify(`${level} Flood Alert`, `${levelWarnings[level].detail} Rise level: ${riseLevel} mm.`);
+      }
+    }
+
+    if (policy.repeatMinutes && (level === "Major" || (level === "Critical" && !criticalAcknowledged))) {
+      const intervalId = window.setInterval(() => {
+        notify(`${level} Flood Reminder`, `Flood level remains ${level}. Follow safety guidance immediately.`);
+      }, policy.repeatMinutes * 60 * 1000);
+      previousSeverityRef.current = level;
+      return () => window.clearInterval(intervalId);
+    }
+
+    previousSeverityRef.current = level;
+  }, [currentSeverity, riseLevel, criticalAcknowledged]);
+
   // Convert backend severity text to a typed level model used by all three panels.
   const activeLevel = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
   const warning = activeLevel ? levelWarnings[activeLevel] : null;
   const guidelines = activeLevel ? safetyGuidelines[activeLevel] : [];
   const levelRow = activeLevel ? getLevelRow(activeLevel) : undefined;
   const chrome = activeLevel ? liveChrome(activeLevel) : null;
+  const alertPolicy = activeLevel ? webAlertPolicies[activeLevel] : null;
+  useFloodNotifications(activeLevel, riseLevel);
 
   return (
     <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900">
@@ -329,6 +378,41 @@ export default function FloodLiveAlertPage() {
                   </div>
                 </div>
               </section>
+            </div>
+          )}
+
+          {warning && alertPolicy ? (
+            <section className="mt-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/80">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                <span aria-hidden>🔔</span>
+                Alert delivery
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Channels active for <strong>{activeLevel}</strong> status.
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+                {alertPolicy.channels.map((channel) => (
+                  <li key={channel}>{channel}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {activeLevel === "Critical" && alertPolicy?.showEmergencyModal && !criticalAcknowledged && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+              <div className="w-full max-w-2xl rounded-2xl border-4 border-red-500 bg-white p-6 shadow-2xl">
+                <h2 className="text-3xl font-extrabold text-red-700">CRITICAL FLOOD EMERGENCY</h2>
+                <p className="mt-3 text-base text-slate-700">
+                  Severe inundation is expected. Move to higher ground immediately and avoid flooded routes.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCriticalAcknowledged(true)}
+                  className="mt-5 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800"
+                >
+                  I am aware - dismiss alert
+                </button>
+              </div>
             </div>
           )}
         </main>
