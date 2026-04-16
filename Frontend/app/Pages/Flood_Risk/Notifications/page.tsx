@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Header from "@/app/Header/page";
-import Navbar from "../NavBar/Navbar";
 import {
   levels,
   type LevelName,
 } from "../Alert/floodLevelConfig";
 import FloodNotificationItem from "./components/FloodNotificationItem";
+import NotificationBell from "./components/NotificationBell";
 import { useFloodNotifications } from "./hooks/useFloodNotifications";
 
 interface FloodMeasurement {
@@ -74,7 +74,6 @@ export default function FloodNotificationsPage() {
     <>
       <Header />
       <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden">
-        <Navbar />
         <main className="mx-auto max-w-6xl px-6 py-8 text-base">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -84,6 +83,7 @@ export default function FloodNotificationsPage() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <NotificationBell unreadCount={unreadCount} />
               <button
                 type="button"
                 onClick={markAllAsRead}
