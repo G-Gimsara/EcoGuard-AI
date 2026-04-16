@@ -5,6 +5,8 @@ import React, { useEffect, useState } from "react";
 import { Droplets, AlertTriangle, MapPin, Clock, RefreshCw } from "lucide-react";
 import Header from "@/app/Header/page";
 import Navbar from "../NavBar/Navbar";
+import { levels, type LevelName } from "../Alert/floodLevelConfig";
+import { useFloodNotifications } from "../Notifications/hooks/useFloodNotifications";
 
 // One flood reading from backend (or websocket) used across cards and table.
 interface FloodMeasurement {
@@ -96,6 +98,9 @@ export default function Dashboard() {
 
     return () => ws.close();
   }, []);
+
+  const activeLevel = levels.find((l) => l.name === latest?.severity)?.name as LevelName | undefined;
+  useFloodNotifications(activeLevel, latest?.riseLevel ?? 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased">
