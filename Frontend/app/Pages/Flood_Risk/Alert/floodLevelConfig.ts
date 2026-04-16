@@ -11,6 +11,13 @@ export const levels = [
 
 export type LevelName = (typeof levels)[number]["name"];
 
+export interface WebAlertPolicy {
+  channels: string[];
+  repeatMinutes: number | null;
+  requiresAcknowledge: boolean;
+  showEmergencyModal: boolean;
+}
+
 // Warning message shown for each level.
 export const levelWarnings: Record<LevelName, { headline: string; detail: string; bannerClass: string }> = {
   Normal: {
@@ -42,6 +49,46 @@ export const levelWarnings: Record<LevelName, { headline: string; detail: string
     headline: "Critical flood emergency",
     detail: "Severe inundation expected. Leave flood-prone zones now if safe to do so; avoid all flooded routes and underground spaces.",
     bannerClass: "bg-red-800 text-white animate-pulse ring-2 ring-red-300",
+  },
+};
+
+// Web alert escalation plan for each risk level.
+export const webAlertPolicies: Record<LevelName, WebAlertPolicy> = {
+  Normal: {
+    channels: ["In-app status card"],
+    repeatMinutes: null,
+    requiresAcknowledge: false,
+    showEmergencyModal: false,
+  },
+  Alert: {
+    channels: ["In-app banner"],
+    repeatMinutes: null,
+    requiresAcknowledge: false,
+    showEmergencyModal: false,
+  },
+  Minor: {
+    channels: ["In-app banner"],
+    repeatMinutes: null,
+    requiresAcknowledge: false,
+    showEmergencyModal: false,
+  },
+  Moderate: {
+    channels: ["In-app banner", "Browser push (recommended)"],
+    repeatMinutes: null,
+    requiresAcknowledge: false,
+    showEmergencyModal: false,
+  },
+  Major: {
+    channels: ["In-app banner", "Browser push", "SMS/Email (integrated backend)"],
+    repeatMinutes: 15,
+    requiresAcknowledge: false,
+    showEmergencyModal: false,
+  },
+  Critical: {
+    channels: ["Full-screen emergency modal", "Browser push", "SMS/Email (integrated backend)"],
+    repeatMinutes: 5,
+    requiresAcknowledge: true,
+    showEmergencyModal: true,
   },
 };
 
@@ -131,4 +178,26 @@ export function getActiveGradient(name: string) {
 export function getLevelRow(severity: string) {
   // Returns full level details for a severity value.
   return levels.find((l) => l.name === severity);
+}
+
+/**
+ * Affected-area lines for a level, derived from `levels` first/next affected text (no duplicated copy).
+ * Normal returns an empty list; use `getNormalAffectedAreasLabel()` for the Normal display string.
+ */
+export function getAffectedAreaLinesForLevel(level: LevelName): string[] {
+  const row = levels.find((l) => l.name === level);
+  if (!row || level === "Normal") return [];
+  const lines: string[] = [];
+  if (row.firstAffected) {
+    lines.push(...row.firstAffected.split("\n").map((s) => s.trim()).filter(Boolean));
+  }
+  if (row.nextAffected) {
+    lines.push(...row.nextAffected.split("\n").map((s) => s.trim()).filter(Boolean));
+  }
+  return lines;
+}
+
+/** Label for Normal when no geographic list applies (from `levels` Normal row). */
+export function getNormalAffectedAreasLabel(): string {
+  return levels.find((l) => l.name === "Normal")?.firstAffected ?? "No areas affected";
 }
