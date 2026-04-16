@@ -5,8 +5,10 @@ import React, { useEffect, useState } from "react";
 import { Droplets, AlertTriangle, MapPin, Clock, RefreshCw } from "lucide-react";
 import Header from "@/app/Header/page";
 import Navbar from "../NavBar/Navbar";
+import { levels, type LevelName } from "../Alert/floodLevelConfig";
+import { useFloodNotifications } from "../Notifications/hooks/useFloodNotifications";
 
-// Flood measurement interface
+// One flood reading from backend (or websocket) used across cards and table.
 interface FloodMeasurement {
   id: number;
   riseLevel: number;
@@ -17,7 +19,7 @@ interface FloodMeasurement {
   createdAt: string;
 }
 
-// Float sensor interface
+// Float device heartbeat/status record shown in the sensor widgets/table.
 interface FloatStatus {
   id: number;
   device_id: string;
@@ -26,7 +28,7 @@ interface FloatStatus {
   recorded_at: string;
 }
 
-// Define severity colors
+// Shared badge palette so severity meaning stays consistent across dashboard sections.
 const severityColors: Record<string, { bg: string; text: string }> = {
   Normal: { bg: "bg-green-100", text: "text-green-800" },
   Alert: { bg: "bg-yellow-100", text: "text-yellow-800" },
@@ -37,15 +39,15 @@ const severityColors: Record<string, { bg: string; text: string }> = {
 };
 
 export default function Dashboard() {
-  // Flood state
+  // Flood stream state.
   const [measurements, setMeasurements] = useState<FloodMeasurement[]>([]);
   const [latest, setLatest] = useState<FloodMeasurement | null>(null);
 
-  // Float state
+  // Float sensor stream state.
   const [floatStatuses, setFloatStatuses] = useState<FloatStatus[]>([]);
   const [latestFloat, setLatestFloat] = useState<FloatStatus | null>(null);
 
-  // Fetch initial flood data
+  // Initial fetch ensures UI has snapshot data before live socket messages arrive.
   const fetchFloodData = () => {
     fetch("http://localhost:5000/api/flood")
       .then((res) => res.json())
@@ -56,7 +58,7 @@ export default function Dashboard() {
       .catch(console.error);
   };
 
-  // Fetch initial float data
+  // Same bootstrap fetch for float sensor status history.
   const fetchFloatData = () => {
     fetch("http://localhost:5000/api/flood/float")
       .then((res) => res.json())
@@ -72,21 +74,21 @@ export default function Dashboard() {
     fetchFloatData();
   }, []);
 
-  // WebSocket connection
+  // Single websocket channel that delivers both flood and float updates in real time.
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:5000");
 
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
 
-      // Flood updates
+      // Prepend newest flood reading and keep only latest 10 rows for a compact dashboard.
       if (msg.type === "FLOOD_UPDATE") {
         const newMeasurement: FloodMeasurement = msg.data;
         setMeasurements((prev) => [newMeasurement, ...prev].slice(0, 10));
         setLatest(newMeasurement);
       }
 
-      // Float updates
+      // Same rolling-window logic for float sensor stream.
       if (msg.type === "FLOAT_UPDATE") {
         const newFloat: FloatStatus = msg.data;
         setFloatStatuses((prev) => [newFloat, ...prev].slice(0, 10));
@@ -96,6 +98,9 @@ export default function Dashboard() {
 
     return () => ws.close();
   }, []);
+
+  const activeLevel = levels.find((l) => l.name === latest?.severity)?.name as LevelName | undefined;
+  useFloodNotifications(activeLevel, latest?.riseLevel ?? 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased">
