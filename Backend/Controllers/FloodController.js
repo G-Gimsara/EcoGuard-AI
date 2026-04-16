@@ -1,6 +1,10 @@
 const FloodMeasurement = require("../Models/FloodMeasurement");
 const FloatSensor = require('../Models/FloatSensor');
 
+// --- SMS (START): Major/Critical flood SMS — DISABLED (textlkFloodSms.js is comment-only) ---
+// const { sendMajorCriticalFloodSms } = require("../Services/textlkFloodSms");
+// --- SMS (END) ---
+
 // Define thresholds same as your ESP32 logic
 const levels = [
   { threshold: 0, name: "Normal", firstAffected: "No areas affected", nextAffected: "", floodFeet: 0 },
@@ -29,6 +33,14 @@ exports.createMeasurement = async (req, res) => {
 
     const severityData = getSeverity(riseLevel);
 
+    // --- SMS (START): previous row for anti-spam transition logic — DISABLED ---
+    // const previous = await FloodMeasurement.findOne({
+    //   order: [["createdAt", "DESC"]],
+    //   attributes: ["severity"],
+    // });
+    // const previousSeverity = previous ? previous.severity : null;
+    // --- SMS (END) ---
+
     const measurement = await FloodMeasurement.create({
       riseLevel,
       severity: severityData.name,
@@ -46,6 +58,20 @@ exports.createMeasurement = async (req, res) => {
         }
       });
     }
+
+    // --- SMS (START): background Text.lk send — DISABLED ---
+    // void sendMajorCriticalFloodSms({
+    //   previousSeverity,
+    //   currentSeverity: severityData.name,
+    //   riseLevel,
+    // })
+    //   .then((result) => {
+    //     if (!result.skipped) {
+    //       console.log(`[flood-sms] Delivery result: sent=${result.sent}, failed=${result.failed ?? 0}`);
+    //     }
+    //   })
+    //   .catch((err) => console.error("[flood-sms]", err));
+    // --- SMS (END) ---
 
     return res.status(201).json(measurement);
   } catch (error) {
