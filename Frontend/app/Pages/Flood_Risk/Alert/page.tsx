@@ -9,11 +9,13 @@ import {
   levelWarnings,
   safetyGuidelines,
   feetRanges,
+  webAlertPolicies,
   getColor,
   getBadge,
   getActiveGradient,
   type LevelName,
 } from "./floodLevelConfig";
+import { useFloodNotifications } from "../Notifications/hooks/useFloodNotifications";
 
 interface FloodMeasurement {
   id: number;
@@ -29,6 +31,8 @@ export default function FloodLevelsPage() {
   // Live state mirrored from backend API/WebSocket stream.
   const [currentSeverity, setCurrentSeverity] = useState("");
   const [riseLevel, setRiseLevel] = useState(0);
+  const [criticalAcknowledged, setCriticalAcknowledged] = useState(false);
+  const previousSeverityRef = useRef<string>("");
 
   // Alarm audio element controlled by severity changes.
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -67,10 +71,54 @@ export default function FloodLevelsPage() {
     }
   }, [currentSeverity]);
 
+  useEffect(() => {
+    const level = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
+    if (!level) return;
+    const policy = webAlertPolicies[level];
+    const levelChanged = previousSeverityRef.current !== level;
+    if (level !== "Critical") {
+      setCriticalAcknowledged(false);
+    }
+    if (typeof window === "undefined" || typeof Notification === "undefined") {
+      previousSeverityRef.current = level;
+      return;
+    }
+
+    const notify = (title: string, body: string) => {
+      if (Notification.permission === "granted") {
+        new Notification(title, { body, icon: "/favicon.ico" });
+      }
+    };
+
+    if (levelChanged && (level === "Major" || level === "Critical")) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            notify(`${level} Flood Alert`, `${levelWarnings[level].detail} Rise level: ${riseLevel} mm.`);
+          }
+        });
+      } else {
+        notify(`${level} Flood Alert`, `${levelWarnings[level].detail} Rise level: ${riseLevel} mm.`);
+      }
+    }
+
+    if (policy.repeatMinutes && (level === "Major" || (level === "Critical" && !criticalAcknowledged))) {
+      const intervalId = window.setInterval(() => {
+        notify(`${level} Flood Reminder`, `Flood level remains ${level}. Follow safety guidance immediately.`);
+      }, policy.repeatMinutes * 60 * 1000);
+      previousSeverityRef.current = level;
+      return () => window.clearInterval(intervalId);
+    }
+
+    previousSeverityRef.current = level;
+  }, [currentSeverity, riseLevel, criticalAcknowledged]);
+
   // Map current backend severity into reusable config blocks for UI sections.
   const activeLevel = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
   const warning = activeLevel ? levelWarnings[activeLevel] : null;
   const guidelines = activeLevel ? safetyGuidelines[activeLevel] : [];
+  const alertPolicy = activeLevel ? webAlertPolicies[activeLevel] : null;
+  useFloodNotifications(activeLevel, riseLevel);
 
   return (
     <>
@@ -121,6 +169,27 @@ export default function FloodLevelsPage() {
             </div>
           )}
 
+          {activeLevel === "Critical" && alertPolicy?.showEmergencyModal && !criticalAcknowledged && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+              <div className="w-full max-w-2xl rounded-2xl border-4 border-red-500 bg-white p-6 shadow-2xl">
+                <h2 className="text-3xl font-extrabold text-red-700">CRITICAL FLOOD EMERGENCY</h2>
+                <p className="mt-3 text-base text-slate-700">
+                  Severe inundation is expected. Move to higher ground immediately and avoid all flooded routes.
+                </p>
+                <p className="mt-2 text-sm text-slate-600">
+                  This warning stays active until you acknowledge it.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCriticalAcknowledged(true)}
+                  className="mt-5 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800"
+                >
+                  I am aware - dismiss alert
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Safety checklist changes with the active severity level. */}
           {guidelines.length > 0 && (
             <section
@@ -148,6 +217,7 @@ export default function FloodLevelsPage() {
               return (
                 <div
                   key={level.name}
+                  id={`level-${level.name.toLowerCase()}`}
                   className={`border-l-4 ${getColor(level.name)}
                     rounded-xl p-6 shadow hover:shadow-lg transition-all duration-300
                     flex flex-col justify-between
