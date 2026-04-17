@@ -22,6 +22,7 @@ require('./Models/Airquality.js');            // ← ADD
 
 require('./Models/Airquality.js');       
 const waterQualityRoute = require('./Routes/WaterqualityRoute.js');
+const floodAlertUserRoute = require("./Routes/FloodAlertUserRoute");
 require('./Models/Phreading.js');
 require('./Models/Tuberlity.js');
 require('./Models/WaterTempReading.js');     // ← ADD
@@ -118,6 +119,7 @@ require("./Models/Airquality.js");
 require("./Models/Phreading.js");
 require("./Models/Tuberlity.js");
 require("./Models/WaterTempReading.js");
+require("./Models/FloodAlertUser.js");
 
 /* -------------------- CONTROLLERS -------------------- */
 // Fixed: Matches heat_controller.js
@@ -133,7 +135,7 @@ app.set("wss", wss);
 app.use(cors({
   origin: "http://localhost:3000",
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
@@ -168,6 +170,7 @@ app.use('/api', airSensorRoute);
 
 app.use('/api', waterQualityRoute);
 app.use('/api', heatAlertRoutes);
+app.use("/api/alert-users", floodAlertUserRoute);
 
 // ────────────────────────────────────────────────
 // UPDATED: Heat warning route with cache support
