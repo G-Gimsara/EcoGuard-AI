@@ -49,7 +49,7 @@ export default function NotificationBell({
   };
 
   const onNotifications = isNotificationsPath(pathname, href);
-  const badgeIsCompact = unreadCount > 99;
+  const badgeIsCompact = unreadCount >= 99;
 
   return (
     <button
