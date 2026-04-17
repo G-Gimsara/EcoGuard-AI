@@ -1,9 +1,7 @@
 const FloodMeasurement = require("../Models/FloodMeasurement");
 const FloatSensor = require('../Models/FloatSensor');
+const { sendMajorCriticalFloodSms } = require("../Services/textlkFloodSms");
 
-// --- SMS (START): Major/Critical flood SMS — DISABLED (textlkFloodSms.js is comment-only) ---
-// const { sendMajorCriticalFloodSms } = require("../Services/textlkFloodSms");
-// --- SMS (END) ---
 
 // Define thresholds same as your ESP32 logic
 const levels = [
@@ -33,13 +31,12 @@ exports.createMeasurement = async (req, res) => {
 
     const severityData = getSeverity(riseLevel);
 
-    // --- SMS (START): previous row for anti-spam transition logic — DISABLED ---
-    // const previous = await FloodMeasurement.findOne({
-    //   order: [["createdAt", "DESC"]],
-    //   attributes: ["severity"],
-    // });
-    // const previousSeverity = previous ? previous.severity : null;
-    // --- SMS (END) ---
+    // Previous row lets us send only on meaningful transitions.
+    const previous = await FloodMeasurement.findOne({
+      order: [["createdAt", "DESC"]],
+      attributes: ["severity"],
+    });
+    const previousSeverity = previous ? previous.severity : null;
 
     const measurement = await FloodMeasurement.create({
       riseLevel,
@@ -59,19 +56,18 @@ exports.createMeasurement = async (req, res) => {
       });
     }
 
-    // --- SMS (START): background Text.lk send — DISABLED ---
-    // void sendMajorCriticalFloodSms({
-    //   previousSeverity,
-    //   currentSeverity: severityData.name,
-    //   riseLevel,
-    // })
-    //   .then((result) => {
-    //     if (!result.skipped) {
-    //       console.log(`[flood-sms] Delivery result: sent=${result.sent}, failed=${result.failed ?? 0}`);
-    //     }
-    //   })
-    //   .catch((err) => console.error("[flood-sms]", err));
-    // --- SMS (END) ---
+    // Fire in background so API response + websocket stay fast.
+    void sendMajorCriticalFloodSms({
+      previousSeverity,
+      currentSeverity: severityData.name,
+      riseLevel,
+    })
+      .then((result) => {
+        if (!result.skipped) {
+          console.log(`[flood-sms] Delivery result: sent=${result.sent}, failed=${result.failed ?? 0}`);
+        }
+      })
+      .catch((err) => console.error("[flood-sms]", err.message));
 
     return res.status(201).json(measurement);
   } catch (error) {
