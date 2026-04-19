@@ -60,7 +60,8 @@ exports.createMeasurement = async (req, res) => {
     void sendMajorCriticalFloodSms({
       previousSeverity,
       currentSeverity: severityData.name,
-      riseLevel,
+      firstAffected: severityData.firstAffected || "",
+      nextAffected: severityData.nextAffected || "",
     })
       .then((result) => {
         if (!result.skipped) {
