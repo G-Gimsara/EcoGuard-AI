@@ -116,11 +116,11 @@ def startup_tasks():
         scheduler.add_job(
             periodic_weather_update,
             "interval",
-            minutes=1
+            minutes=2
         )
 
         scheduler.start()
-        print("⏰ Scheduler started (10 min interval)")
+        print("⏰ Scheduler started (30 min interval)")
 
     print("✅ Startup tasks completed")
 
