@@ -15,7 +15,6 @@ import {
   getActiveGradient,
   type LevelName,
 } from "./floodLevelConfig";
-import { useFloodNotifications } from "../Notifications/hooks/useFloodNotifications";
 
 interface FloodMeasurement {
   id: number;
@@ -118,7 +117,6 @@ export default function FloodLevelsPage() {
   const warning = activeLevel ? levelWarnings[activeLevel] : null;
   const guidelines = activeLevel ? safetyGuidelines[activeLevel] : [];
   const alertPolicy = activeLevel ? webAlertPolicies[activeLevel] : null;
-  useFloodNotifications(activeLevel, riseLevel);
 
   return (
     <>
