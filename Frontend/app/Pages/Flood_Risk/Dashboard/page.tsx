@@ -6,7 +6,6 @@ import { Droplets, AlertTriangle, MapPin, Clock, RefreshCw } from "lucide-react"
 import Header from "@/app/Header/page";
 import Navbar from "../NavBar/Navbar";
 import { levels, type LevelName } from "../Alert/floodLevelConfig";
-import { useFloodNotifications } from "../Notifications/hooks/useFloodNotifications";
 
 // One flood reading from backend (or websocket) used across cards and table.
 interface FloodMeasurement {
@@ -26,6 +25,12 @@ interface FloatStatus {
   status: string;
   message: string;
   recorded_at: string;
+}
+
+function formatFloatTime(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString();
 }
 
 // Shared badge palette so severity meaning stays consistent across dashboard sections.
@@ -88,9 +93,12 @@ export default function Dashboard() {
         setLatest(newMeasurement);
       }
 
-      // Same rolling-window logic for float sensor stream.
       if (msg.type === "FLOAT_UPDATE") {
-        const newFloat: FloatStatus = msg.data;
+        const d = msg.data;
+        const newFloat = {
+          ...d,
+          recorded_at: d.recorded_at ?? d.timestamp ?? "",
+        } as FloatStatus;
         setFloatStatuses((prev) => [newFloat, ...prev].slice(0, 10));
         setLatestFloat(newFloat);
       }
@@ -100,7 +108,6 @@ export default function Dashboard() {
   }, []);
 
   const activeLevel = levels.find((l) => l.name === latest?.severity)?.name as LevelName | undefined;
-  useFloodNotifications(activeLevel, latest?.riseLevel ?? 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased">
@@ -185,7 +192,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-gray-600 text-sm font-medium">Recorded At</p>
                 <p className="text-gray-800 font-semibold">
-                  {new Date(latestFloat.recorded_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {formatFloatTime(latestFloat.recorded_at)}
                 </p>
               </div>
             </div>
@@ -264,7 +271,7 @@ export default function Dashboard() {
                       <td className="px-6 py-3">{f.device_id}</td>
                       <td className={`px-6 py-3 font-semibold ${f.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>{f.status}</td>
                       <td className="px-6 py-3">{f.message}</td>
-                      <td className="px-6 py-3 text-gray-600">{new Date(f.recorded_at).toLocaleString()}</td>
+                      <td className="px-6 py-3 text-gray-600">{formatFloatTime(f.recorded_at)}</td>
                     </tr>
                   ))}
                   {floatStatuses.length === 0 && (

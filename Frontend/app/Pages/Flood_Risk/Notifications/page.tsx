@@ -1,56 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Header from "@/app/Header/page";
-import {
-  levels,
-  type LevelName,
-} from "../Alert/floodLevelConfig";
 import FloodNotificationItem from "./components/FloodNotificationItem";
 import NotificationBell from "./components/NotificationBell";
 import { useFloodNotifications } from "./hooks/useFloodNotifications";
 
-interface FloodMeasurement {
-  id: number;
-  riseLevel: number;
-  severity: string;
-  firstAffected: string;
-  nextAffected?: string;
-  floodFeet: number;
-  createdAt: string;
-}
-
 export default function FloodNotificationsPage() {
-  const [currentSeverity, setCurrentSeverity] = useState("");
-  const [riseLevel, setRiseLevel] = useState(0);
   const [activeFilter, setActiveFilter] = useState<"all" | "unread">("all");
 
-  // Live severity + rise (REST first, then WebSocket)
-  useEffect(() => {
-    const fetchData = async () => {
-      const res = await fetch("http://localhost:5000/api/flood");
-      const data: FloodMeasurement[] = await res.json();
-      if (data.length > 0) {
-        setCurrentSeverity(data[0].severity);
-        setRiseLevel(data[0].riseLevel);
-      }
-    };
-    fetchData();
-
-    const ws = new WebSocket("ws://localhost:5000");
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "FLOOD_UPDATE") {
-        setCurrentSeverity(msg.data.severity);
-        setRiseLevel(msg.data.riseLevel);
-      }
-    };
-    return () => ws.close();
-  }, []);
-
-  const activeLevel = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
-
-  // List + read state (provider + localStorage)
   const {
     notifications,
     unreadCount,
@@ -58,7 +16,9 @@ export default function FloodNotificationsPage() {
     markAsRead,
     clearAll,
     isHydrated,
-  } = useFloodNotifications(activeLevel, riseLevel);
+    liveLevel,
+    liveRiseLevel,
+  } = useFloodNotifications();
 
   // UI filter only; does not delete stored items
   const visibleNotifications =
@@ -127,9 +87,9 @@ export default function FloodNotificationsPage() {
                   Unread ({unreadCount})
                 </button>
               </div>
-              {activeLevel ? (
+              {liveLevel ? (
                 <p className="text-base font-semibold text-slate-700">
-                  Current live level: <span className="text-blue-700">{activeLevel}</span> | {riseLevel} mm
+                  Current live level: <span className="text-blue-700">{liveLevel}</span> | {liveRiseLevel} mm
                 </p>
               ) : (
                 <p className="text-base text-slate-500">Waiting for live flood data...</p>
