@@ -93,9 +93,12 @@ export default function Dashboard() {
         setLatest(newMeasurement);
       }
 
-      // Same rolling-window logic for float sensor stream.
       if (msg.type === "FLOAT_UPDATE") {
-        const newFloat: FloatStatus = msg.data;
+        const d = msg.data;
+        const newFloat = {
+          ...d,
+          recorded_at: d.recorded_at ?? d.timestamp ?? "",
+        } as FloatStatus;
         setFloatStatuses((prev) => [newFloat, ...prev].slice(0, 10));
         setLatestFloat(newFloat);
       }
