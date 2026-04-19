@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { LevelName } from "../../Alert/floodLevelConfig";
+import { levels, type LevelName } from "../../Alert/floodLevelConfig";
 import {
   createNotificationFromLevel,
   FLOOD_NOTIFICATIONS_LIMIT,
@@ -45,14 +45,29 @@ interface FloodNotificationsContextValue {
   markAsRead: (id: string) => void;
   clearAll: () => void;
   isHydrated: boolean;
+  /** Latest flood severity from shared REST + WebSocket (for UI badges). */
+  liveLevel: LevelName | undefined;
+  liveRiseLevel: number;
 }
 
 const FloodNotificationsContext = createContext<FloodNotificationsContextValue | null>(null);
 
-// Holds notification list and syncs to localStorage
+const FLOOD_API = "http://localhost:5000/api/flood";
+const FLOOD_WS = "ws://localhost:5000";
+
+// Holds notification list, live flood stream, and syncs list to localStorage
 export function FloodNotificationsProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<FloodNotification[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [currentSeverity, setCurrentSeverity] = useState("");
+  const [liveRiseLevel, setLiveRiseLevel] = useState(0);
+
+  const liveLevel = useMemo(
+    () => levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined,
+    [currentSeverity]
+  );
+
+  const lastDispatchedLevelRef = useRef<LevelName | null>(null);
 
   useEffect(() => {
     const initial = loadStoredNotifications();
@@ -88,6 +103,47 @@ export function FloodNotificationsProvider({ children }: { children: ReactNode }
     setNotifications([]);
   }, []);
 
+  // One REST snapshot + one WebSocket for all Flood_Risk routes (bell + list stay in sync).
+  useEffect(() => {
+    if (!isHydrated) return;
+    let cancelled = false;
+    fetch(FLOOD_API)
+      .then((res) => res.json())
+      .then((data: { severity: string; riseLevel: number }[]) => {
+        if (cancelled || !Array.isArray(data) || data.length === 0) return;
+        setCurrentSeverity(data[0].severity);
+        setLiveRiseLevel(data[0].riseLevel);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    const ws = new WebSocket(FLOOD_WS);
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data as string);
+        if (msg.type === "FLOOD_UPDATE" && msg.data) {
+          setCurrentSeverity(msg.data.severity);
+          setLiveRiseLevel(msg.data.riseLevel);
+        }
+      } catch {
+        /* ignore malformed payloads */
+      }
+    };
+    return () => ws.close();
+  }, [isHydrated]);
+
+  useEffect(() => {
+    if (!isHydrated || !liveLevel) return;
+    if (lastDispatchedLevelRef.current === liveLevel) return;
+    addNotificationForLevel(liveLevel, liveRiseLevel);
+    lastDispatchedLevelRef.current = liveLevel;
+  }, [isHydrated, liveLevel, liveRiseLevel, addNotificationForLevel]);
+
   const unreadCount = useMemo(
     () => notifications.reduce((count, item) => count + (item.isRead ? 0 : 1), 0),
     [notifications]
@@ -102,8 +158,20 @@ export function FloodNotificationsProvider({ children }: { children: ReactNode }
       markAsRead,
       clearAll,
       isHydrated,
+      liveLevel,
+      liveRiseLevel,
     }),
-    [notifications, unreadCount, addNotificationForLevel, markAllAsRead, markAsRead, clearAll, isHydrated]
+    [
+      notifications,
+      unreadCount,
+      addNotificationForLevel,
+      markAllAsRead,
+      markAsRead,
+      clearAll,
+      isHydrated,
+      liveLevel,
+      liveRiseLevel,
+    ]
   );
 
   return (
@@ -111,28 +179,10 @@ export function FloodNotificationsProvider({ children }: { children: ReactNode }
   );
 }
 
-export function useFloodNotifications(currentLevel?: LevelName, riseLevel = 0) {
+export function useFloodNotifications() {
   const context = useContext(FloodNotificationsContext);
   if (!context) {
     throw new Error("useFloodNotifications must be used inside FloodNotificationsProvider");
   }
-  // One notification per level change per session (avoids duplicate from re-renders)
-  const lastDispatchedLevelRef = useRef<LevelName | null>(null);
-
-  useEffect(() => {
-    if (!context.isHydrated || !currentLevel) return;
-    if (lastDispatchedLevelRef.current === currentLevel) return;
-    context.addNotificationForLevel(currentLevel, riseLevel);
-    lastDispatchedLevelRef.current = currentLevel;
-  }, [context, currentLevel, riseLevel]);
-
-  return {
-    notifications: context.notifications,
-    unreadCount: context.unreadCount,
-    addNotificationForLevel: context.addNotificationForLevel,
-    markAllAsRead: context.markAllAsRead,
-    markAsRead: context.markAsRead,
-    clearAll: context.clearAll,
-    isHydrated: context.isHydrated,
-  };
+  return context;
 }
