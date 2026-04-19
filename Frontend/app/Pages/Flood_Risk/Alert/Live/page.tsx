@@ -13,7 +13,6 @@ import {
   getLevelRow,
   type LevelName,
 } from "../floodLevelConfig";
-import { useFloodNotifications } from "../../Notifications/hooks/useFloodNotifications";
 
 interface FloodMeasurement {
   id: number;
@@ -226,7 +225,6 @@ export default function FloodLiveAlertPage() {
   const levelRow = activeLevel ? getLevelRow(activeLevel) : undefined;
   const chrome = activeLevel ? liveChrome(activeLevel) : null;
   const alertPolicy = activeLevel ? webAlertPolicies[activeLevel] : null;
-  useFloodNotifications(activeLevel, riseLevel);
 
   return (
     <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900">
