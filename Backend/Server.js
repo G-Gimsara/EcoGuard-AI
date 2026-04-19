@@ -12,8 +12,12 @@ const ReportRoutes = require('./Routes/ReportRoute');
 const sequelize = require('./Config/sequelize');
 const waterRoutes = require('./Routes/Wroute');
 const sensorRoutes = require('./Routes/HeatSensorRoute.js'); 
-const floodAlertRoute = require('./Routes/FloodMesureRoute.js'); // ← NOT CHANGED
-require('./Models/FloodDangerAlert.js');            
+// ========================= FLOOD MODULE (imports) — START =========================
+// Router: measurements + float sensor (FloodController). Mounted later as /api/flood and /api/float.
+const floodAlertRoute = require('./Routes/FloodMesureRoute.js');
+// Model: legacy / parallel flood danger alerts table (synced with sequelize).
+require('./Models/FloodDangerAlert.js');
+// ========================= FLOOD MODULE (imports) — END ===========================
 require('./Models/WaterLevelSensor.js');    
 const airSensorRoute = require('./Routes/AirsensorRoute.js');
 require('./Models/GasReading.js');
@@ -22,7 +26,10 @@ require('./Models/Airquality.js');            // ← ADD
 
 require('./Models/Airquality.js');       
 const waterQualityRoute = require('./Routes/WaterqualityRoute.js');
+// ========================= FLOOD MODULE (SMS subscribers route) — START =========================
+// FloodAlertUserController: register/list/PATCH subscription for Text.lk flood SMS recipients.
 const floodAlertUserRoute = require("./Routes/FloodAlertUserRoute");
+// ========================= FLOOD MODULE (SMS subscribers route) — END ===========================
 require('./Models/Phreading.js');
 require('./Models/Tuberlity.js');
 require('./Models/WaterTempReading.js');     // ← ADD
@@ -112,14 +119,16 @@ dotenv.config();
 
 
 /* -------------------- MODELS -------------------- */
+// ========================= FLOOD MODULE (DB models for sync) — START =========================
 require("./Models/FloodDangerAlert.js");
+require("./Models/FloodAlertUser.js");
+// ========================= FLOOD MODULE (DB models for sync) — END ===========================
 require("./Models/WaterLevelSensor.js");
 require("./Models/GasReading.js");
 require("./Models/Airquality.js");
 require("./Models/Phreading.js");
 require("./Models/Tuberlity.js");
 require("./Models/WaterTempReading.js");
-require("./Models/FloodAlertUser.js");
 
 /* -------------------- CONTROLLERS -------------------- */
 // Fixed: Matches heat_controller.js
@@ -129,7 +138,10 @@ require("./Models/FloodAlertUser.js");
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
+// ========================= FLOOD MODULE (WebSocket) — START =========================
+// FloodController uses req.app.get("wss") to push FLOOD_UPDATE / FLOAT_UPDATE to EcoGuard Flood_Risk UI.
 app.set("wss", wss);
+// ========================= FLOOD MODULE (WebSocket) — END ===========================
 
 /* -------------------- MIDDLEWARE -------------------- */
 app.use(cors({
@@ -164,13 +176,19 @@ app.use('/api/water', waterRoutes);
 app.use('/api/pollution', Pollution);
 
 app.use('/api/sensors', sensorRoutes);   
+// ========================= FLOOD MODULE: /api/float — START =========================
+// FloodMesureRoute — float sensor ingest + list (same controller as under /api/flood/float).
 app.use('/api/float', floodAlertRoute);
+// ========================= FLOOD MODULE: /api/float — END ===========================
 
 app.use('/api', airSensorRoute);
 
 app.use('/api', waterQualityRoute);
 app.use('/api', heatAlertRoutes);
+// ========================= FLOOD MODULE: /api/alert-users — START =========================
+// FloodAlertUserRoute — register phone for Major/Critical SMS (Text.lk); CORS includes PATCH for Register UI.
 app.use("/api/alert-users", floodAlertUserRoute);
+// ========================= FLOOD MODULE: /api/alert-users — END ===========================
 
 // ────────────────────────────────────────────────
 // UPDATED: Heat warning route with cache support
@@ -192,7 +210,10 @@ app.get('/api/heat-warning', async (req, res) => {
 app.use("/api/water", waterRoutes);
 app.use("/api/pollution", Pollution);
 app.use("/api/sensors", sensorRoutes);
+// ========================= FLOOD MODULE: /api/flood — START =========================
+// FloodMesureRoute — POST new rise reading (triggers WS FLOOD_UPDATE + optional SMS), GET measurement history.
 app.use("/api/flood", floodAlertRoute);
+// ========================= FLOOD MODULE: /api/flood — END ===========================
 // app.use("/api/water-level", waterLevelRoute); // Commented out until file is created
 app.use("/api/air", airSensorRoute);
 app.use("/api/water-quality", waterQualityRoute);
