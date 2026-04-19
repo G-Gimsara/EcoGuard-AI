@@ -97,26 +97,22 @@ exports.receiveFloatStatus = async (req, res) => {
 
     const now = new Date();
 
-    // Broadcast to WebSocket (if you want real-time updates)
-    const wss = req.app.get('wss');
-    if (wss) {
-      wss.clients.forEach(client => {
-        if (client.readyState === 1) {
-          client.send(JSON.stringify({
-            type: 'FLOAT_UPDATE',
-            data: { device_id, status, message, timestamp: now.toISOString() }
-          }));
-        }
-      });
-    }
-
-    // Save to DB
-    await FloatSensor.create({
+    const row = await FloatSensor.create({
       device_id,
       status,
       message,
       recorded_at: now,
     });
+
+    const wss = req.app.get('wss');
+    if (wss) {
+      const data = row.get({ plain: true });
+      wss.clients.forEach((client) => {
+        if (client.readyState === 1) {
+          client.send(JSON.stringify({ type: 'FLOAT_UPDATE', data }));
+        }
+      });
+    }
 
     console.log(`[${device_id}] Float status: ${status} saved`);
     res.json({ success: true });
