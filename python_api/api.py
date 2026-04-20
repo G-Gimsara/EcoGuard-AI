@@ -8,7 +8,8 @@ import torch.nn as nn
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, List, Literal
+from pydantic import BaseModel
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -149,6 +150,86 @@ Keep it easy to understand."""
             return response.choices[0].message.content.strip()
         except Exception as e2:
             return f"Unable to generate suggestions. Error: {str(e2)}"
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant", "system"]
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    role: Optional[str] = "researcher"
+    coral_area: Optional[str] = ""
+    coast: Optional[str] = ""
+    rivers: Optional[str] = ""
+    ph_value: Optional[str] = ""
+    ph_status: Optional[str] = ""
+    turbidity_ntu: Optional[str] = ""
+    turbidity_status: Optional[str] = ""
+    temperature: Optional[str] = ""
+    temp_status: Optional[str] = ""
+    prediction: Optional[str] = ""
+    history: Optional[List[ChatMessage]] = None
+
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    has_water = any([req.ph_value, req.turbidity_ntu, req.temperature])
+    water_section = ""
+    if has_water:
+        water_section = f"""
+Current river water quality at {req.coral_area}:
+- pH         : {req.ph_value} → status: {req.ph_status}  (coral safe range: 8.0–8.3)
+- Turbidity  : {req.turbidity_ntu} NTU → status: {req.turbidity_status}  (coral safe range: 0–10 NTU)
+- Temperature: {req.temperature}°C → status: {req.temp_status}  (coral safe range: 23–29°C)
+Affecting rivers: {req.rivers}"""
+
+    base_rules = f"""
+You are a coral reef assistant for Sri Lanka.
+You must answer using the given location and real-time IoT water-quality values.
+If a value is missing, say it's not available.
+Be concise, practical, and avoid guessing numbers.
+Location: {req.coral_area}, {req.coast}, Sri Lanka.
+If provided, image diagnosis/prediction is: {req.prediction or "N/A"}.
+{water_section}
+"""
+
+    if req.role == "tourism_guide":
+        system_prompt = "You are a marine conservation expert and tourism guide for Sri Lanka coral reefs. Give practical, visitor-friendly advice."
+    elif req.role == "general":
+        system_prompt = "You are a friendly marine biologist explaining coral reef health to the public in simple language."
+    else:
+        system_prompt = "You are a marine biologist specializing in coral reef ecology in Sri Lanka. Give scientific, evidence-based analysis."
+
+    messages = [{"role": "system", "content": system_prompt + "\n" + base_rules}]
+    if req.history:
+        for m in req.history[-12:]:
+            messages.append({"role": m.role, "content": m.content})
+    messages.append({"role": "user", "content": req.message})
+
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            tools=[{"type": "web_search_preview"}],
+            max_tokens=500,
+            temperature=0.4,
+        )
+        content = (response.choices[0].message.content or "").strip()
+        return JSONResponse({"reply": content})
+    except Exception:
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=500,
+                temperature=0.4,
+            )
+            content = (response.choices[0].message.content or "").strip()
+            return JSONResponse({"reply": content})
+        except Exception as e2:
+            return JSONResponse({"error": str(e2)}, status_code=500)
 
 
 @app.post("/predict")
