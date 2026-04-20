@@ -5,4 +5,3 @@ import { FloodNotificationsProvider } from "./Notifications/hooks/useFloodNotifi
 export default function FloodRiskLayout({ children }: { children: ReactNode }) {
   return <FloodNotificationsProvider>{children}</FloodNotificationsProvider>;
 }
-

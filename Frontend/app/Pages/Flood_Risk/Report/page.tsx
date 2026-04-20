@@ -15,6 +15,9 @@ interface FloodMeasurement {
   createdAt: string;
 }
 
+const FLOOD_API = "http://localhost:5000/api/flood";
+const FLOOD_WS = "ws://localhost:5000";
+
 export default function Reports() {
   // Flood history from backend; the UI derives filter + pagination from this single source of truth.
   const [measurements, setMeasurements] = useState<FloodMeasurement[]>([]);
@@ -25,11 +28,30 @@ export default function Reports() {
   const rowsPerPage = 10;
 
   useEffect(() => {
-    // Fetch once on mount. This endpoint is assumed to return an array of `FloodMeasurement`.
-    fetch("http://localhost:5000/api/flood")
+    // Full history on load (newest first, same order as backend).
+    fetch(FLOOD_API)
       .then((res) => res.json())
       .then((data) => setMeasurements(data))
       .catch((err) => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    const ws = new WebSocket(FLOOD_WS);
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data as string);
+        if (msg.type !== "FLOOD_UPDATE" || !msg.data) return;
+        const row = msg.data as FloodMeasurement;
+        if (typeof row.id !== "number") return;
+        setMeasurements((prev) => {
+          if (prev.some((m) => m.id === row.id)) return prev;
+          return [row, ...prev];
+        });
+      } catch {
+        /* ignore */
+      }
+    };
+    return () => ws.close();
   }, []);
 
   // Apply year filter in-memory (fast enough for typical report sizes).
