@@ -93,3 +93,23 @@ exports.updateAlertUserSubscription = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+exports.deleteAlertUser = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "Invalid user id." });
+    }
+
+    const user = await FloodAlertUser.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    await user.destroy();
+    return res.json({ message: "User deleted successfully." });
+  } catch (error) {
+    console.error("deleteAlertUser error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
