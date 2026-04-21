@@ -121,6 +121,27 @@ export default function RegisterForAlertsPage() {
     }
   };
 
+  const deleteUser = async (user: AlertUserRow) => {
+    setActionBusyId(user.id);
+    setManageError("");
+    try {
+      const response = await fetch(`${API_BASE}/${user.id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setManageError((data as { message?: string }).message || "Failed to delete user.");
+        return;
+      }
+      await loadUsers();
+    } catch (deleteError) {
+      console.error("Delete user error:", deleteError);
+      setManageError("Failed to delete user.");
+    } finally {
+      setActionBusyId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased">
       <Header />
@@ -241,18 +262,28 @@ export default function RegisterForAlertsPage() {
                         </span>
                       </td>
                       <td className="px-3 py-3">
-                        <button
-                          type="button"
-                          onClick={() => void toggleSubscription(user)}
-                          disabled={actionBusyId === user.id}
-                          className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-70"
-                        >
-                          {actionBusyId === user.id
-                            ? "Updating..."
-                            : user.isSubscribed
-                            ? "Unsubscribe"
-                            : "Subscribe"}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void toggleSubscription(user)}
+                            disabled={actionBusyId === user.id}
+                            className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-70"
+                          >
+                            {actionBusyId === user.id
+                              ? "Updating..."
+                              : user.isSubscribed
+                              ? "Unsubscribe"
+                              : "Subscribe"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deleteUser(user)}
+                            disabled={actionBusyId === user.id}
+                            className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+                          >
+                            {actionBusyId === user.id ? "Updating..." : "Delete"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
