@@ -55,7 +55,7 @@ const ChatBot: React.FC = () => {
     },
   ];
 
-  const API_KEY = ""; // TODO: inject via env variable in production
+  const API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY || ""; // TODO: inject via env variable in production
 
   const toggleChat = () => {
     setIsOpen((prev) => !prev);
@@ -159,7 +159,7 @@ Provide analysis with risk levels and mitigation methods.`;
       setMessages((prev) => [
         ...prev,
         {
-          text: "⚙️ API key not configured. Please add your OpenRouter API key.",
+          text: "⚙️ API key not configured. Please add your OpenAI API key.",
           sender: "bot",
         },
       ]);
@@ -170,17 +170,15 @@ Provide analysis with risk levels and mitigation methods.`;
 
     try {
       const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
+        "https://api.openai.com/v1/chat/completions",
         {
           method: "POST",
           headers: {
             Authorization: "Bearer " + API_KEY,
-            "HTTP-Referer": "http://localhost",
-            "X-Title": "Weather Risk Chatbot",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "deepseek/deepseek-r1-0528:free",
+            model: "gpt-3.5-turbo",
             messages: [
               {
                 role: "system",
@@ -220,7 +218,7 @@ Provide analysis with risk levels and mitigation methods.`;
       setMessages((prev) => [
         ...prev,
         {
-          text: "⚙️ API key not configured. Please add your OpenRouter API key.",
+          text: "⚙️ API key not configured. Please add your OpenAI API key.",
           sender: "bot",
         },
       ]);
@@ -229,7 +227,7 @@ Provide analysis with risk levels and mitigation methods.`;
     setIsTyping(true);
     try {
       const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
+        "https://api.openai.com/v1/chat/completions",
         {
           method: "POST",
           headers: {
@@ -237,7 +235,7 @@ Provide analysis with risk levels and mitigation methods.`;
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "deepseek/deepseek-r1-0528:free",
+            model: "gpt-3.5-turbo",
             messages: [{ role: "user", content: message }],
           }),
         }
