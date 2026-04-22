@@ -1,80 +1,107 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { 
-  RefreshCw, AlertTriangle, ThermometerSun, Droplets, 
+import {
+  RefreshCw, AlertTriangle, ThermometerSun, Droplets,
   Clock, Wind, Sun, Info, ShieldAlert, WifiOff,
   Activity, ShieldCheck, HeartPulse, AlertCircle
 } from 'lucide-react';
 
+interface HeatWarningMessage {
+  risky_day: string;
+  location: string;
+  main_warning_message: string;
+  possible_situations: string[];
+  mitigation_strategies: string[];
+}
+
+interface HeatWarning {
+  type: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+  message: HeatWarningMessage;
+}
+
 interface HeatAlertData {
   hasDanger: boolean;
-  warning: string;
-  period: string;
+  warnings: HeatWarning[];
   generatedAt: string;
   dangerCount: number;
 }
 
 const detailedClassification = [
-  { 
-    level: "Caution", 
-    range: "27°C - 32°C",
+  {
+    level: "Caution",
+    range: "27°C – 32°C",
     effects: "Fatigue possible with prolonged exposure and/or physical activity.",
     mitigation: [
-      "Drink water frequently (250ml every 20 mins)",
+      "Drink water frequently (250 ml every 20 mins)",
       "Wear lightweight, light-colored clothing",
-      "Take regular rest breaks in shaded areas"
+      "Take regular rest breaks in shaded areas",
     ],
-    icon: <Activity className="h-5 w-5 text-yellow-700" />, 
-    bg: "bg-yellow-50",
-    border: "border-yellow-200",
-    accent: "bg-yellow-400",
-    text: "text-yellow-900"
+    icon: <Activity className="h-5 w-5" />,
+    dot: "#92400e",
+    bg: "#fffbeb",
+    leftBg: "#fef3c7",
+    border: "#fcd34d",
+    textColor: "#78350f",
+    labelColor: "#92400e",
+    badgeBg: "#fde68a",
   },
-  { 
-    level: "Extreme Caution", 
-    range: "32°C - 39°C",
-    effects: "Heat stroke, heat cramps, or heat exhaustion possible with prolonged exposure and/or physical activity.",
+  {
+    level: "Extreme Caution",
+    range: "32°C – 39°C",
+    effects: "Heat stroke, cramps, or exhaustion possible with prolonged exposure and/or physical activity.",
     mitigation: [
       "Use electrolyte-replacement drinks",
       "Limit strenuous activities to early morning",
-      "Monitor vulnerable peers, children, and elderly"
+      "Monitor vulnerable peers, children, and elderly",
     ],
-    icon: <ShieldCheck className="h-5 w-5 text-amber-700" />, 
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    accent: "bg-amber-500",
-    text: "text-amber-900"
+    icon: <ShieldCheck className="h-5 w-5" />,
+    dot: "#c2410c",
+    bg: "#fff7ed",
+    leftBg: "#fed7aa",
+    border: "#fb923c",
+    textColor: "#7c2d12",
+    labelColor: "#9a3412",
+    badgeBg: "#fdba74",
   },
-  { 
-    level: "Danger", 
-    range: "39°C - 51°C",
-    effects: "Heat cramps or heat exhaustion likely, and heat stroke possible with prolonged exposure and/or physical activity.",
+  {
+    level: "Danger",
+    range: "39°C – 51°C",
+    effects: "Heat cramps or exhaustion likely, and heat stroke possible with prolonged exposure and/or physical activity.",
     mitigation: [
       "Strict work/rest cycles (15 min rest per 45 min work)",
       "Stay in air-conditioned environments if possible",
-      "Wet skin with cool water or use damp cloths"
+      "Wet skin with cool water or use damp cloths",
     ],
-    icon: <HeartPulse className="h-5 w-5 text-orange-700" />, 
-    bg: "bg-orange-50",
-    border: "border-orange-200",
-    accent: "bg-orange-600",
-    text: "text-orange-900"
+    icon: <HeartPulse className="h-5 w-5" />,
+    dot: "#b91c1c",
+    bg: "#fff1f2",
+    leftBg: "#fecaca",
+    border: "#f87171",
+    textColor: "#7f1d1d",
+    labelColor: "#991b1b",
+    badgeBg: "#fca5a5",
   },
-  { 
-    level: "Extreme Danger", 
-    range: "52°C or Higher",
+  {
+    level: "Extreme Danger",
+    range: "52°C or higher",
     effects: "Heat stroke highly likely. High risk of severe organ damage or failure.",
     mitigation: [
       "Cease all outdoor activity immediately",
       "Call emergency services if symptoms appear",
-      "Evacuate to designated cooling centers"
+      "Evacuate to designated cooling centers",
     ],
-    icon: <AlertCircle className="h-5 w-5 text-rose-700" />, 
-    bg: "bg-rose-50",
-    border: "border-rose-300",
-    accent: "bg-rose-700",
-    text: "text-rose-950"
+    icon: <AlertCircle className="h-5 w-5" />,
+    dot: "#9f1239",
+    bg: "#fff0f3",
+    leftBg: "#fda4af",
+    border: "#fb7185",
+    textColor: "#4c0519",
+    labelColor: "#881337",
+    badgeBg: "#fda4af",
   },
 ];
 
@@ -83,6 +110,7 @@ const HeatAlert: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [openWarning, setOpenWarning] = useState<number | null>(0);
 
   const fetchHeatWarning = async () => {
     setLoading(true);
@@ -90,13 +118,13 @@ const HeatAlert: React.FC = () => {
     try {
       const res = await fetch('http://localhost:5000/api/heat-warning');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json: HeatAlertData = await res.json();
-      setData(json);
+      const json = await res.json();
+      setData(json as HeatAlertData);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Failed to fetch live data:", err);
       setError(true);
-      setData(null); 
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -108,220 +136,367 @@ const HeatAlert: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const dayWarnings = data?.warning
-    ?.split('──────────────────────────────')
-    ?.map((msg) => msg.trim())
-    ?.filter((msg) => msg.length > 0) || [];
-
+  const dayWarnings = data?.warnings || [];
   const hasDanger = data?.hasDanger || false;
 
+  const bannerBg = error ? '#1e293b' : hasDanger ? '#dc2626' : '#059669';
+  const bannerLabel = error
+    ? 'Service Unavailable'
+    : hasDanger
+      ? `${data?.dangerCount} Danger Alert${data?.dangerCount !== 1 ? 's' : ''} Active`
+      : 'No Extreme Heat Detected';
+  const bannerSub = error
+    ? 'Cannot reach weather server. Showing standard safety guidelines below.'
+    : hasDanger
+      ? data?.warnings?.map(w => `${w.message.risky_day} · ${w.location}`).join('  •  ')
+      : 'Next 15 days look safe for the Colombo district.';
+  const bannerIcon = error
+    ? <WifiOff className="h-6 w-6 text-white" />
+    : hasDanger
+      ? <AlertTriangle className="h-6 w-6 text-white" />
+      : <Sun className="h-6 w-6 text-white" />;
+
+  /* shared card style */
+  const card: React.CSSProperties = {
+    background: '#ffffff',
+    borderRadius: 20,
+    border: '2px solid #e2e8f0',
+    overflow: 'hidden',
+    boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+  };
+
+  const sectionLabel: React.CSSProperties = {
+    fontSize: 11, fontWeight: 800,
+    textTransform: 'uppercase', letterSpacing: '0.12em',
+    marginBottom: 8,
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        
-        {/* TOP SECTION: Live Status Dashboard */}
-        <section className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          
-          {/* Main Status Card */}
-          <div className={`lg:col-span-3 rounded-3xl shadow-lg overflow-hidden relative transition-colors duration-500 ${
-            error ? 'bg-gradient-to-br from-slate-600 to-slate-800' :
-            hasDanger ? 'bg-gradient-to-br from-red-500 via-red-600 to-orange-600' : 
-            'bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500'
-          }`}>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
-            <div className="relative p-8 flex flex-col h-full justify-between">
-              <div className="flex items-start justify-between mb-6">
-                <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-inner">
-                  {error ? <WifiOff className="h-7 w-7 text-white" /> : 
-                   hasDanger ? <AlertTriangle className="h-7 w-7 text-white" /> : 
-                   <Sun className="h-7 w-7 text-white" />}
-                </div>
-                <button
-                  onClick={fetchHeatWarning}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white rounded-xl font-medium transition-all disabled:opacity-50"
-                >
-                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                  {loading ? 'Syncing...' : 'Refresh'}
-                </button>
-              </div>
-              
-              <div>
-                {error ? (
-                  <>
-                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Live Data Unavailable</h1>
-                    <p className="text-white/90 text-lg mb-4">Cannot connect to the weather server. Displaying standard heat safety guidelines below.</p>
-                  </>
-                ) : hasDanger ? (
-                  <>
-                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Heat Danger Alert</h1>
-                    <div className="flex items-baseline gap-3 mb-2">
-                      <span className="text-6xl font-bold text-white">{data?.dangerCount}</span>
-                      <span className="text-xl text-white/90">dangerous day{data?.dangerCount !== 1 ? 's' : ''} ahead</span>
-                    </div>
-                    <p className="text-white/90 text-lg">{data?.period}</p>
-                  </>
-                ) : (
-                  <>
-                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Safe Conditions</h1>
-                    <p className="text-white/90 text-lg mb-2">
-                      {data?.period || 'Next 15 days - No extreme heat danger detected in forecast.'}
-                    </p>
-                  </>
-                )}
-                
-                {lastUpdated && !error && (
-                  <div className="flex items-center gap-2 text-white/70 text-sm mt-6">
-                    <Clock className="h-4 w-4" />
-                    Last synced: {lastUpdated.toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
+    <div className="w-full max-w-[100%] mx-auto min-h-screen" style={{ backgroundColor: '#e8edf3' }}>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          STATUS BANNER
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div style={{ background: bannerBg }}>
+        <div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between b"
+          style={{ gap: 16 }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 50, height: 50, borderRadius: 14,
+              background: 'rgba(255,255,255,0.22)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              {bannerIcon}
+            </div>
+            <div>
+              <p style={{ fontSize: 21, fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>{bannerLabel}</p>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.88)', marginTop: 4, lineHeight: 1.4 }}>{bannerSub}</p>
             </div>
           </div>
-
-          {/* Quick Safety Tips Widget */}
-          <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 flex flex-col justify-center">
-            <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-blue-500" /> Quick Actions
-            </h3>
-            <div className="space-y-5">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-50 rounded-xl text-blue-600"><Droplets className="h-5 w-5" /></div>
-                <div>
-                  <p className="font-semibold text-slate-800">Hydrate Often</p>
-                  <p className="text-sm text-slate-500">Every 15-20 minutes</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-orange-50 rounded-xl text-orange-600"><Sun className="h-5 w-5" /></div>
-                <div>
-                  <p className="font-semibold text-slate-800">Avoid Peak Sun</p>
-                  <p className="text-sm text-slate-500">Between 10 AM - 4 PM</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-teal-50 rounded-xl text-teal-600"><Wind className="h-5 w-5" /></div>
-                <div>
-                  <p className="font-semibold text-slate-800">Cool Spaces</p>
-                  <p className="text-sm text-slate-500">Seek AC or shade</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* MIDDLE SECTION: Live Warnings */}
-        {!error && hasDanger && dayWarnings.length > 0 && (
-          <section className="bg-white rounded-3xl shadow-lg border border-red-100 p-6 lg:p-8">
-            <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
-              <AlertTriangle className="h-6 w-6 text-red-500" /> Specific Day Alerts
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {dayWarnings.map((warning, index) => {
-                const lines = warning.split('\n');
-                const title = lines[0] || `Alert ${index + 1}`;
-                const content = lines.slice(1).join('\n').trim();
-
-                return (
-                  <div key={index} className="bg-red-50/50 border border-red-100 rounded-2xl overflow-hidden">
-                    <details open={index === 0} className="group">
-                      <summary className="flex justify-between items-center p-5 cursor-pointer hover:bg-red-50 transition-colors">
-                        <span className="font-bold text-red-900">{title}</span>
-                        <span className="text-red-500 transform group-open:rotate-180 transition-transform">▼</span>
-                      </summary>
-                      <div className="p-5 pt-0 text-sm text-red-800 whitespace-pre-wrap leading-relaxed border-t border-red-100/50 mt-2">
-                        {content}
-                      </div>
-                    </details>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* REDESIGNED BOTTOM SECTION: Guidelines */}
-        <section className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
-          <div className="bg-slate-900 p-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                <ThermometerSun className="h-7 w-7 text-orange-400" /> 
-                <span className="tracking-tight uppercase">Heat Index Protocol</span>
-              </h2>
-               <p className="text-slate-400 text-sm font-medium text-xl"> what the temperature feels like to the human body when relative humidity is combined with the air temperature.</p>
-              <p className="text-slate-400 text-sm font-medium text-xl">Standardized safety thresholds for physiological heat stress.</p>
-            </div>
-            <a 
-              href="https://www.weather.gov/ama/heatindex" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-xs font-bold bg-slate-800 px-5 py-2.5 rounded-xl transition-all border border-slate-700"
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, alignSelf: 'flex-end' }} className="sm:self-auto">
+            {lastUpdated && !error && (
+              <span style={{ color: 'rgba(255,255,255,0.82)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Clock className="h-3.5 w-3.5" />
+                {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
+            <button
+              onClick={fetchHeatWarning}
+              disabled={loading}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '9px 18px', borderRadius: 10,
+                background: 'rgba(255,255,255,0.18)',
+                border: '1.5px solid rgba(255,255,255,0.4)',
+                color: '#ffffff', fontSize: 14, fontWeight: 700,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+              }}
             >
-              <Info className="h-4 w-4" /> 
-              NOAA / NWS SOURCE
-            </a>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Syncing…' : 'Refresh'}
+            </button>
           </div>
-          
-          <div className="p-6 lg:p-10">
-            <div className="flex flex-col gap-6">
-              {detailedClassification.map((item, idx) => (
-                <div 
-                  key={idx} 
-                  className={`group relative flex flex-col lg:flex-row rounded-2xl border-2 ${item.border} ${item.bg} transition-all duration-300 hover:shadow-lg`}
-                >
-                  {/* Vertical Level Indicator (Visual Reference to Image) */}
-                  <div className={`w-full lg:w-4 min-h-[10px] lg:min-h-full ${item.accent} rounded-t-xl lg:rounded-l-xl lg:rounded-tr-none`} />
+        </div>
+      </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-12 w-full">
-                    
-                    {/* Classification Column */}
-                    <div className="lg:col-span-3 p-6 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-black/5">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="p-2 bg-white rounded-lg shadow-sm">{item.icon}</div>
-                        <h3 className={`font-black text-xl uppercase tracking-tighter ${item.text}`}>{item.level}</h3>
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          PAGE TITLE
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ paddingTop: 32, paddingBottom: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <ThermometerSun className="h-7 w-7" style={{ color: '#ea580c' }} />
+          <h1 style={{ fontSize: 28, fontWeight: 900, color: '#0f172a' }}>Colombo Heat Alert System</h1>
+        </div>
+        <p style={{ fontSize: 16, color: '#334155', marginTop: 6 }}>
+          Real-time heat index monitoring and safety guidance for the Colombo district.
+        </p>
+      </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          CONTENT
+      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ paddingTop: 24, paddingBottom: 40, display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+        {/* QUICK ACTIONS */}
+        <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 16 }}>
+          {[
+            { icon: <Droplets className="h-5 w-5" />, iconColor: '#1d4ed8', iconBg: '#dbeafe', title: "Hydrate Often", sub: "Drink water every 15–20 minutes" },
+            { icon: <Sun className="h-5 w-5" />, iconColor: '#b45309', iconBg: '#fef3c7', title: "Avoid Peak Sun", sub: "Stay indoors between 10 AM – 4 PM" },
+            { icon: <Wind className="h-5 w-5" />, iconColor: '#0f766e', iconBg: '#ccfbf1', title: "Seek Cool Spaces", sub: "Find AC or shaded areas to rest" },
+          ].map((tip, i) => (
+            <div key={i} style={{
+              background: '#ffffff', borderRadius: 16,
+              border: '2px solid #e2e8f0',
+              padding: '18px 20px',
+              display: 'flex', alignItems: 'center', gap: 16,
+              boxShadow: '0 1px 5px rgba(0,0,0,0.06)',
+            }}>
+              <div style={{
+                width: 46, height: 46, borderRadius: 13,
+                background: tip.iconBg, color: tip.iconColor,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                {tip.icon}
+              </div>
+              <div>
+                <p style={{ fontSize: 17, fontWeight: 800, color: '#0f172a' }}>{tip.title}</p>
+                <p style={{ fontSize: 14, color: '#334155', marginTop: 3 }}>{tip.sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* LIVE DANGER WARNINGS */}
+        {!error && hasDanger && dayWarnings.length > 0 && (
+          <div style={{ ...card, border: '2px solid #fca5a5', boxShadow: '0 2px 12px rgba(220,38,38,0.10)' }}>
+            <div style={{
+              background: '#fee2e2', padding: '18px 24px',
+              borderBottom: '2px solid #fca5a5',
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <AlertTriangle className="h-5 w-5" style={{ color: '#dc2626' }} />
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: '#7f1d1d' }}>Active Heat Warnings</h2>
+              <span style={{
+                marginLeft: 'auto', fontSize: 13, fontWeight: 700,
+                background: '#fca5a5', color: '#7f1d1d',
+                padding: '4px 14px', borderRadius: 20,
+              }}>
+                {dayWarnings.length} alert{dayWarnings.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            <div style={{ padding: '8px 0' }}>
+              {dayWarnings.map((warning, index) => (
+                <div key={index} style={{ borderBottom: index < dayWarnings.length - 1 ? '1.5px solid #fee2e2' : 'none' }}>
+                  <button
+                    onClick={() => setOpenWarning(openWarning === index ? null : index)}
+                    style={{
+                      width: '100%', padding: '16px 24px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                      <div style={{
+                        width: 10, height: 10, borderRadius: '50%',
+                        background: '#dc2626', flexShrink: 0, marginTop: 6,
+                      }} />
+                      <div>
+                        <p style={{ fontSize: 12, fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 3 }}>
+                          {warning.type}
+                        </p>
+                        <p style={{ fontSize: 17, fontWeight: 800, color: '#0f172a' }}>{warning.message.risky_day}</p>
+                        <p style={{ fontSize: 14, color: '#334155', marginTop: 3 }}>
+                          {warning.location} &middot; {warning.start_date} to {warning.end_date}
+                        </p>
                       </div>
-                      <div className="inline-flex items-center px-3 py-1 bg-white/50 rounded-lg border border-black/5 w-fit">
-                        <span className={`text-lg font-black tracking-tight ${item.text}`}>{item.range}</span>
+                    </div>
+                    <span style={{
+                      color: '#dc2626', fontSize: 13,
+                      transform: openWarning === index ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s', flexShrink: 0,
+                    }}>▼</span>
+                  </button>
+
+                  {openWarning === index && (
+                    <div style={{ padding: '0 24px 22px 24px' }}>
+                      <div style={{
+                        marginLeft: 24, paddingLeft: 20,
+                        borderLeft: '3px solid #fca5a5',
+                        display: 'flex', flexDirection: 'column', gap: 18,
+                      }}>
+                        <div>
+                          <p style={{ ...sectionLabel, color: '#991b1b' }}>Warning</p>
+                          <p style={{ fontSize: 15, color: '#1e293b', lineHeight: 1.7 }}>{warning.message.main_warning_message}</p>
+                        </div>
+                        {warning.message.possible_situations?.length > 0 && (
+                          <div>
+                            <p style={{ ...sectionLabel, color: '#991b1b' }}>Possible situations</p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                              {warning.message.possible_situations.map((item, i) => (
+                                <li key={i} style={{ fontSize: 15, color: '#1e293b', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                  <span style={{ color: '#dc2626', fontWeight: 800, flexShrink: 0, fontSize: 16 }}>›</span>{item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {warning.message.mitigation_strategies?.length > 0 && (
+                          <div>
+                            <p style={{ ...sectionLabel, color: '#991b1b' }}>Mitigation strategies</p>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                              {warning.message.mitigation_strategies.map((step, i) => (
+                                <li key={i} style={{ fontSize: 15, color: '#1e293b', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                  <span style={{ color: '#16a34a', fontWeight: 800, flexShrink: 0, fontSize: 16 }}>✓</span>{step}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    {/* Effect Column */}
-                    <div className="lg:col-span-4 p-6 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-black/5">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Physiological Effect</h4>
-                      <p className="text-sm font-bold text-slate-800 leading-relaxed italic">
-                        "{item.effects}"
-                      </p>
-                    </div>
-
-                    {/* Mitigation Column */}
-                    <div className="lg:col-span-5 p-6 flex flex-col justify-center bg-white/30">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Mitigation Strategy</h4>
-                      <ul className="space-y-2">
-                        {item.mitigation.map((step, i) => (
-                          <li key={i} className="flex items-start gap-2 text-[13px] font-semibold text-slate-700">
-                            <div className={`mt-1.5 h-1.5 w-1.5 rounded-full ${item.accent} shrink-0`} />
-                            {step}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
+          </div>
+        )}
 
-            {/* UX Enhancement: Footer Tip */}
-            <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-full text-blue-600">
-                <ShieldAlert size={20} />
+        {/* HEAT INDEX PROTOCOL */}
+        <div style={card}>
+          {/* Header */}
+          <div style={{
+            background: '#1e293b', padding: '22px 24px',
+            borderBottom: '2px solid #334155',
+          }}>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between" style={{ gap: 14 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <ThermometerSun className="h-6 w-6" style={{ color: '#fb923c' }} />
+                  <h2 style={{ fontSize: 20, fontWeight: 800, color: '#f8fafc' }}>Heat Index Protocol</h2>
+                </div>
+                <p style={{ fontSize: 14, color: '#94a3b8', lineHeight: 1.6 }}>
+                  Standardized safety thresholds based on apparent temperature — how hot it feels when relative humidity is combined with air temperature.
+                </p>
               </div>
-              <p className="text-xs font-bold text-blue-800 leading-relaxed">
-                PRO TIP: The Heat Index indicates how hot it feels when relative humidity is factored in with the actual air temperature. Note that exposure to full sunshine can increase heat index values by up to 8°C.
-              </p>
+              <a
+                href="https://www.weather.gov/ama/heatindex"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  fontSize: 13, fontWeight: 700, color: '#93c5fd',
+                  background: 'rgba(59,130,246,0.15)', border: '1.5px solid #3b82f6',
+                  padding: '9px 18px', borderRadius: 10,
+                  textDecoration: 'none', whiteSpace: 'nowrap', alignSelf: 'flex-start',
+                }}
+              >
+                <Info className="h-3.5 w-3.5" />
+                NOAA / NWS Source
+              </a>
             </div>
           </div>
-        </section>
+
+          {/* Classification rows */}
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {detailedClassification.map((item, idx) => (
+              <div key={idx} style={{
+                borderRadius: 16,
+                border: `2px solid ${item.border}`,
+                overflow: 'hidden',
+                background: item.bg,
+              }}>
+                <div className="flex flex-col lg:flex-row">
+
+                  {/* Left: level */}
+                  <div style={{
+                    background: item.leftBg,
+                    padding: '20px 22px',
+                    display: 'flex', flexDirection: 'column',
+                    justifyContent: 'center', gap: 12,
+                    minWidth: 200, flexShrink: 0,
+                  }}
+                    className="border-b-2 lg:border-b-0 lg:border-r-2"
+                    // Tailwind dynamic won't work for custom colors; border set via style
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: 10,
+                        background: item.badgeBg, color: item.textColor,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        {item.icon}
+                      </div>
+                      <span style={{ fontSize: 17, fontWeight: 800, color: item.textColor }}>{item.level}</span>
+                    </div>
+                    <span style={{
+                      fontSize: 14, fontWeight: 700, color: item.labelColor,
+                      background: item.badgeBg,
+                      padding: '5px 14px', borderRadius: 8,
+                      display: 'inline-block', alignSelf: 'flex-start',
+                      border: `1px solid ${item.border}`,
+                    }}>
+                      {item.range}
+                    </span>
+                  </div>
+
+                  {/* Middle: effect */}
+                  <div style={{
+                    flex: 1, padding: '20px 22px',
+                    borderRight: `2px solid ${item.border}`,
+                  }}
+                    className="border-b-2 lg:border-b-0"
+                  >
+                    <p style={{ ...sectionLabel, color: item.labelColor }}>Physiological Effect</p>
+                    <p style={{ fontSize: 15, color: '#1e293b', lineHeight: 1.7, fontStyle: 'italic' }}>
+                      "{item.effects}"
+                    </p>
+                  </div>
+
+                  {/* Right: mitigation */}
+                  <div style={{ flex: 1, padding: '20px 22px' }}>
+                    <p style={{ ...sectionLabel, color: item.labelColor }}>Mitigation Strategy</p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
+                      {item.mitigation.map((step, i) => (
+                        <li key={i} style={{ fontSize: 15, color: '#1e293b', display: 'flex', alignItems: 'flex-start', gap: 10, lineHeight: 1.55 }}>
+                          <span style={{
+                            width: 8, height: 8, borderRadius: '50%',
+                            background: item.dot, flexShrink: 0, marginTop: 6,
+                          }} />
+                          {step}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer note */}
+          <div style={{
+            margin: '0 20px 20px 20px', padding: '16px 20px',
+            background: '#eff6ff', borderRadius: 14,
+            border: '1.5px solid #bfdbfe',
+            display: 'flex', alignItems: 'flex-start', gap: 14,
+          }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 10,
+              background: '#bfdbfe', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <ShieldAlert className="h-4 w-4" style={{ color: '#1d4ed8' }} />
+            </div>
+            <p style={{ fontSize: 15, color: '#1e3a8a', lineHeight: 1.7 }}>
+              <strong style={{ fontWeight: 800 }}>Important:</strong> The Heat Index indicates how hot it feels when relative humidity is combined with air temperature.
+              Exposure to full sunshine can increase heat index values by up to{' '}
+              <strong style={{ fontWeight: 800 }}>8°C</strong> beyond the shaded reading.
+            </p>
+          </div>
+        </div>
 
       </div>
     </div>
