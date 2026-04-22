@@ -17,7 +17,7 @@ const Navbar: React.FC = () => {
     { name: "Alert", path: "/Pages/Flood_Risk/Alert" },
     { name: "Report", path: "/Pages/Flood_Risk/Report" },
     { name: "Safety", path: "/Pages/Flood_Risk/Safety" },
-    { name: "Register", path: "/Pages/Flood_Risk/Register" },
+    { name: "Alert Subscription", path: "/Pages/Flood_Risk/Register" },
   ] as const;
 
   // Preload Flood routes to reduce click-to-render delay between tabs.
