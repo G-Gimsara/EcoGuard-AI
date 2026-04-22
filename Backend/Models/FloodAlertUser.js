@@ -26,6 +26,14 @@ const FloodAlertUser = sequelize.define(
       allowNull: false,
       defaultValue: true,
     },
+    unsubscribeOtp: {
+      type: DataTypes.STRING(6),
+      allowNull: true,
+    },
+    unsubscribeOtpExpiresAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "alert_users",

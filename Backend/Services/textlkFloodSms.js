@@ -148,4 +148,5 @@ module.exports = {
   sendMajorCriticalFloodSms,
   shouldSendFloodSms,
   buildFloodMessage,
+  sendSms,
 };
