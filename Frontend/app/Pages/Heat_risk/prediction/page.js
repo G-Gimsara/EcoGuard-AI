@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import PredictionsTable from "../components/PredictionsTable";
-import HeatIndexChart from "../components/HeatIndexChart";
-import SummaryCards from "../components/SummaryCards"; // ← Add this
-import DivisionHeatMap from "../components/DivisionHeatMap";
 import HistoricalForecastChart from "../components/HistoricalForecastChart";
 import Navigation from "../components/Navigation";
 import HeatSensor from "../components/HeatSensor";
