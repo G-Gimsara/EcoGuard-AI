@@ -59,33 +59,53 @@ const HistoricalForecastChart: React.FC<HistoricalForecastChartProps> = ({
     let forecastHighRiskDays = 0;
     const RISK_THRESHOLD = 36;
 
-    const chartArray = Object.keys(dailyGroups).map((dateStr) => {
+    // Get last 7 days for historical data
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      last7Days.push(date.toISOString().split("T")[0]);
+    }
+
+    // Get next 15 days for forecast data
+    const next15Days = [];
+    for (let i = 1; i <= 15; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      next15Days.push(date.toISOString().split("T")[0]);
+    }
+
+    // Combine historical and forecast dates
+    const allDates = [...last7Days, ...next15Days];
+
+    const chartArray = allDates.map((dateStr) => {
       const dateObj = new Date(dateStr);
-      const temps = dailyGroups[dateStr];
-      const avgTemp =
-        temps.reduce((sum, val) => sum + val, 0) / temps.length;
-      const roundedTemp = Math.round(avgTemp * 10) / 10;
+      const temps = dailyGroups[dateStr] || [];
+      const avgTemp = temps.length > 0
+        ? temps.reduce((sum, val) => sum + val, 0) / temps.length
+        : null;
+      const roundedTemp = avgTemp !== null ? Math.round(avgTemp * 10) / 10 : null;
+
+      // Display real date in format "Apr 19"
+      const displayDate = dateObj.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      });
 
       const isHistorical = dateObj.getTime() < today.getTime();
-      if (!isHistorical && roundedTemp >= RISK_THRESHOLD)
+      const isToday = dateObj.getTime() === today.getTime();
+
+      if (!isHistorical && !isToday && roundedTemp && roundedTemp >= RISK_THRESHOLD)
         forecastHighRiskDays++;
 
       return {
         dateStr,
-        displayDate: dateObj.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        historical: isHistorical ? roundedTemp : null,
-        forecast: !isHistorical ? roundedTemp : null,
+        displayDate,
+        historical: (isHistorical || isToday) && roundedTemp !== null ? roundedTemp : null,
+        forecast: !isHistorical && !isToday && roundedTemp !== null ? roundedTemp : null,
         combined: roundedTemp,
       };
     });
-
-    chartArray.sort(
-      (a, b) =>
-        new Date(a.dateStr).getTime() - new Date(b.dateStr).getTime()
-    );
 
     return {
       chartData: chartArray,
@@ -94,7 +114,7 @@ const HistoricalForecastChart: React.FC<HistoricalForecastChartProps> = ({
         hasData: chartArray.length > 0,
         peakTemp:
           chartArray.length > 0
-            ? Math.max(...chartArray.map((d) => d.combined))
+            ? Math.max(...chartArray.map((d) => d.combined).filter(temp => temp !== null))
             : 0,
       },
     };
@@ -111,6 +131,11 @@ const HistoricalForecastChart: React.FC<HistoricalForecastChartProps> = ({
 
   if (!insights.hasData) return null;
 
+  const todayDisplay = today.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  });
+
   const firstForecast = chartData.find((d) => d.forecast !== null);
 
   return (
@@ -118,10 +143,10 @@ const HistoricalForecastChart: React.FC<HistoricalForecastChartProps> = ({
       <div className="p-6 pb-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-gray-800 tracking-tight">
-            Heat Index Analysis
+            Heat Index Analysis: Historical & Forecast
           </h2>
           <p className="text-sm text-gray-500">
-            Real-time data for{" "}
+            Last 7 days historical data & 15 days forecast for{" "}
             <span className="text-orange-600 font-bold capitalize">
               {selectedDivision}
             </span>
@@ -182,16 +207,16 @@ const HistoricalForecastChart: React.FC<HistoricalForecastChartProps> = ({
             />
 
             <Line
-              name="Historical"
+              name="Historical (7 days)"
               type="monotone"
               dataKey="historical"
-              stroke="#94a3b8"
+              stroke="#374151"
               strokeWidth={3}
               dot={{ r: 4, fill: "#fff", strokeWidth: 2 }}
               connectNulls
             />
             <Line
-              name="Forecast"
+              name="Forecast (15 days)"
               type="monotone"
               dataKey="forecast"
               stroke="#ef4444"
@@ -201,10 +226,10 @@ const HistoricalForecastChart: React.FC<HistoricalForecastChartProps> = ({
             />
             {firstForecast && (
               <ReferenceLine
-                x={firstForecast.displayDate}
+                x={todayDisplay}
                 stroke="#ef4444"
                 label={{
-                  value: "NOW",
+                  value: "Today",
                   position: "insideTopLeft",
                   fill: "#ef4444",
                   fontSize: 10,
