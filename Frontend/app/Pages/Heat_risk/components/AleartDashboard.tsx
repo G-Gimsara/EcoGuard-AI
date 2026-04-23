@@ -172,7 +172,7 @@ const HeatAlert: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-[100%] mx-auto min-h-screen" style={{ backgroundColor: '#e8edf3' }}>
+    <div className="w-full max-w-full mx-auto min-h-screen" style={{ backgroundColor: '#e8edf3' }}>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           STATUS BANNER
