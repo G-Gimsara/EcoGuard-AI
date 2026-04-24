@@ -1,27 +1,34 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../Config/sequelize');
 
-const DustReading = sequelize.define('DustReading', {
+const COReading = sequelize.define('COReading', {
   device_id: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  dust_density: {
+  raw_value: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  voltage: {
     type: DataTypes.FLOAT,
     allowNull: false,
   },
-   air_status: {               
+  co_value: {                // ✅ ADD THIS
+    type: DataTypes.FLOAT,
+    allowNull: false,
+  },
+  status: {
     type: DataTypes.STRING,
     allowNull: false,
   },
   recorded_at: {
     type: DataTypes.DATE,
-    allowNull: false,
     defaultValue: DataTypes.NOW,
   },
 }, {
-  tableName: 'PM2_5_readings',
+  tableName: 'co_readings',
   timestamps: true,
 });
 
-module.exports = DustReading;
+module.exports = COReading;
