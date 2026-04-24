@@ -23,6 +23,7 @@ export default function RegisterForAlertsPage() {
   const [subscribeOtp, setSubscribeOtp] = useState("");
   const [subscribeOtpRequested, setSubscribeOtpRequested] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
+  const [resendSubscribeOtpLoading, setResendSubscribeOtpLoading] = useState(false);
   const [subscribeError, setSubscribeError] = useState("");
   const [subscribeSuccess, setSubscribeSuccess] = useState("");
 
@@ -185,6 +186,57 @@ export default function RegisterForAlertsPage() {
       setSubscribeError("Network error. Please try again.");
     } finally {
       setSubscribeLoading(false);
+    }
+  };
+
+  // Resend OTP for subscribe flow without verifying.
+  const handleResendSubscribeOtp = async () => {
+    setSubscribeError("");
+    setSubscribeSuccess("");
+
+    const trimmedName = name.trim();
+    const trimmedPhone = subscribePhoneNumber.trim();
+
+    if (!trimmedName) {
+      setSubscribeError("Name is required.");
+      return;
+    }
+
+    if (!NAME_REGEX.test(trimmedName)) {
+      setSubscribeError("Name can contain only letters and spaces.");
+      return;
+    }
+
+    if (!PHONE_REGEX.test(trimmedPhone)) {
+      setSubscribeError("Phone number must be in format 947XXXXXXXX.");
+      return;
+    }
+
+    setResendSubscribeOtpLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: trimmedName,
+          phoneNumber: trimmedPhone,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setSubscribeError(data.message || "Failed to resend OTP. Please try again.");
+        return;
+      }
+
+      setSubscribeSuccess("OTP resent to your phone number.");
+    } catch (resendError) {
+      console.error("Resend subscribe OTP error:", resendError);
+      setSubscribeError("Network error. Please try again.");
+    } finally {
+      setResendSubscribeOtpLoading(false);
     }
   };
 
@@ -380,10 +432,20 @@ export default function RegisterForAlertsPage() {
 
               {/* Show OTP input only after OTP is sent. */}
               {subscribeOtpRequested ? (
-                <div>
-                  <label htmlFor="subscribe-otp" className="mb-2 block text-sm font-semibold text-gray-700">
-                    OTP
-                  </label>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <label htmlFor="subscribe-otp" className="block text-sm font-semibold text-gray-700">
+                      OTP
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleResendSubscribeOtp}
+                      disabled={subscribeLoading || resendSubscribeOtpLoading}
+                      className="text-xs font-semibold text-blue-700 underline underline-offset-2 transition hover:text-blue-900 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {resendSubscribeOtpLoading ? "Resending..." : "Resend OTP"}
+                    </button>
+                  </div>
                   <input
                     id="subscribe-otp"
                     type="text"
@@ -392,7 +454,7 @@ export default function RegisterForAlertsPage() {
                     onChange={(e) => setSubscribeOtp(e.target.value)}
                     placeholder="Enter 6-digit OTP"
                     className="w-full rounded-xl border border-gray-300 px-4 py-3 text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                    disabled={subscribeLoading}
+                    disabled={subscribeLoading || resendSubscribeOtpLoading}
                   />
                 </div>
               ) : null}
@@ -411,7 +473,7 @@ export default function RegisterForAlertsPage() {
 
               <button
                 type="submit"
-                disabled={subscribeLoading}
+                disabled={subscribeLoading || resendSubscribeOtpLoading}
                 className="inline-flex min-w-[170px] items-center justify-center rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {subscribeLoading ? "Submitting..." : subscribeOtpRequested ? "Verify OTP" : "Subscribe Alert"}
