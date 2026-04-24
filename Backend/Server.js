@@ -20,11 +20,16 @@ require('./Models/FloodDangerAlert.js');
 // ========================= FLOOD MODULE (imports) — END ===========================
 require('./Models/WaterLevelSensor.js');    
 const airSensorRoute = require('./Routes/AirsensorRoute.js');
-require('./Models/GasReading.js');
 
-require('./Models/Airquality.js');            // ← ADD
 
-require('./Models/Airquality.js');       
+         // ← ADD
+
+require('./Models/Airquality.js'); 
+require('./Models/Airuser.js'); 
+require("./Models/AmoniaReading.js");
+require("./Models/COReading.js");
+require("./Models/Co2Reading.js");
+require("./Models/Dustreading.js");      
 const waterQualityRoute = require('./Routes/WaterqualityRoute.js');
 // ========================= FLOOD MODULE (SMS subscribers route) — START =========================
 // FloodAlertUserController: register/list/PATCH subscription for Text.lk flood SMS recipients.
@@ -124,8 +129,13 @@ require("./Models/FloodDangerAlert.js");
 require("./Models/FloodAlertUser.js");
 // ========================= FLOOD MODULE (DB models for sync) — END ===========================
 require("./Models/WaterLevelSensor.js");
-require("./Models/GasReading.js");
+
 require("./Models/Airquality.js");
+require('./Models/Airuser.js'); 
+require("./Models/AmoniaReading.js");
+require("./Models/COReading.js");
+require("./Models/Co2Reading.js");
+require("./Models/Dustreading.js");
 require("./Models/Phreading.js");
 require("./Models/Tuberlity.js");
 require("./Models/WaterTempReading.js");
@@ -221,12 +231,12 @@ app.use("/api/water-quality", waterQualityRoute);
 /* -------------------- DATABASE SYNC -------------------- */
 
 sequelize.sync({ alter: true })
-  .then(() => {
+.then(() => {
     console.log("✅ Database synced");
-  })
-  .catch((err) => {
-    console.error("❌ Database sync error:", err);
-  });
+ })
+ .catch((err) => {
+   console.error("❌ Database sync error:", err);
+ });
 
 /* -------------------- SERVER START -------------------- */
 const PORT = process.env.PORT || 5000;

@@ -4,6 +4,7 @@ const sequelize = require("../Config/sequelize");
 const GasReading = sequelize.define("GasReading", {
   device_id: {
     type: DataTypes.STRING,
+    allowNull: false,
   },
   gas_ppm: {
     type: DataTypes.FLOAT,
@@ -17,6 +18,9 @@ const GasReading = sequelize.define("GasReading", {
   air_status: {
     type: DataTypes.STRING,
   }
+}, {
+  tableName: "gas_readings",
+  timestamps: true   // ✅ creates createdAt & updatedAt automatically
 });
 
 module.exports = GasReading;

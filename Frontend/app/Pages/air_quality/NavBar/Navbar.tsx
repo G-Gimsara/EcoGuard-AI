@@ -10,9 +10,9 @@ const Navbar: React.FC = () => {
   // Navigation links
   const navLinks = [
     { name: "Home", path: "/Pages/air_quality/Dashboard" },
-    { name: "Recommendations", path: "/Pages/air_quality/Recommendations" },
-    { name: "Recommendations Guide", path: "/Pages/air_quality/Guide" },
-    { name: "Report ", path: "/Pages/air_quality/Report" },
+   
+    { name: "Report", path: "/Pages/air_quality/Report" },
+     { name: "Alert", path: "/Pages/air_quality/Home" },
   ] as const;
 
   return (
