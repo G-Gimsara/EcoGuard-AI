@@ -43,13 +43,7 @@ export default function PredictionPage() {
           <HeatSensor />
         </div>
          
-          {/* Summary Cards at the very top */}
-           {/* <SummaryCards data={tableData} />  */}
           
-
-
-          {/* Chart */}
-          {/*<HeatIndexChart data={tableData} />*/}
 
           <HistoricalForecastChart data={tableData}/>
 
