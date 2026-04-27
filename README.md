@@ -1,5 +1,6 @@
 # EcoGuard-AI
 🌿 Environmental Risk and Resource Management AI System
+🔗 GitHub Repository: [https://github.com/shamalgodawela/EcoGuard-AI.git](https://github.com/shamalgodawela/EcoGuard-AI.git)
 
 EcoGuard-AI is a multi-module environmental intelligence platform that combines IoT data ingestion, machine learning services, and real-time dashboards to support risk detection and response.
 
