@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Upload, Sparkles, User, Brain, CheckCircle, Droplets, X, MapPin,
-  Image as ImageIcon, AlertTriangle
+  Upload, Sparkles, User, Brain, CheckCircle, Droplets, X, MapPin, AlertTriangle,
 } from "lucide-react";
 import Navbar from "../NavBar/Navbar";
 import Header from "@/app/Header/page";
@@ -29,6 +28,13 @@ interface ImageQualityScore {
   overall: "poor" | "fair" | "good";
 }
 
+type ChatRole = "user" | "assistant";
+interface ChatMessage {
+  role: ChatRole;
+  content: string;
+  ts: number;
+}
+
 const CORAL_AREAS = [
   { id: "hikkaduwa",   name: "Hikkaduwa",                coast: "South West Coast", emoji: "🪸", risk: "HIGH",     rivers: ["Gin Ganga", "Bentara Ganga"] },
   { id: "bar_reef",    name: "Bar Reef (Kalpitiya)",     coast: "North West Coast", emoji: "🪸", risk: "CRITICAL", rivers: ["Kala Oya", "Deduru Oya"] },
@@ -50,8 +56,8 @@ const getStatusColor = (status: string) => {
   if (!status) return "bg-gray-100 text-gray-600";
   const s = status.toUpperCase();
   if (s === "SAFE")                                 return "bg-green-100 text-green-700";
-  if (s.includes("RISK") || s.includes("STRESS"))  return "bg-yellow-100 text-yellow-700";
   if (s.includes("BLEACHING") || s === "TOO COLD") return "bg-red-100 text-red-700";
+  if (s.includes("RISK") || s.includes("STRESS"))  return "bg-yellow-100 text-yellow-700";
   return "bg-blue-100 text-blue-700";
 };
 
@@ -69,12 +75,11 @@ function analyzeImageQuality(canvas: HTMLCanvasElement): ImageQualityScore {
   const meanLum = sumLum / total;
   const stdDev  = Math.sqrt(sumSqLum / total - meanLum * meanLum);
   let edgeSum = 0;
-  for (let y = 1; y < height - 1; y++) {
+  for (let y = 1; y < height - 1; y++)
     for (let x = 1; x < width - 1; x++) {
       const c = lums[y * width + x];
       edgeSum += Math.abs(4*c - lums[(y-1)*width+x] - lums[(y+1)*width+x] - lums[y*width+(x+1)] - lums[y*width+(x-1)]);
     }
-  }
   const brightness = Math.min(100, Math.round((meanLum / 255) * 100));
   const contrast   = Math.min(100, Math.round((stdDev / 80) * 100));
   const sharpness  = Math.min(100, Math.round((edgeSum / ((width-2)*(height-2)) / 12) * 100));
@@ -93,55 +98,51 @@ function imageToCanvas(img: HTMLImageElement): HTMLCanvasElement {
 }
 
 export default function AnalyzeCoral() {
-  const [file,         setFile]         = useState<File | null>(null);
-  const [preview,      setPreview]      = useState<string | null>(null);
-  const [quality,      setQuality]      = useState<ImageQualityScore | null>(null);
-  const [role,         setRole]         = useState<string>("researcher");
-  const [loading,      setLoading]      = useState<boolean>(false);
-  const [result,       setResult]       = useState<PredictionResult | null>(null);
-  const [waterQuality, setWaterQuality] = useState<WaterQuality>({});
-  const [showBanner,   setShowBanner]   = useState<boolean>(false);
-  const [selectedArea, setSelectedArea] = useState<typeof CORAL_AREAS[0] | null>(null);
-  const [showRivers,   setShowRivers]   = useState<boolean>(false);
-  const [qualityError,    setQualityError]    = useState<boolean>(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [quality, setQuality] = useState<ImageQualityScore | null>(null);
+  const [qualityError, setQualityError] = useState<boolean>(false);
   const [overrideQuality, setOverrideQuality] = useState<boolean>(false);
+  const [role, setRole] = useState<string>("researcher");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [result, setResult] = useState<PredictionResult | null>(null);
+  const [waterQuality, setWaterQuality] = useState<WaterQuality>({});
+  const [showBanner, setShowBanner] = useState<boolean>(false);
+  const [selectedArea, setSelectedArea] = useState<(typeof CORAL_AREAS)[0] | null>(null);
+  const [showRivers, setShowRivers] = useState<boolean>(false);
+  const [chatOpen, setChatOpen] = useState<boolean>(false);
+  const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState<string>("");
+  const [chatLoading, setChatLoading] = useState<boolean>(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
-  const isQualityTooLow = (q: ImageQualityScore | null) => {
-    if (!q) return false;
-    return q.overall === "poor" && [q.brightness, q.contrast, q.sharpness].filter(v => v < 25).length >= 2;
-  };
+  const isQualityTooLow = (q: ImageQualityScore | null) =>
+    !!q && q.overall === "poor" && [q.brightness, q.contrast, q.sharpness].filter(v => v < 25).length >= 2;
 
   useEffect(() => {
-    const fetchWQ = async () => {
-      const safeJson = async (url: string) => {
-        try {
-          const res = await fetch(url);
-          return JSON.parse(await res.text());
-        } catch { return null; }
-      };
+    const safeJson = async (url: string) => {
+      try { return await (await fetch(url)).json(); } catch { return null; }
+    };
+    (async () => {
       const [phJ, turbJ, tempJ] = await Promise.all([
         safeJson("http://localhost:5000/api/water-quality/ph"),
         safeJson("http://localhost:5000/api/water-quality/turbidity"),
         safeJson("http://localhost:5000/api/water-quality/water-temp"),
       ]);
       setWaterQuality({
-        ph_value:         phJ?.[0]?.ph_value,
-        ph_status:        phJ?.[0]?.ph_status,
-        turbidity_ntu:    turbJ?.[0]?.turbidity_ntu,
-        turbidity_status: turbJ?.[0]?.turbidity_status,
-        temperature:      tempJ?.[0]?.temperature,
-        temp_status:      tempJ?.[0]?.temp_status,
+        ph_value: phJ?.[0]?.ph_value, ph_status: phJ?.[0]?.ph_status,
+        turbidity_ntu: turbJ?.[0]?.turbidity_ntu, turbidity_status: turbJ?.[0]?.turbidity_status,
+        temperature: tempJ?.[0]?.temperature, temp_status: tempJ?.[0]?.temp_status,
       });
-    };
-    fetchWQ();
+    })();
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
     const f = e.target.files[0];
-    setFile(f);
-    setResult(null); setShowBanner(false); setShowRivers(false);
+    setFile(f); setResult(null); setShowBanner(false); setShowRivers(false);
     setQualityError(false); setOverrideQuality(false); setQuality(null);
+    setChatOpen(false); setChatMsgs([]); setChatInput(""); setChatLoading(false); setChatError(null);
     const reader = new FileReader();
     reader.onloadend = () => {
       const dataUrl = reader.result as string;
@@ -153,6 +154,49 @@ export default function AnalyzeCoral() {
     reader.readAsDataURL(f);
   };
 
+  const sendChat = async () => {
+    const msg = chatInput.trim();
+    if (!msg) return;
+    if (!selectedArea) { alert("Please select a coral area."); return; }
+    setChatError(null);
+    setChatInput("");
+    const now = Date.now();
+    const nextMsgs: ChatMessage[] = [...chatMsgs, { role: "user", content: msg, ts: now }];
+    setChatMsgs(nextMsgs);
+    setChatLoading(true);
+    try {
+      const res = await fetch("http://localhost:8001/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: msg,
+          role,
+          coral_area: selectedArea.name,
+          coast: selectedArea.coast,
+          rivers: selectedArea.rivers.join(", "),
+          ph_value:         String(waterQuality.ph_value         ?? ""),
+          ph_status:        String(waterQuality.ph_status        ?? ""),
+          turbidity_ntu:    String(waterQuality.turbidity_ntu    ?? ""),
+          turbidity_status: String(waterQuality.turbidity_status ?? ""),
+          temperature:      String(waterQuality.temperature      ?? ""),
+          temp_status:      String(waterQuality.temp_status      ?? ""),
+          prediction: result?.prediction ?? "",
+          history: nextMsgs.slice(-12).map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Chat request failed");
+      const reply = String(data?.reply ?? "").trim() || "Sorry — I couldn't generate a reply.";
+      setChatMsgs(prev => [...prev, { role: "assistant", content: reply, ts: Date.now() }]);
+    } catch (e) {
+      const err = e instanceof Error ? e.message : "Unknown error";
+      setChatError(err);
+      setChatMsgs(prev => [...prev, { role: "assistant", content: "Sorry — chat is unavailable right now. Please try again.", ts: Date.now() }]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!file)         return alert("Please select an image.");
@@ -160,22 +204,32 @@ export default function AnalyzeCoral() {
     if (isQualityTooLow(quality) && !overrideQuality) { setQualityError(true); return; }
     setQualityError(false);
     setLoading(true);
-    const formData = new FormData();
-    formData.append("file",             file, file.name);
-    formData.append("role",             role);
-    formData.append("coral_area",       selectedArea.name);
-    formData.append("coast",            selectedArea.coast);
-    formData.append("rivers",           selectedArea.rivers.join(", "));
-    formData.append("ph_value",         String(waterQuality.ph_value         ?? ""));
-    formData.append("ph_status",        String(waterQuality.ph_status        ?? ""));
-    formData.append("turbidity_ntu",    String(waterQuality.turbidity_ntu    ?? ""));
-    formData.append("turbidity_status", String(waterQuality.turbidity_status ?? ""));
-    formData.append("temperature",      String(waterQuality.temperature      ?? ""));
-    formData.append("temp_status",      String(waterQuality.temp_status      ?? ""));
+    const fd = new FormData();
+    fd.append("file", file, file.name);
+    fd.append("role", role);
+    fd.append("coral_area", selectedArea.name);
+    fd.append("coast", selectedArea.coast);
+    fd.append("rivers", selectedArea.rivers.join(", "));
+    fd.append("ph_value",         String(waterQuality.ph_value         ?? ""));
+    fd.append("ph_status",        String(waterQuality.ph_status        ?? ""));
+    fd.append("turbidity_ntu",    String(waterQuality.turbidity_ntu    ?? ""));
+    fd.append("turbidity_status", String(waterQuality.turbidity_status ?? ""));
+    fd.append("temperature",      String(waterQuality.temperature      ?? ""));
+    fd.append("temp_status",      String(waterQuality.temp_status      ?? ""));
     try {
-      const res  = await fetch("http://localhost:8000/predict", { method: "POST", body: formData });
-      const data: PredictionResult = await res.json();
-      setResult(data); setShowBanner(true); setShowRivers(true);
+      const data: PredictionResult = await (await fetch("http://localhost:8001/predict", { method: "POST", body: fd })).json();
+      setResult(data);
+      setShowBanner(true);
+      setShowRivers(true);
+      setChatOpen(true);
+      setChatMsgs([
+        {
+          role: "assistant",
+          ts: Date.now(),
+          content:
+            `I can help you understand the current situation at ${selectedArea.name} using live IoT water quality data.\n\nAsk me anything like:\n- Is the water safe for corals right now?\n- What does this turbidity mean?\n- What actions should we take today?`,
+        },
+      ]);
     } catch (err) {
       console.error(err);
       alert("Error predicting coral image.");
@@ -184,22 +238,19 @@ export default function AnalyzeCoral() {
   };
 
   const getBanner = () => {
-    const statuses = [waterQuality.ph_status, waterQuality.turbidity_status, waterQuality.temp_status]
-      .filter(Boolean).map(s => s!.toUpperCase());
-    if (statuses.some(s => s.includes("BLEACHING")))
-      return { label: "🚨 HIGH BLEACHING RISK — Water conditions are critical!", color: "bg-red-600 text-white" };
-    if (statuses.some(s => s.includes("STRESS") || s.includes("RISK")))
-      return { label: "⚠️ MODERATE RISK — Water conditions show coral stress!", color: "bg-orange-500 text-white" };
-    if (statuses.length > 0)
-      return { label: "✅ SAFE — Current water conditions are good for corals.", color: "bg-green-600 text-white" };
+    const s = [waterQuality.ph_status, waterQuality.turbidity_status, waterQuality.temp_status]
+      .filter(Boolean).map(x => x!.toUpperCase());
+    if (s.some(x => x.includes("BLEACHING"))) return { label: "🚨 HIGH BLEACHING RISK — Water conditions are critical!", color: "bg-red-600 text-white" };
+    if (s.some(x => x.includes("STRESS") || x.includes("RISK"))) return { label: "⚠️ MODERATE RISK — Water conditions show coral stress!", color: "bg-orange-500 text-white" };
+    if (s.length > 0) return { label: "✅ SAFE — Current water conditions are good for corals.", color: "bg-green-600 text-white" };
     return null;
   };
   const banner = getBanner();
 
   const roleDescriptions: Record<string, string> = {
-    researcher:    "Get detailed scientific analysis and metrics",
+    researcher: "Get detailed scientific analysis and metrics",
     tourism_guide: "Receive tourist-friendly insights and facts",
-    general:       "Get simplified information about coral health",
+    general: "Get simplified information about coral health",
   };
 
   return (
@@ -208,7 +259,6 @@ export default function AnalyzeCoral() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-12">
 
-        {/* Banner */}
         {showBanner && banner && (
           <div className={`${banner.color} rounded-2xl px-6 py-4 mb-6 shadow-lg`}>
             <div className="flex items-start justify-between">
@@ -216,9 +266,9 @@ export default function AnalyzeCoral() {
                 <p className="font-bold text-lg">{banner.label}</p>
                 <div className="flex flex-wrap gap-3 mt-3">
                   {[
-                    { label: "pH",        val: waterQuality.ph_value?.toFixed(2),      unit: "",     status: waterQuality.ph_status },
+                    { label: "pH",        val: waterQuality.ph_value?.toFixed(2),      unit: "",     status: waterQuality.ph_status        },
                     { label: "Turbidity", val: waterQuality.turbidity_ntu?.toFixed(1), unit: " NTU", status: waterQuality.turbidity_status },
-                    { label: "Temp",      val: waterQuality.temperature?.toFixed(1),   unit: "°C",   status: waterQuality.temp_status },
+                    { label: "Temp",      val: waterQuality.temperature?.toFixed(1),   unit: "°C",   status: waterQuality.temp_status      },
                   ].map(chip => (
                     <div key={chip.label} className="bg-white bg-opacity-20 rounded-lg px-3 py-2 text-sm">
                       <span className="opacity-75">{chip.label}</span>
@@ -233,7 +283,6 @@ export default function AnalyzeCoral() {
           </div>
         )}
 
-        {/* Upload Card */}
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mb-8 print:hidden">
           <div className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2" />
           <div className="p-10 space-y-8">
@@ -248,39 +297,25 @@ export default function AnalyzeCoral() {
                 {preview ? <p className="text-sm text-blue-600 font-medium">Click to change image</p>
                          : <p className="text-black">Click or drag image here (PNG / JPG)</p>}
               </label>
-
               {preview && (
                 <div className="mt-5 space-y-4">
                   <div className="relative rounded-xl overflow-hidden shadow border border-gray-200 bg-black">
                     <img src={preview} alt="Coral" className="w-full h-64 object-contain" />
-                    <div className="absolute top-2 left-2 bg-black bg-opacity-55 text-white text-xs px-2 py-0.5 rounded-full">📷 Original</div>
+                    <div className="absolute top-2 left-2 bg-black bg-opacity-55 text-white text-xs px-2 py-0.5 rounded-full">📷 Preview</div>
                   </div>
                   {quality && (
-                    <div className={`rounded-xl p-4 border text-xs space-y-3 ${
-                      quality.overall === "good" ? "bg-green-50 border-green-200"
-                      : quality.overall === "fair" ? "bg-yellow-50 border-yellow-200"
-                      : "bg-red-50 border-red-200"}`}>
+                    <div className={`rounded-xl p-4 border text-xs space-y-3 ${quality.overall === "good" ? "bg-green-50 border-green-200" : quality.overall === "fair" ? "bg-yellow-50 border-yellow-200" : "bg-red-50 border-red-200"}`}>
                       <div className="flex items-center justify-between">
-                        <span className={`font-bold text-xs px-2 py-0.5 rounded-full ${
-                          quality.overall === "good"  ? "bg-green-200 text-green-800"
-                          : quality.overall === "fair" ? "bg-yellow-200 text-yellow-800"
-                          : "bg-red-200 text-red-800"}`}>
+                        <span className={`font-bold text-xs px-2 py-0.5 rounded-full ${quality.overall === "good" ? "bg-green-200 text-green-800" : quality.overall === "fair" ? "bg-yellow-200 text-yellow-800" : "bg-red-200 text-red-800"}`}>
                           {quality.overall === "good" ? "✅ Good" : quality.overall === "fair" ? "⚠️ Fair" : "🚨 Poor"} Image Quality
                         </span>
                         <span className="text-gray-400">Pre-analysis check</span>
                       </div>
-                      {[
-                        { label: "Brightness", val: quality.brightness },
-                        { label: "Contrast",   val: quality.contrast },
-                        { label: "Sharpness",  val: quality.sharpness },
-                      ].map(m => (
+                      {[{ label: "Brightness", val: quality.brightness }, { label: "Contrast", val: quality.contrast }, { label: "Sharpness", val: quality.sharpness }].map(m => (
                         <div key={m.label}>
-                          <div className="flex justify-between text-gray-500 mb-1">
-                            <span>{m.label}</span><span className="font-medium">{m.val}%</span>
-                          </div>
+                          <div className="flex justify-between text-gray-500 mb-1"><span>{m.label}</span><span className="font-medium">{m.val}%</span></div>
                           <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full transition-all ${m.val >= 60 ? "bg-green-500" : m.val >= 35 ? "bg-yellow-500" : "bg-red-500"}`}
-                              style={{ width: `${m.val}%` }} />
+                            <div className={`h-full rounded-full ${m.val >= 60 ? "bg-green-500" : m.val >= 35 ? "bg-yellow-500" : "bg-red-500"}`} style={{ width: `${m.val}%` }} />
                           </div>
                         </div>
                       ))}
@@ -297,8 +332,7 @@ export default function AnalyzeCoral() {
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {CORAL_AREAS.map(area => (
-                  <div key={area.id}
-                    onClick={() => { setSelectedArea(area); setShowRivers(false); setResult(null); setShowBanner(false); }}
+                  <div key={area.id} onClick={() => { setSelectedArea(area); setShowRivers(false); setResult(null); setShowBanner(false); }}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition ${selectedArea?.id === area.id ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}>
                     <div className="flex items-center justify-between">
                       <p className="font-semibold text-black">{area.emoji} {area.name}</p>
@@ -318,15 +352,18 @@ export default function AnalyzeCoral() {
               </label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
-                  { value: "researcher",    label: "Researcher",    emoji: "🔬" },
+                  { value: "researcher", label: "Researcher", emoji: "🔬" },
                   { value: "tourism_guide", label: "Tourism Guide", emoji: "🗺️" },
-                  { value: "general",       label: "General User",  emoji: "👤" },
-                ].map(option => (
-                  <div key={option.value} onClick={() => setRole(option.value)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer ${role === option.value ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}>
-                    <p className="text-2xl">{option.emoji}</p>
-                    <p className="font-semibold text-black">{option.label}</p>
-                    <p className="text-xs text-black">{roleDescriptions[option.value]}</p>
+                  { value: "general", label: "General User", emoji: "👤" },
+                ].map((opt) => (
+                  <div
+                    key={opt.value}
+                    onClick={() => setRole(opt.value)}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition ${role === opt.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}
+                  >
+                    <p className="text-2xl">{opt.emoji}</p>
+                    <p className="font-semibold text-black">{opt.label}</p>
+                    <p className="text-xs text-gray-500">{roleDescriptions[opt.value]}</p>
                   </div>
                 ))}
               </div>
@@ -339,7 +376,6 @@ export default function AnalyzeCoral() {
               {loading ? "🧠 Analyzing coral…" : "Analyze Coral"}
             </button>
 
-            {/* Quality Error */}
             {qualityError && quality && (
               <div className="rounded-2xl border-2 border-red-400 bg-red-50 overflow-hidden">
                 <div className="bg-red-500 px-5 py-3 flex items-center justify-between">
@@ -350,12 +386,10 @@ export default function AnalyzeCoral() {
                   <button onClick={() => setQualityError(false)} className="text-white opacity-80 hover:opacity-100"><X size={18} /></button>
                 </div>
                 <div className="px-5 py-4 space-y-4">
-                  <p className="text-red-800 text-sm font-medium">
-                    The uploaded image cannot be reliably analysed. The AI model requires clear, well-lit coral images.
-                  </p>
+                  <p className="text-red-800 text-sm font-medium">The uploaded image cannot be reliably analysed. The AI model requires clear, well-lit coral images.</p>
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { label: "Brightness", val: quality.brightness, icon: "☀️", tip: quality.brightness < 25 ? "Image is too dark" : "Acceptable" },
+                      { label: "Brightness", val: quality.brightness, icon: "☀️", tip: quality.brightness < 25 ? "Image is too dark"   : "Acceptable" },
                       { label: "Contrast",   val: quality.contrast,   icon: "◑",  tip: quality.contrast   < 25 ? "Too little contrast" : "Acceptable" },
                       { label: "Sharpness",  val: quality.sharpness,  icon: "🔍", tip: quality.sharpness  < 25 ? "Image is too blurry" : "Acceptable" },
                     ].map(m => (
@@ -387,7 +421,6 @@ export default function AnalyzeCoral() {
           </div>
         </div>
 
-        {/* Results */}
         {result && showRivers && selectedArea && (
           <div className="print-area space-y-6 text-black">
             <div className="text-center mb-6">
@@ -401,16 +434,16 @@ export default function AnalyzeCoral() {
               <h2 className="text-xl font-bold flex items-center gap-2 mb-1">
                 <Droplets className="text-blue-600" />River Water Quality — {selectedArea.name}
               </h2>
-              <p className="text-xs text-gray-500 mb-4">⚠️ IoT Device monitors water quality. Same readings applied to all rivers in this area.</p>
+              <p className="text-xs text-gray-500 mb-4">📡 IoT Device 4 monitors water quality. Same readings applied to all rivers in this area.</p>
               <div className="space-y-3">
                 {selectedArea.rivers.map((river, i) => (
                   <div key={i} className="bg-white rounded-xl p-4 border shadow-sm">
                     <p className="font-bold text-blue-800 mb-3">💧 {river}</p>
                     <div className="grid grid-cols-3 gap-3 text-center">
                       {[
-                        { label: "pH Level",    val: waterQuality.ph_value?.toFixed(2),      unit: "",     status: waterQuality.ph_status,        range: "Safe: 8.0–8.3" },
+                        { label: "pH Level",    val: waterQuality.ph_value?.toFixed(2),      unit: "",     status: waterQuality.ph_status,        range: "Safe: 8.0–8.3"  },
                         { label: "Turbidity",   val: waterQuality.turbidity_ntu?.toFixed(1), unit: " NTU", status: waterQuality.turbidity_status, range: "Safe: 0–10 NTU" },
-                        { label: "Temperature", val: waterQuality.temperature?.toFixed(1),   unit: "°C",   status: waterQuality.temp_status,       range: "Safe: 23–29°C" },
+                        { label: "Temperature", val: waterQuality.temperature?.toFixed(1),   unit: "°C",   status: waterQuality.temp_status,       range: "Safe: 23–29°C"  },
                       ].map(c => (
                         <div key={c.label} className="bg-gray-50 rounded-lg p-3">
                           <p className="text-xs text-gray-400 mb-1">{c.label}</p>
@@ -426,31 +459,80 @@ export default function AnalyzeCoral() {
             </div>
 
             <div className="bg-white rounded-xl shadow p-6 border-l-4 border-green-500">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <CheckCircle className="text-green-600" /> Prediction Result
-              </h2>
+              <h2 className="text-xl font-bold flex items-center gap-2"><CheckCircle className="text-green-600" /> Prediction Result</h2>
               <p className="mt-4 text-black whitespace-pre-line">{result.prediction}</p>
             </div>
 
             <div className="bg-white rounded-xl shadow p-6 border-l-4 border-blue-500">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <Brain className="text-blue-600" /> AI Recommendations
-              </h2>
-              <p className="text-xs text-gray-400 mb-3">Based on coral image + {selectedArea.name} + live river water quality</p>
+              <h2 className="text-xl font-bold flex items-center gap-2"><Brain className="text-blue-600" /> AI Recommendations</h2>
+              <p className="text-xs text-gray-400 mb-3">Based on coral image + {selectedArea.name} location + live river water quality</p>
               <p className="mt-2 text-black whitespace-pre-line">{result.suggestions}</p>
             </div>
 
-            <button onClick={() => window.print()} className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold print:hidden">
-              🖨️ Print Report
-            </button>
-            <button onClick={() => { setFile(null); setPreview(null); setResult(null); setShowBanner(false); setShowRivers(false); setSelectedArea(null); setQuality(null); }}
-              className="w-full py-3 bg-gray-200 rounded-xl print:hidden text-black">
-              Analyze Another Image
-            </button>
+            {chatOpen && (
+              <div className="bg-white rounded-xl shadow p-6 border-l-4 border-purple-500 print:hidden">
+                <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                  <Brain className="text-purple-600" /> Chatbot (Ask about current situation)
+                </h2>
+                <p className="text-xs text-gray-400 mb-4">
+                  Uses {selectedArea.name} + live IoT water data (pH/turbidity/temp) automatically.
+                </p>
+
+                <div className="border rounded-xl bg-gray-50 p-4 h-72 overflow-y-auto space-y-3">
+                  {chatMsgs.length === 0 ? (
+                    <p className="text-sm text-gray-500">Chat will appear after prediction.</p>
+                  ) : (
+                    chatMsgs.map((m, i) => (
+                      <div key={`${m.ts}-${i}`} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm whitespace-pre-line shadow-sm ${
+                          m.role === "user" ? "bg-blue-600 text-white" : "bg-white text-gray-900 border"
+                        }`}>
+                          {m.content}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  {chatLoading && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[85%] rounded-2xl px-4 py-2 text-sm bg-white text-gray-700 border">
+                        Thinking…
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {chatError && (
+                  <p className="text-xs text-red-600 mt-3">Chat error: {chatError}</p>
+                )}
+
+                <div className="mt-4 flex gap-2">
+                  <input
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!chatLoading) sendChat(); }
+                    }}
+                    disabled={chatLoading}
+                    placeholder="Type your question about the current water conditions…"
+                    className="flex-1 rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white"
+                  />
+                  <button
+                    onClick={() => { if (!chatLoading) sendChat(); }}
+                    disabled={chatLoading || !chatInput.trim()}
+                    className="px-5 py-3 rounded-xl font-semibold bg-purple-600 text-white disabled:opacity-50"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button onClick={() => window.print()} className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold print:hidden">🖨️ Print Report</button>
+            <button onClick={() => { setFile(null); setPreview(null); setQuality(null); setResult(null); setShowBanner(false); setShowRivers(false); setSelectedArea(null); }}
+              className="w-full py-3 bg-gray-200 rounded-xl print:hidden text-black">Analyze Another Image</button>
           </div>
         )}
       </div>
-
       <style jsx global>{`
         @media print {
           body * { visibility: hidden; }

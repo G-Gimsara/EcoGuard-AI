@@ -19,6 +19,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
+
 // ─── Types ───────────────────────────────────────────
 interface SafetyLevel {
   level: string;
@@ -50,7 +51,7 @@ interface EmergencyContact {
   borderClass: string;
 }
 
-// ─── Data ───────────────────────────────────────────
+// Static guidance data: each safety card represents one flood severity level.
 const safetyLevels: SafetyLevel[] = [
   {
     level: "NORMAL",
@@ -62,7 +63,7 @@ const safetyLevels: SafetyLevel[] = [
     badgeText: "text-white",
     glowClass: "shadow-green-200",
     threshold: "0 mm",
-    icon: <ShieldCheck size={20} />,
+    icon: <ShieldCheck size={26} />,
     status: "ALL CLEAR",
     actions: [
       "Monitor local weather forecasts daily",
@@ -81,15 +82,35 @@ const safetyLevels: SafetyLevel[] = [
     badgeBg: "bg-yellow-400",
     badgeText: "text-black",
     glowClass: "shadow-yellow-200",
-    threshold: "55 mm",
-    icon: <Eye size={20} />,
+    threshold: "40 mm",
+    icon: <Eye size={26} />,
     status: "WATCH",
     actions: [
-      "Pre-flood — ankle-deep water possible",
+      "Pre-flood ankle-deep water possible",
       "Secure all outdoor furniture & valuables",
       "Move items to higher ground or upper floors",
       "Avoid low-lying areas in Megoda Kolonnawa",
       "Charge all devices & prepare emergency kit",
+    ],
+  },
+  {
+    level: "MINOR",
+    code: "LVL-1.5",
+    textClass: "text-amber-600",
+    borderLeft: "border-l-4 border-amber-500",
+    bgActive: "bg-amber-50",
+    badgeBg: "bg-amber-500",
+    badgeText: "text-white",
+    glowClass: "shadow-amber-200",
+    threshold: " 75 mm",
+    icon: <AlertTriangle size={26} />,
+    status: "MINOR FLOOD",
+    actions: [
+      "Minor flooding possible in low-lying areas",
+      "Stay alert for rising water levels",
+      "Avoid canals, drainage paths and rivers",
+      "Prepare evacuation bag if conditions worsen",
+      "Monitor official alerts from Disaster Management Centre",
     ],
   },
   {
@@ -101,8 +122,8 @@ const safetyLevels: SafetyLevel[] = [
     badgeBg: "bg-orange-500",
     badgeText: "text-white",
     glowClass: "shadow-orange-200",
-    threshold: "100 – 150 mm",
-    icon: <TriangleAlert size={20} />,
+    threshold: "110 mm",
+    icon: <TriangleAlert size={26} />,
     status: "WARNING",
     actions: [
       "Water entering home entry points — act now",
@@ -110,6 +131,26 @@ const safetyLevels: SafetyLevel[] = [
       "Walpola zone: move to upper floors immediately",
       "Turn off electrical appliances at breaker level",
       "Assist neighbours & elderly residents nearby",
+    ],
+  },
+  {
+    level: "MAJOR",
+    code: "LVL-2.5",
+    textClass: "text-red-500",
+    borderLeft: "border-l-4 border-red-500",
+    bgActive: "bg-red-50",
+    badgeBg: "bg-red-500",
+    badgeText: "text-white",
+    glowClass: "shadow-red-200",
+    threshold: "145 mm",
+    icon: <Siren size={26} />,
+    status: "SEVERE WARNING",
+    actions: [
+      "Severe flooding likely in vulnerable zones",
+      "Prepare for evacuation immediately",
+      "Move valuables, vehicles and electronics to higher ground",
+      "Follow instructions from local authorities",
+      "Be ready to evacuate within minutes if situation escalates",
     ],
   },
   {
@@ -121,11 +162,11 @@ const safetyLevels: SafetyLevel[] = [
     badgeBg: "bg-red-600",
     badgeText: "text-white",
     glowClass: "shadow-red-200",
-    threshold: "200 – 300+ mm",
-    icon: <Siren size={20} />,
+    threshold: "180 + mm",
+    icon: <Siren size={26} />,
     status: "EVACUATE NOW",
     actions: [
-      "EVACUATE IMMEDIATELY — do not delay",
+      "EVACUATE IMMEDIATELY do not delay",
       "Severe flooding in Wellampitiya / Kelaniya",
       "Switch off electricity and gas at the mains",
       "Do NOT re-enter flooded structures",
@@ -152,10 +193,16 @@ const emergencyContacts: EmergencyContact[] = [
 
 // ─── Component ───────────────────────────────────────────
 const SafetyGuidancePage = () => {
+  // Selected card index; null means "all cards collapsed" state.
   const [activeLevel, setActiveLevel] = useState<number | null>(null);
+  // Live clock is for situational awareness in operations view.
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Avoid hydration mismatch: render time only after client mounts.
+    setMounted(true);
+    // Update the incident clock every second.
     const clock = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(clock);
   }, []);
@@ -171,28 +218,28 @@ const SafetyGuidancePage = () => {
           {/* Page Heading */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <ShieldCheck size={40} className="text-blue-800 shrink-0" />
+              <ShieldCheck size={44} className="text-blue-800 shrink-0" />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Safety Protocols & Guidance</h1>
-                <p className="text-gray-600 text-sm">Based on Flood Risk Level Monitor Thresholds</p>
+                <p className="text-gray-600 text-base">Based on Flood Risk Level Monitor Thresholds</p>
               </div>
             </div>
 
             {/* Live Clock */}
             <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm text-sm text-gray-500 self-start sm:self-auto">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <Clock size={13} />
-              <span className="font-mono font-medium text-gray-700">{currentTime.toLocaleTimeString()}</span>
+              <Clock size={14} />
+              <span className="font-mono font-medium text-gray-700 text-sm">{mounted ? currentTime.toLocaleTimeString() : '--:--:-- --'}</span>
               <span className="text-gray-300">|</span>
-              <Radio size={13} className="text-blue-500" />
+              <Radio size={14} className="text-blue-500" />
               <span className="text-blue-600 font-semibold text-xs">LIVE</span>
             </div>
           </div>
 
-          {/* Alert Levels */}
+          {/* Flood level protocol matrix (click a card to highlight/expand context). */}
           <section>
             <div className="flex items-center gap-2 mb-4">
-              <Radio size={14} className="text-blue-700" />
+              <Radio size={15} className="text-blue-700" />
               <h2 className="text-sm font-bold text-blue-700 uppercase tracking-widest">Alert Levels & Response Protocols</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
@@ -205,24 +252,30 @@ const SafetyGuidancePage = () => {
                     className={`relative overflow-hidden rounded-xl p-5 text-left transition-all duration-300 cursor-pointer
                       ${item.borderLeft} ${isActive ? `${item.bgActive} shadow-lg ${item.glowClass} scale-[1.02]` : "bg-white shadow-sm hover:shadow-md hover:scale-[1.01]"}`}
                   >
-                    <span className={`absolute top-0 right-0 text-[9px] font-black px-2 py-1 rounded-bl-xl ${item.badgeBg} ${item.badgeText}`}>{item.code}</span>
+                    {/* Badge */}
+                    <span className={`absolute top-0 right-0 text-sm font-black px-2 py-1 rounded-bl-xl ${item.badgeBg} ${item.badgeText}`}>{item.code}</span>
+
                     <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.textClass} bg-gray-100`}>{item.icon}</div>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${item.textClass} bg-gray-100`}>{item.icon}</div>
                       <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">{item.status}</p>
-                        <h3 className={`font-black text-lg leading-tight ${item.textClass}`}>{item.level}</h3>
+                        <p className="text-sm text-gray-400 uppercase tracking-wider">{item.status}</p>
+                        <h3 className={`font-black text-2xl leading-tight ${item.textClass}`}>{item.level}</h3>
                       </div>
                     </div>
-                    <div className={`inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 mb-3 bg-gray-100 ${item.textClass}`}>
-                      <Zap size={9} /> TRIGGER: {item.threshold}
+
+
+                    <div className={`inline-flex items-center gap-1 text-sm font-semibold rounded-full px-3 py-1 mb-3 bg-gray-100 ${item.textClass}`}>
+                      <Zap size={12} /> TRIGGER: {item.threshold}
                     </div>
-                    <ul className="space-y-1.5">
+
+                    <ul className="space-y-2">
                       {item.actions.map((action, i) => (
-                        <li key={i} className="flex items-start gap-2 text-[11px] text-gray-600 leading-snug">
-                          <ChevronRight size={10} className={`mt-0.5 shrink-0 ${item.textClass}`} /> {action}
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700 leading-snug">
+                          <ChevronRight size={14} className={`mt-0.5 shrink-0 ${item.textClass}`} /> {action}
                         </li>
                       ))}
                     </ul>
+
                     {isActive && <div className={`absolute bottom-0 left-0 right-0 h-0.5 ${item.badgeBg} opacity-40`} />}
                   </button>
                 );
@@ -230,29 +283,36 @@ const SafetyGuidancePage = () => {
             </div>
           </section>
 
-          {/* Emergency Action Plan */}
+          {/* Operational response section: shelters + hotline numbers. */}
           <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200">
-            <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2"><PhoneCall size={24} /> Emergency Action Plan</h2>
+            <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2">
+              <PhoneCall size={26} /> Emergency Action Plan
+            </h2>
             <div className="grid lg:grid-cols-3 gap-8">
 
               {/* Evacuation Centres */}
               <div className="lg:col-span-2 space-y-2">
-                <div className="flex items-center gap-2 mb-3"><MapPin size={15} className="text-red-500" /><p className="font-bold text-gray-800 text-sm uppercase tracking-wide">Evacuation Centres</p></div>
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin size={16} className="text-red-500" />
+                  <p className="font-bold text-gray-800 text-sm uppercase tracking-wide">Evacuation Centres</p>
+                </div>
                 {evacuationZones.map((zone, i) => (
                   <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
-                        <Home size={13} className="text-gray-500" />
+                      <div className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
+                        <Home size={15} className="text-gray-500" />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-800">{zone.name}</p>
-                        <div className="flex items-center gap-3 mt-0.5 text-[10px] text-gray-400">
-                          <span className="flex items-center gap-1"><Users size={9} /> {zone.capacity}</span>
-                          <span className="flex items-center gap-1"><MapPin size={9} /> {zone.distance}</span>
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
+                          <span className="flex items-center gap-1"><Users size={11} /> {zone.capacity}</span>
+                          <span className="flex items-center gap-1"><MapPin size={11} /> {zone.distance}</span>
                         </div>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${zone.status === "Open" ? "text-green-700 bg-green-50 border-green-200" : "text-yellow-700 bg-yellow-50 border-yellow-200"}`}>{zone.status.toUpperCase()}</span>
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full border ${zone.status === "Open" ? "text-green-700 bg-green-50 border-green-200" : "text-yellow-700 bg-yellow-50 border-yellow-200"}`}>
+                      {zone.status.toUpperCase()}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -262,15 +322,16 @@ const SafetyGuidancePage = () => {
                 <p className="font-bold text-gray-800 text-sm uppercase tracking-wide mb-3">Emergency Hotlines</p>
                 {emergencyContacts.map((c, i) => (
                   <div key={i} className={`rounded-xl border ${c.borderClass} ${c.bgClass} px-4 py-3 flex items-center justify-between`}>
-                    <p className="text-xs text-gray-600 leading-tight max-w-[140px]">{c.label}</p>
+                    <p className="text-sm md:text-base text-gray-600 leading-tight max-w-[180px]">{c.label}</p>
                     <span className={`text-2xl font-black font-mono tracking-tight ${c.colorClass}`}>{c.number}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+          
 
-          {/* Do's & Don'ts */}
+          {/* Quick behavioral checklist for public communication during flood events. */}
           <div className="grid md:grid-cols-2 gap-6">
             {[
               {
@@ -279,12 +340,12 @@ const SafetyGuidancePage = () => {
                 bg: "bg-green-50",
                 dot: "bg-green-500",
                 text: "text-green-700",
-                icon: <ShieldCheck size={16} />,
+                icon: <ShieldCheck size={20} />,
                 items: [
                   "Move to highest ground or upper floors immediately",
                   "Follow all instructions from local authorities",
                   "Disconnect electrical appliances before water rises",
-                  "Use battery-powered torch — avoid candles or flames",
+                  "Use battery-powered torch avoid candles or flames",
                   "Keep important documents in waterproof sealed bags",
                   "Signal for help using bright cloth or mirror reflection",
                 ],
@@ -295,23 +356,26 @@ const SafetyGuidancePage = () => {
                 bg: "bg-red-50",
                 dot: "bg-red-500",
                 text: "text-red-700",
-                icon: <AlertTriangle size={16} />,
+                icon: <AlertTriangle size={20} />,
                 items: [
                   "Never walk through moving floodwater (6 in can knock you down)",
                   "Do not drive through flooded roads under any circumstance",
                   "Never touch electrical equipment in wet conditions",
                   "Do not return home until officials declare it safe",
                   "Do not drink flood-contaminated tap or well water",
-                  "Never ignore evacuation orders — leave immediately",
+                  "Never ignore evacuation orders leave immediately",
                 ],
               },
             ].map((section, i) => (
               <div key={i} className={`rounded-xl ${section.borderLeft} ${section.bg} p-6 shadow-sm`}>
-                <div className={`flex items-center gap-2 mb-4 ${section.text}`}>{section.icon}<h3 className="font-bold text-sm uppercase tracking-wide">{section.title}</h3></div>
-                <ul className="space-y-2.5">
+                <div className={`flex items-center gap-2 mb-4 ${section.text}`}>
+                  {section.icon}
+                  <h3 className="font-bold text-base uppercase tracking-wide">{section.title}</h3>
+                </div>
+                <ul className="space-y-3">
                   {section.items.map((item, j) => (
-                    <li key={j} className="flex items-start gap-3 text-sm text-gray-700 leading-snug">
-                      <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${section.dot}`} />{item}
+                    <li key={j} className="flex items-start gap-3 text-base text-gray-700 leading-snug">
+                      <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${section.dot}`} />{item}
                     </li>
                   ))}
                 </ul>

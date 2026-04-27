@@ -1,31 +1,34 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../Config/sequelize');
 
-const GasReading = sequelize.define('GasReading', {
+const Co2Reading = sequelize.define('Co2Reading', {
   device_id: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  gas_ppm: {
-    type: DataTypes.FLOAT,
+  aqi: {
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
-  voltage: {
-    type: DataTypes.FLOAT,
-    allowNull: true,
-  },
-  raw_value: {
+  tvoc: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
+  },
+  eco2: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  status: {
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   recorded_at: {
     type: DataTypes.DATE,
-    allowNull: false,
     defaultValue: DataTypes.NOW,
   },
 }, {
-  tableName: 'gas_readings',
+  tableName: 'co2_readings',
   timestamps: true,
 });
 
-module.exports = GasReading;
+module.exports = Co2Reading;

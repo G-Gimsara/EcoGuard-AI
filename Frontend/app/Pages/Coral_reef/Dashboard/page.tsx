@@ -581,7 +581,6 @@ export default function CoralReef() {
             </div>
           </div>
         </section>
-
       </div>
     </div>
   );

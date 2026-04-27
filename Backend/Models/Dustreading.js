@@ -10,13 +10,17 @@ const DustReading = sequelize.define('DustReading', {
     type: DataTypes.FLOAT,
     allowNull: false,
   },
+   air_status: {               
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
   recorded_at: {
     type: DataTypes.DATE,
     allowNull: false,
     defaultValue: DataTypes.NOW,
   },
 }, {
-  tableName: 'dust_readings',
+  tableName: 'PM2_5_readings',
   timestamps: true,
 });
 

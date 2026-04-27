@@ -1,14 +1,16 @@
 const FloodMeasurement = require("../Models/FloodMeasurement");
 const FloatSensor = require('../Models/FloatSensor');
+const { sendMajorCriticalFloodSms } = require("../Services/textlkFloodSms");
+
 
 // Define thresholds same as your ESP32 logic
 const levels = [
   { threshold: 0, name: "Normal", firstAffected: "No areas affected", nextAffected: "", floodFeet: 0 },
-  { threshold: 55, name: "Alert", firstAffected: "Megoda Kolonnawa GND — 1 ft ankle-deep", nextAffected: "", floodFeet: 4 },
-  { threshold: 100, name: "Minor", firstAffected: "Megoda Kolonnawa — 2 ft home entry\nWalpola GND Kaduwela — 1 ft yards", nextAffected: "", floodFeet: 5 },
-  { threshold: 150, name: "Moderate", firstAffected: "Megoda Kolonnawa — 3-4 ft major homes\nWalpola — 2 ft roads", nextAffected: "Wellampitiya — 1 ft pooling\nKelanimulla GND Kolonnawa — 1-2 ft", floodFeet: 6.5 },
-  { threshold: 200, name: "Major", firstAffected: "Megoda Kolonnawa — 4-6 ft evacuation\nWalpola — 3 ft households", nextAffected: "Wellampitiya — 2-3 ft\nKelaniya — 1-2 ft\nMahadeniya Kaduwela — 2 ft", floodFeet: 7 },
-  { threshold: 300, name: "Critical", firstAffected: "Megoda Kolonnawa — 6-10 ft severe\nWalpola — 4-6 ft", nextAffected: "Wellampitiya/Kelaniya — 3-5 ft\nKaduwela DSD — 3-4 ft", floodFeet: 8 }
+  { threshold: 40, name: "Alert", firstAffected: "Megoda Kolonnawa GND — 1 ft ankle-deep", nextAffected: "", floodFeet: 4 },
+  { threshold: 75, name: "Minor", firstAffected: "Megoda Kolonnawa — 2 ft home entry\nWalpola GND Kaduwela — 1 ft yards", nextAffected: "", floodFeet: 5 },
+  { threshold: 110, name: "Moderate", firstAffected: "Megoda Kolonnawa — 3-4 ft major homes\nWalpola — 2 ft roads", nextAffected: "Wellampitiya — 1 ft pooling\nKelanimulla GND Kolonnawa — 1-2 ft", floodFeet: 6.5 },
+  { threshold: 145, name: "Major", firstAffected: "Megoda Kolonnawa — 4-6 ft evacuation\nWalpola — 3 ft households", nextAffected: "Wellampitiya — 2-3 ft\nKelaniya — 1-2 ft\nMahadeniya Kaduwela — 2 ft", floodFeet: 7 },
+  { threshold: 180, name: "Critical", firstAffected: "Megoda Kolonnawa — 6-10 ft severe\nWalpola — 4-6 ft", nextAffected: "Wellampitiya/Kelaniya — 3-5 ft\nKaduwela DSD — 3-4 ft", floodFeet: 8 }
 ];
 
 function getSeverity(riseLevel) {
@@ -29,6 +31,13 @@ exports.createMeasurement = async (req, res) => {
 
     const severityData = getSeverity(riseLevel);
 
+    // Previous row lets us send only on meaningful transitions.
+    const previous = await FloodMeasurement.findOne({
+      order: [["createdAt", "DESC"]],
+      attributes: ["severity"],
+    });
+    const previousSeverity = previous ? previous.severity : null;
+
     const measurement = await FloodMeasurement.create({
       riseLevel,
       severity: severityData.name,
@@ -46,6 +55,20 @@ exports.createMeasurement = async (req, res) => {
         }
       });
     }
+
+    // Fire in background so API response + websocket stay fast.
+    void sendMajorCriticalFloodSms({
+      previousSeverity,
+      currentSeverity: severityData.name,
+      firstAffected: severityData.firstAffected || "",
+      nextAffected: severityData.nextAffected || "",
+    })
+      .then((result) => {
+        if (!result.skipped) {
+          console.log(`[flood-sms] Delivery result: sent=${result.sent}, failed=${result.failed ?? 0}`);
+        }
+      })
+      .catch((err) => console.error("[flood-sms]", err.message));
 
     return res.status(201).json(measurement);
   } catch (error) {
@@ -74,26 +97,22 @@ exports.receiveFloatStatus = async (req, res) => {
 
     const now = new Date();
 
-    // Broadcast to WebSocket (if you want real-time updates)
-    const wss = req.app.get('wss');
-    if (wss) {
-      wss.clients.forEach(client => {
-        if (client.readyState === 1) {
-          client.send(JSON.stringify({
-            type: 'FLOAT_UPDATE',
-            data: { device_id, status, message, timestamp: now.toISOString() }
-          }));
-        }
-      });
-    }
-
-    // Save to DB
-    await FloatSensor.create({
+    const row = await FloatSensor.create({
       device_id,
       status,
       message,
       recorded_at: now,
     });
+
+    const wss = req.app.get('wss');
+    if (wss) {
+      const data = row.get({ plain: true });
+      wss.clients.forEach((client) => {
+        if (client.readyState === 1) {
+          client.send(JSON.stringify({ type: 'FLOAT_UPDATE', data }));
+        }
+      });
+    }
 
     console.log(`[${device_id}] Float status: ${status} saved`);
     res.json({ success: true });

@@ -14,8 +14,8 @@ import Footer from './Footer/Footer';
 const MODULES = [
   {
     id: 1,
-    title: 'Flood Risk Detection',
-    description: 'AI-driven flood monitoring using real time IoT data from rainfall sensors, river levels, and environmental conditions.',
+    title: 'Real-Time Flood Risk Monitoring',
+    description: 'Flood monitoring uses real-time IoT data from ultrasonic and float sensors to measure water levels and trigger alerts.',
     icon: Droplets,
     image: FloodImg,
     link: '/Pages/Flood_Risk/Dashboard',
@@ -24,10 +24,10 @@ const MODULES = [
   {
     id: 2,
     title: 'Air Quality Management',
-    description: 'Real-time air quality monitoring with PM2.5, PM10, CO₂ levels and predictive analytics.',
+    description: 'Real-time air quality monitoring with PM2.5, PM10, CO₂ levels and health recomendations system.',
     icon: Wind,
     image: AirImg,
-    link: '/Pages/air-quality/Dashboard',
+    link: '/Pages/air_quality/Dashboard',
     tag: 'IoT • Environmental Health'
   },
   {
@@ -62,7 +62,7 @@ const TECH_STACK = [
   'Next.js & React',
   'Node.js & Express',
   'Python (ML Models)',
-  'MongoDB',
+  'PostgreSQL',
   'IoT Sensors',
   'Cloud Computing',
   'REST APIs',
@@ -143,7 +143,7 @@ function ModulesGrid() {
   return (
     <section className="py-16 px-4 bg-slate-50">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-4xl font-bold text-center text-slate-900 mb-12">Core Monitoring Modules</h2>
+        <h2 className="text-4xl font-bold text-center text-slate-900 mb-12">AI & IoT Environmental Monitoring Modules</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {MODULES.map((module) => (
             <ModuleCard
