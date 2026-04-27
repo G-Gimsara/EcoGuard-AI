@@ -120,14 +120,14 @@ def startup_tasks():
         )
 
         scheduler.start()
-        print("⏰ Scheduler started (30 min interval)")
+        print("⏰ Scheduler started (2 min interval)")
 
     print("✅ Startup tasks completed")
 
 
 # -----------------------------
 # Shutdown event
-# -----------------------------
+# ----------------------------- 
 @app.on_event("shutdown")
 def shutdown_event():
     scheduler.shutdown()
