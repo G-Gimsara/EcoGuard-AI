@@ -1,6 +1,6 @@
 const SensorReading = require('../Models/HeatRiskSeonsor');
 const axios = require("axios");
-const HeatAlertSubscriber = require("../Models/HeatAlertSubscriber");
+const Subscriber = require("../Models/subscriber.model");
 
 const lastAlertState = {};
 // Format:
@@ -56,15 +56,15 @@ async function sendLiveSensorAlert(temperature, heatIndex, riskLevel) {
   }
 
   try {
-    const subscribers = await HeatAlertSubscriber.findAll({
-      where: { isActive: true },
-      attributes: ["mobile"],
+    const subscribers = await Subscriber.findAll({
+      where: { isSubscribed: true },
+      attributes: ["phoneNumber"],
     });
 
     const recipients = Array.from(
       new Set(
         subscribers
-          .map((subscriber) => normalizePhone(subscriber.mobile))
+          .map((subscriber) => normalizePhone(subscriber.phoneNumber))
           .filter((phone) => /^94\d{9}$/.test(phone))
       )
     );
