@@ -1,18 +1,32 @@
 # EcoGuard-AI
 🌿 Environmental Risk and Resource Management AI System
 
+EcoGuard-AI is a multi-module environmental intelligence platform that combines IoT data ingestion, machine learning services, and real-time dashboards to support risk detection and response.
+
 ## Project overview
-EcoGuard-AI integrates multiple environmental monitoring and prediction systems into a single web application:
-- IoT-enhanced aquatic ecosystem health monitoring
-- Urban heat risk early warning system
-- Flood prediction & alert system
-- Air pollution & vehicle emissions tracking
+EcoGuard-AI integrates multiple environmental monitoring and prediction capabilities into one system:
+- Coral reef and aquatic ecosystem health monitoring
+- Urban heat risk prediction and Alert System
+- Flood risk monitoring and Alert System
+- Air Quality Monitoring and Alert System
 
 Frontend: Next.js + Tailwind CSS  
 Backend: Node.js + Express (APIs) + PostgreSQL (data)  
 ML services: FastAPI (model inference)
 
-The platform enables real-time monitoring, predictive analysis, and actionable alerts for stakeholders (government agencies, researchers, and the public).
+The platform is designed for actionable decision support across agencies, researchers, and communities through data visualization, forecasting, and notifications.
+
+---
+
+## Key capabilities
+
+- Real-time dashboards for flood, heat, air quality, and coral modules
+- IoT sensor data ingestion and historical trend analysis
+- Heat-risk prediction pipeline with scheduled weather data updates
+- Coral image inference powered by deep learning (PyTorch)
+- Alert subscription workflows (OTP-based subscribe/unsubscribe flows)
+- WebSocket-backed live updates for selected risk modules
+- AI-assisted chat endpoints in both backend and Python inference services
 
 ---
 
@@ -56,156 +70,208 @@ flowchart LR
 
 ---
 
-## Technologies & Dependencies
+## Technology stack
 
-| Layer    | Technology                               | Purpose                       |
-| -------- | ---------------------------------------- | ----------------------------- |
-| Frontend | Next.js                                  | React-based SSR/SPA framework |
-| Frontend | Tailwind CSS                             | Styling & responsive design   |
-| Frontend | React Charts / Leaflet Maps              | Interactive dashboards        |
-| Backend  | Node.js + Express                        | REST API framework            |
-| Backend  | PostgreSQL                               | Relational database           |
-| ML       | FastAPI                                  | Model serving                 |
-| ML       | LightGBM / XGBoost / CNN / RandomForest  | Predictive models             |
-| Alerts   | Twilio / WhatsApp API                    | SMS & WhatsApp alerts         |
-| Auth     | JWT                                      | Secure authentication         |
+| Layer | Technologies |
+| --- | --- |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, Leaflet, Recharts |
+| Backend | Node.js, Express, Sequelize, PostgreSQL, JWT, WebSocket (`ws`) |
+| Python ML Services | FastAPI, pandas, scikit-learn, LightGBM, APScheduler, PyTorch |
+| AI Integrations | Google Generative AI SDK, OpenAI API |
+| Notifications | OTP-based subscriber management, SMS integration service hooks |
 
 ---
 
 ## Folder structure
-A suggested project layout for clarity — adjust if frontend/backend are split across separate repos:
+A high-level structure of this repository:
 
-```
-smart-environment-platform/
-├── frontend/               # Next.js + Tailwind SPA
-│   ├── pages/              # Pages for dashboard & modules
-│   ├── components/         # Navbar, charts, maps, widgets
-│   ├── public/             # Static assets (images, svgs)
-│   ├── styles/             # Tailwind + custom CSS
+```text
+EcoGuard-AI/
+├── Frontend/                          # Next.js frontend
+│   ├── app/
+│   │   ├── Pages/
+│   │   │   ├── Coral_reef/            # Coral dashboards, auth/report pages
+│   │   │   ├── Heat_risk/             # Heat maps, prediction, alerts, chatbot
+│   │   │   ├── Flood_Risk/            # Flood dashboard, alerts, notifications
+│   │   │   └── air_quality/           # Air dashboard, reports, subscriptions
+│   │   ├── Header/
+│   │   └── Footer/
+│   ├── public/                        # Static assets and geojson files
 │   └── package.json
-├── backend/                # Node.js + Express + PostgreSQL
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── routes/
-│   │   ├── models/
-│   │   ├── middleware/
-│   │   └── server.js
-│   ├── ml_services/        # FastAPI model clients or wrappers
+├── Backend/                           # Express + Sequelize backend
+│   ├── Config/                        # DB configuration
+│   ├── Controllers/                   # Route business logic
+│   ├── Models/                        # Sequelize models
+│   ├── Routes/                        # API route definitions
+│   ├── Middleware/                    # Auth and request middleware
+│   ├── Services/                      # OTP/SMS and utility services
+│   ├── Utils/
+│   ├── seed/
+│   ├── Server.js                      # Main app/server entry
 │   └── package.json
-├── ml_services/            # (optional separate service repo or folder)
-│   ├── aquatic/
-│   ├── urban_heat/
-│   └── flood/
-├── scripts/                # deployment, db migrations, helpers
-├── .env.example
+├── python_api/                        # Coral inference service (FastAPI + PyTorch)
+│   ├── api.py
+│   └── requirements.txt
+├── python_api_heat_risk/              # Heat prediction service (FastAPI + LightGBM)
+│   ├── api.py
+│   ├── config/
+│   ├── services/
+│   ├── utils/
+│   ├── data/
+│   ├── train_model.py
+│   └── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Features
-- Real-time aquatic ecosystem monitoring (IoT sensor integration)
-- Urban heat risk prediction with multi-day forecasts
-- Flood prediction with alerts and multi-language support
-- Air pollution & vehicle emission tracking (PM2.5 forecasting)
-- Interactive dashboards with charts, maps, and real-time alerts
-- SMS/WhatsApp alerting for high-risk conditions
+## Module highlights
+
+### 1) Heat risk module
+- Prediction APIs under `/api/predictions`
+- Backend heat warning endpoint `/api/heat-warning` with cache refresh cycle
+- Python heat service with scheduled dataset updates and forecasting pipeline
+
+### 2) Flood risk module
+- Measurement and float-sensor APIs under `/api/flood` and `/api/float`
+- Alert user management under `/api/alert-users`
+- WebSocket event broadcasting for live UI updates
+
+### 3) Air quality module
+- Pollution APIs under `/api/pollution`
+- Sensor and reporting workflows integrated into dashboard pages
+- Subscription endpoints for notifications under `/api/subscribe/*` and `/api/unsubscribe/*`
+
+### 4) Coral & water quality module
+- Coral auth and report routes
+- Water quality sensor endpoints for pH, turbidity, and temperature
+- Python `python_api` service for coral bleaching inference + contextual AI suggestions
 
 ---
 
 ## Getting Started (local development)
-Requirements: Node.js 18+, Python 3.11+, PostgreSQL 16+, npm or yarn.
+Requirements:
+- Node.js 18+
+- npm 9+
+- Python 3.10+
+- PostgreSQL 14+ (16+ recommended)
 
-1. Clone the repository (if combined repo):
+1. Clone repository
    ```bash
    git clone https://github.com/<owner>/EcoGuard-AI.git
    cd EcoGuard-AI
    ```
 
-   If frontend and backend are separate repositories, clone each into sibling directories.
-
-2. Frontend:
+2. Run frontend
    ```bash
-   cd frontend
+   cd Frontend
    npm install
    npm run dev
    ```
-   Default: http://localhost:3000
+   Frontend URL: `http://localhost:3000`
 
-3. Backend:
+3. Run backend
    ```bash
-   cd ../backend
+   cd ../Backend
    npm install
-   cp .env.example .env
-   # Edit .env to configure your PostgreSQL connection and other secrets
    npm run dev
    ```
+   Backend URL: `http://localhost:5000`
 
-4. ML services (FastAPI):
-   Each ML service may live under `ml_services/` and include its own dependencies.
+4. Run heat-risk FastAPI service
    ```bash
-   cd ../ml_services/<service-folder>
+   cd ../python_api_heat_risk
    python -m venv venv
-   source venv/bin/activate
+   venv\Scripts\activate
    pip install -r requirements.txt
-   uvicorn main:app --reload --port 8001
+   uvicorn api:app --reload --port 8001
    ```
 
-5. Database migrations:
-   - Run database migrations according to the backend tooling used (e.g., Sequelize, Knex, TypeORM).
-   - Example (Sequelize CLI):
-     ```bash
-     npx sequelize-cli db:migrate
-     ```
+5. Run coral inference FastAPI service
+   ```bash
+   cd ../python_api
+   python -m venv venv
+   venv\Scripts\activate
+   pip install -r requirements.txt
+   uvicorn api:app --reload --port 8002
+   ```
 
-Notes:
-- Use `.env.example` as a template for required environment variables.
-- Adjust ports and addresses in the frontend/backend config to match local setup.
-
----
-
-## Running with Docker (example)
-If you add Dockerfiles and docker-compose, a typical flow:
-```bash
-docker-compose up --build
-```
-Provide service definitions for frontend, backend, ml_services, and postgres in `docker-compose.yml`.
+6. Configure environment variables
+   - Create `Backend/.env` for DB and auth settings
+   - Create `python_api/.env` with `OPENAI_API_KEY` for coral suggestion/chat routes
+   - Adjust service URLs/ports if running on non-default ports
 
 ---
 
-## Testing & CI
-- Add unit and integration tests for backend and frontend.
-- Configure GitHub Actions for CI:
-  - Linting (ESLint, style checks)
-  - Unit tests
-  - Build check for Next.js
+## Backend API overview
+
+Core route groups currently include:
+- `/api/auth` (heat auth)
+- `/api/predictions` (heat predictions)
+- `/api/heat-warning` and `/api/heat-warning` route group
+- `/api/flood`, `/api/float` (flood and float sensor data)
+- `/api/alert-users` (flood alert recipients and subscription management)
+- `/api/pollution` (air pollution data and chat endpoint)
+- `/api/water-quality` (pH, turbidity, water temperature)
+- `/api/reports`, `/api/coral-auth`, `/api/sensors`
+
+Backend root check:
+- `GET /` returns API status payload
+
+---
+
+## Data and model flow
+
+- Heat-risk service fetches historical/forecast weather signals and blends sensor context for prediction features.
+- Prediction artifacts include heat index and classified risk levels.
+- Backend consumes and serves processed risk data to UI dashboards and alert workflows.
+- Coral service performs image classification (`healthy_corals`, `bleach_1_40`, `bleach_40_100`) and generates context-aware guidance.
+
+---
+
+## Scripts
+
+### Frontend (`Frontend/package.json`)
+- `npm run dev`
+- `npm run build`
+- `npm run start`
+- `npm run lint`
+
+### Backend (`Backend/package.json`)
+- `npm run dev`
+- `npm start`
+
+---
+
+## Deployment notes
+
+- Deploy each service independently: frontend, backend, `python_api`, and `python_api_heat_risk`.
+- Use managed PostgreSQL for production durability and backups.
+- Put backend and Python services behind a reverse proxy/API gateway.
+- Restrict CORS origins for production domains.
+- Run CI checks for lint/build/test before release.
 
 ---
 
 ## Contributing
-Contributions welcome. Please:
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes and push
-4. Open a Pull Request describing your changes and tests
+
+1. Fork repository
+2. Create branch: `git checkout -b feature/my-feature`
+3. Commit and push changes
+4. Open a Pull Request with clear testing notes
 
 Follow/add a CONTRIBUTING.md to document branching, testing, and PR guidelines.
 
 ---
 
-## Troubleshooting Mermaid rendering
-- Common error: malformed node labels or missing/extra brackets.
-- Use quoted labels like `Node["label text"]` to avoid parsing issues.
-- If your environment doesn't render Mermaid, replace diagram with a generated SVG/PNG or link to a Mermaid live preview.
+## Troubleshooting
+
+- If backend cannot connect, verify PostgreSQL credentials and host/port in `Backend/.env`.
+- If heat-risk predictions fail, ensure model `.pkl` files and CSV data paths exist in `python_api_heat_risk`.
+- If coral service fails at startup, ensure `python_api/.env` contains `OPENAI_API_KEY` and model file `my_model.pth` is present.
+- If CORS errors occur, verify frontend origin (`http://localhost:3000`) matches backend and FastAPI CORS settings.
 
 ---
 
 ## License
 MIT License
-
----
-
-If you'd like, I can:
-- Commit this README.md update to the repository,
-- Replace the Mermaid diagram with a generated SVG/PNG and update the README to reference the image,
-- Or split the README into separate docs (CONTRIBUTING.md, ARCHITECTURE.md).
