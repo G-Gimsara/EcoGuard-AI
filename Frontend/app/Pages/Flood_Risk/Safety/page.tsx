@@ -136,7 +136,7 @@ const safetyLevels: SafetyLevel[] = [
     icon: <TriangleAlert size={26} />,
     status: "WARNING",
     actions: [
-      "Water entering home entry points — act now",
+      "Water entering home entry points - act now",
       "Do NOT walk or drive through flooded roads",
       "Walpola zone: move to upper floors immediately",
       "Turn off electrical appliances at breaker level",
