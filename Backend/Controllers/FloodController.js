@@ -3,7 +3,7 @@ const FloatSensor = require('../Models/FloatSensor');
 const { sendMajorCriticalFloodSms } = require("../Services/textlkFloodSms");
 
 
-// Define thresholds same as your ESP32 logic
+// Keep server-side flood levels aligned with ESP32 thresholds.
 const levels = [
   { threshold: 0, name: "Normal", firstAffected: "No areas affected", nextAffected: "", floodFeet: 0 },
   { threshold: 40, name: "Alert", firstAffected: "Megoda Kolonnawa GND — 1 ft ankle-deep", nextAffected: "", floodFeet: 4 },
@@ -14,13 +14,14 @@ const levels = [
 ];
 
 function getSeverity(riseLevel) {
-  let severity = levels[0]; // default to Normal
+  let severity = levels[0]; // fallback
   for (let i = 0; i < levels.length; i++) {
     if (riseLevel >= levels[i].threshold) severity = levels[i];
   }
   return severity;
 }
 
+// Create flood measurement, broadcast live, and trigger SMS on level transitions.
 exports.createMeasurement = async (req, res) => {
   try {
     const { riseLevel } = req.body;
@@ -31,7 +32,7 @@ exports.createMeasurement = async (req, res) => {
 
     const severityData = getSeverity(riseLevel);
 
-    // Previous row lets us send only on meaningful transitions.
+    // Check previous severity so we only alert when level actually changes.
     const previous = await FloodMeasurement.findOne({
       order: [["createdAt", "DESC"]],
       attributes: ["severity"],
@@ -46,7 +47,7 @@ exports.createMeasurement = async (req, res) => {
       floodFeet: severityData.floodFeet
     });
 
-    // --- BROADCAST VIA WEBSOCKET ---
+    // Push new reading to connected dashboards immediately.
     const wss = req.app.get('wss');
     if (wss) {
       wss.clients.forEach((client) => {
@@ -56,7 +57,7 @@ exports.createMeasurement = async (req, res) => {
       });
     }
 
-    // Fire in background so API response + websocket stay fast.
+    // Send SMS in background so API/websocket latency stays low.
     void sendMajorCriticalFloodSms({
       previousSeverity,
       currentSeverity: severityData.name,
@@ -77,6 +78,7 @@ exports.createMeasurement = async (req, res) => {
   }
 };
 
+// Return flood history (newest first) for dashboard/report views.
 exports.getMeasurements = async (req, res) => {
   try {
     const data = await FloodMeasurement.findAll({ order: [['createdAt', 'DESC']] });
@@ -87,6 +89,7 @@ exports.getMeasurements = async (req, res) => {
 };
 
 
+// Receive float heartbeat/state updates and stream to websocket clients.
 exports.receiveFloatStatus = async (req, res) => {
   try {
     const { device_id, status, message } = req.body;
@@ -97,6 +100,7 @@ exports.receiveFloatStatus = async (req, res) => {
 
     const now = new Date();
 
+    // Persist every status event; UI can decide how to summarize it.
     const row = await FloatSensor.create({
       device_id,
       status,
@@ -123,6 +127,7 @@ exports.receiveFloatStatus = async (req, res) => {
   }
 };
 
+// Return recent float status history (newest first).
 exports.getFloatStatuses = async (req, res) => {
   try {
     const statuses = await FloatSensor.findAll({
@@ -135,6 +140,7 @@ exports.getFloatStatuses = async (req, res) => {
   }
 };
 
+// Return the latest single float status row.
 exports.getLatestFloatStatus = async (req, res) => {
   try {
     const latest = await FloatSensor.findOne({
