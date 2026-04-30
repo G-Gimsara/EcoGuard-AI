@@ -2,13 +2,16 @@ const FloodAlertUser = require("../Models/FloodAlertUser");
 const { sendSms } = require("../Services/textlkFloodSms");
 const { randomInt } = require("crypto");
 
+// Local phone format: 947XXXXXXXX
 const SL_PHONE_REGEX = /^947\d{8}$/;
+// OTP lives for 5 minutes.
 const OTP_TTL_MS = 5 * 60 * 1000;
 
 function generateOtp() {
   return String(randomInt(100000, 1000000));
 }
 
+// Subscribe endpoint handles both "request OTP" and "verify OTP".
 exports.registerAlertUser = async (req, res) => {
   try {
     const name = (req.body?.name || "").trim();
@@ -25,6 +28,7 @@ exports.registerAlertUser = async (req, res) => {
       });
     }
 
+    // keep one row per phone number.
     let user = await FloodAlertUser.findOne({ where: { phoneNumber } });
 
     if (!otp) {
@@ -32,6 +36,7 @@ exports.registerAlertUser = async (req, res) => {
         return res.status(409).json({ message: "Phone number is already subscribed." });
       }
 
+      // No OTP yet -> generate and send one.
       const generatedOtp = generateOtp();
 
       if (!user) {
@@ -49,7 +54,7 @@ exports.registerAlertUser = async (req, res) => {
         await user.save();
       }
 
-      
+      // Send via SMS provider.
       await sendSms(
         phoneNumber,
         `Your EcoGuard AI Flood Alerts subscribe OTP is ${generatedOtp}. Do not share this code.`
@@ -58,6 +63,7 @@ exports.registerAlertUser = async (req, res) => {
       return res.json({ message: "OTP sent successfully." });
     }
 
+    // OTP provided -> move to verification.
     if (!/^\d{6}$/.test(otp)) {
       return res.status(400).json({ message: "OTP must be a 6-digit number." });
     }
@@ -74,6 +80,7 @@ exports.registerAlertUser = async (req, res) => {
       return res.status(400).json({ message: "OTP not requested. Please request a new OTP." });
     }
 
+    // Expired code: clear and ask user to request again.
     if (Date.now() > new Date(user.unsubscribeOtpExpiresAt).getTime()) {
       user.unsubscribeOtp = null;
       user.unsubscribeOtpExpiresAt = null;
@@ -85,12 +92,14 @@ exports.registerAlertUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP." });
     }
 
+    // OTP matched; activate subscription.
     user.name = name;
     user.isSubscribed = true;
     user.unsubscribeOtp = null;
     user.unsubscribeOtpExpiresAt = null;
     await user.save();
 
+    // Nice-to-have confirmation SMS (do not fail request if this breaks).
     try {
       await sendSms(
         phoneNumber,
@@ -129,6 +138,7 @@ exports.getAlertUsers = async (_req, res) => {
   }
 };
 
+// Admin: toggle subscription flag directly.
 exports.updateAlertUserSubscription = async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -166,6 +176,7 @@ exports.updateAlertUserSubscription = async (req, res) => {
   }
 };
 
+// Admin: permanently remove a user row.
 exports.deleteAlertUser = async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -186,6 +197,7 @@ exports.deleteAlertUser = async (req, res) => {
   }
 };
 
+// Unsubscribe step 1: send OTP.
 exports.requestUnsubscribeOtp = async (req, res) => {
   try {
     const phoneNumber = (req.body?.phoneNumber || "").trim();
@@ -206,6 +218,7 @@ exports.requestUnsubscribeOtp = async (req, res) => {
     user.unsubscribeOtpExpiresAt = new Date(Date.now() + OTP_TTL_MS);
     await user.save();
 
+    // Send OTP to confirm phone ownership.
     await sendSms(
       phoneNumber,
       `Your EcoGuard AI unsubscribe OTP is ${otp}. Do not share this code.`
@@ -218,6 +231,7 @@ exports.requestUnsubscribeOtp = async (req, res) => {
   }
 };
 
+// Unsubscribe step 2: verify OTP and turn alerts off.
 exports.verifyUnsubscribeOtp = async (req, res) => {
   try {
     const phoneNumber = (req.body?.phoneNumber || "").trim();
@@ -253,11 +267,13 @@ exports.verifyUnsubscribeOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP." });
     }
 
+    // Valid OTP -> unsubscribe and clear OTP fields.
     user.isSubscribed = false;
     user.unsubscribeOtp = null;
     user.unsubscribeOtpExpiresAt = null;
     await user.save();
 
+    // Confirmation SMS is best-effort only.
     try {
       await sendSms(
         phoneNumber,
