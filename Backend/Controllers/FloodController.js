@@ -34,7 +34,8 @@ exports.createMeasurement = async (req, res) => {
 
     // Check previous severity so we only alert when level actually changes.
     const previous = await FloodMeasurement.findOne({
-      order: [["createdAt", "DESC"]],
+      // Stable ordering avoids incorrect "previous" reads when timestamps match closely.
+      order: [["createdAt", "DESC"], ["id", "DESC"]],
       attributes: ["severity"],
     });
     const previousSeverity = previous ? previous.severity : null;
@@ -81,7 +82,8 @@ exports.createMeasurement = async (req, res) => {
 // Return flood history (newest first) for dashboard/report views.
 exports.getMeasurements = async (req, res) => {
   try {
-    const data = await FloodMeasurement.findAll({ order: [['createdAt', 'DESC']] });
+    // Include id as a tie-breaker so newest row is always first.
+    const data = await FloodMeasurement.findAll({ order: [['createdAt', 'DESC'], ['id', 'DESC']] });
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });
