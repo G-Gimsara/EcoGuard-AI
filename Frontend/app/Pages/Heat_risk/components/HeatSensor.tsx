@@ -104,7 +104,7 @@ export default function LiveMonitoringCard() {
 
   useEffect(() => {
     fetchData();
-    const timer = setInterval(fetchData, 3000);
+    const timer = setInterval(fetchData, 1000);
     return () => clearInterval(timer);
   }, [selectedLocation]);
 
@@ -210,7 +210,7 @@ export default function LiveMonitoringCard() {
                 </div>
               </div>
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-500 mb-2">TEMPERATURE</p>
+                <p className="text-sm font-semibold text-slate-500 mb-2">AIR TEMPERATURE</p>
                 <div className="flex items-baseline">
                   <span className="text-4xl font-bold text-slate-900">{data.temperature}</span>
                   <span className="text-lg text-slate-400 ml-1">°C</span>
