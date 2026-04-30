@@ -11,8 +11,6 @@ const {
 const router = express.Router();
 
 // Subscribe endpoint:
-// - request OTP (without otp in body)
-// - verify OTP and activate (with otp in body)
 router.post("/register", registerAlertUser);
 
 // Unsubscribe OTP flow.
