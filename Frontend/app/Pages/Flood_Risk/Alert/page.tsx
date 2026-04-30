@@ -15,6 +15,7 @@ import {
   type LevelName,
 } from "./floodLevelConfig";
 
+// Minimal shape consumed from `/api/flood` records.
 interface FloodMeasurement {
   id: number;
   riseLevel: number;
@@ -26,12 +27,12 @@ interface FloodMeasurement {
 }
 
 export default function FloodLevelsPage() {
-  // Live state mirrored from backend API/WebSocket stream.
+  // Current live values shown in the header + cards.
   const [currentSeverity, setCurrentSeverity] = useState("");
   const [riseLevel, setRiseLevel] = useState(0);
 
   useEffect(() => {
-    // Initial snapshot so page has data before the first socket event arrives.
+    // Load latest saved reading first, then keep it live over websocket.
     const fetchData = async () => {
       const res = await fetch("http://localhost:5000/api/flood");
       const data: FloodMeasurement[] = await res.json();
@@ -42,7 +43,7 @@ export default function FloodLevelsPage() {
     };
     fetchData();
 
-    // Real-time stream: each FLOOD_UPDATE updates severity and rise level in-place.
+    // Stream updates from backend and patch only the two visible live fields.
     const ws = new WebSocket("ws://localhost:5000");
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
@@ -51,10 +52,11 @@ export default function FloodLevelsPage() {
         setRiseLevel(msg.data.riseLevel);
       }
     };
+    // Close socket on unmount to avoid duplicate listeners after navigation.
     return () => ws.close();
   }, []);
 
-  // Map current backend severity into reusable config blocks for UI sections.
+  // Resolve all UI blocks from the current level once.
   const activeLevel = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
   const warning = activeLevel ? levelWarnings[activeLevel] : null;
   const guidelines = activeLevel ? safetyGuidelines[activeLevel] : [];
@@ -62,43 +64,49 @@ export default function FloodLevelsPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50 text-black overflow-x-hidden text-lg">
+      <div className="min-h-screen bg-gray-50 text-black overflow-x-hidden text-[15px]">
         <Navbar />
 
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <h1 className="text-4xl font-bold">Flood Risk Level Monitor</h1>
-            <Link
-              href="/Pages/Flood_Risk/Alert/Live"
-              className="text-base font-semibold text-blue-600 hover:text-blue-800 underline underline-offset-2"
-            >
-              Live status (current level only)
-            </Link>
+            <h1 className="text-[36px] font-bold">Flood Risk Level Monitor</h1>
+            <div className="inline-flex items-center rounded-xl border border-blue-200 bg-white p-1 shadow-sm">
+              <span className="rounded-lg px-4 py-2 text-[14px] font-semibold text-slate-600">
+                Overview
+              </span>
+              <Link
+                href="/Pages/Flood_Risk/Alert/Live"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-[14px] font-semibold text-white transition hover:bg-blue-700"
+              >
+                Live status (current level only)
+              </Link>
+            </div>
           </div>
 
-          <p className="text-lg mb-6">
+          <p className="mb-6 text-[20px]">
             Current Water Rise Level :
-            <span className="ml-2 font-bold text-blue-600 text-xl">{riseLevel} mm</span>
+            <span className="ml-2 font-bold text-blue-600 text-[24px]">{riseLevel} mm</span>
           </p>
 
+          {/* Shown before first usable severity arrives from API/websocket. */}
           {!warning && (
-            <div className="mb-6 p-4 rounded-lg bg-gray-200 text-gray-800 text-lg font-medium shadow flex items-center">
-              <span className="mr-3 text-2xl">📡</span>
+            <div className="mb-6 p-4 rounded-lg bg-gray-200 text-gray-800 font-medium shadow flex items-center">
+              <span className="mr-3 text-[24px]">📡</span>
               <span>Connecting to flood monitor… severity will appear here when data is received.</span>
             </div>
           )}
 
-          {/* Dynamic warning banner for whichever level is currently active. */}
+          {/* Top status banner: headline + short action text for active level */}
           {warning && (
             <div className={`mb-6 p-5 rounded-lg shadow-lg ${warning.bannerClass}`}>
               <div className="flex items-start gap-3">
-                <span className="text-3xl shrink-0" aria-hidden>
+                <span className="text-[30px] shrink-0" aria-hidden>
                   {activeLevel === "Normal" ? "✓" : activeLevel === "Critical" || activeLevel === "Major" ? "⚠️" : "ℹ️"}
                 </span>
                 <div>
-                  <p className="text-xl font-bold leading-tight">{warning.headline}</p>
-                  <p className="mt-2 text-base font-medium opacity-95 leading-snug">{warning.detail}</p>
-                  <p className="mt-2 text-sm font-semibold opacity-90">
+                  <p className="text-[24px] font-bold leading-tight">{warning.headline}</p>
+                  <p className="mt-2 text-[18px] font-medium opacity-95 leading-snug">{warning.detail}</p>
+                  <p className="mt-2 text-[17px] font-semibold opacity-90">
                     Current level: <span className="uppercase tracking-wide">{currentSeverity}</span>
                   </p>
                 </div>
@@ -106,19 +114,19 @@ export default function FloodLevelsPage() {
             </div>
           )}
 
-          {/* Safety checklist changes with the active severity level. */}
+          {/* Safety list for only the current live level */}
           {guidelines.length > 0 && (
             <section
               className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-6 shadow-sm"
               aria-labelledby="safety-guidelines-heading"
             >
-              <h2 id="safety-guidelines-heading" className="text-2xl font-bold text-blue-900 mb-2">
+              <h2 id="safety-guidelines-heading" className="text-[28px] font-bold text-blue-900 mb-2">
                 Safety guidelines
               </h2>
-              <p className="text-blue-800 mb-4 text-base">
+              <p className="text-blue-800 mb-4 text-[18px]">
                 Follow these steps for the <strong>{currentSeverity}</strong> level. Adjust as local authorities direct.
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-blue-900 text-base leading-relaxed">
+              <ul className="list-disc pl-6 space-y-2 text-blue-900 text-[17px] leading-relaxed">
                 {guidelines.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -126,9 +134,10 @@ export default function FloodLevelsPage() {
             </section>
           )}
 
-          {/* Static severity map: user can compare all levels at a glance. */}
+          {/* Always show full level map so users can compare thresholds quickly */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {levels.map((level) => {
+              // Active level gets stronger visual treatment so it stands out in the grid.
               const isActive = currentSeverity === level.name;
               return (
                 <div
@@ -140,33 +149,36 @@ export default function FloodLevelsPage() {
                     ${isActive ? `scale-105 ring-2 ring-blue-500 ${getActiveGradient(level.name)}` : "bg-white"}`}
                 >
                   <div className="flex items-center mb-4">
-                    <span className="text-3xl mr-3">{level.icon}</span>
-                    <h2 className="text-xl font-bold">{level.name}</h2>
-                    <span className="ml-3 text-xl font-bold">{feetRanges[level.name]}</span>
+                    <span className="text-[30px] mr-3">{level.icon}</span>
+                    <h2 className="text-[20px] font-bold">{level.name}</h2>
+                    <span className="ml-3 text-[20px] font-bold">{feetRanges[level.name]}</span>
                   </div>
 
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold mb-3 ${getBadge(level.name)}`}>
+                  {/* Quick color badge for scanning level severity. */}
+                  <span className={`px-3 py-1 rounded-full font-semibold mb-3 ${getBadge(level.name)}`}>
                     {level.name}
                   </span>
 
-                  <p className="text-sm mb-3 text-gray-700">Threshold: {level.threshold} mm</p>
+                  <p className="mb-3 text-gray-700">Threshold: {level.threshold} mm</p>
 
-                  <p className="font-semibold text-base mb-1">First Affected Areas</p>
-                  <pre className="whitespace-pre-wrap text-sm">{level.firstAffected}</pre>
+                  <p className="font-semibold mb-1">First Affected Areas</p>
+                  <pre className="whitespace-pre-wrap">{level.firstAffected}</pre>
 
+                  {/* Some levels don't define a next area; hide block when absent. */}
                   {level.nextAffected && (
                     <>
-                      <p className="font-semibold text-base mt-3 mb-1">Next Affected</p>
-                      <pre className="whitespace-pre-wrap text-sm">{level.nextAffected}</pre>
+                      <p className="font-semibold mt-3 mb-1">Next Affected</p>
+                      <pre className="whitespace-pre-wrap">{level.nextAffected}</pre>
                     </>
                   )}
 
-                  <p className="mt-3 font-semibold text-blue-600 text-base">
+                  <p className="mt-3 font-semibold text-blue-600">
                     Estimated Flood Depth: {level.floodFeet} ft
                   </p>
 
+                  {/* Active marker inside the matching card only. */}
                   {isActive && (
-                    <div className="mt-3 p-2 bg-blue-600 text-white rounded text-center text-sm font-bold animate-bounce">
+                    <div className="mt-3 p-2 bg-blue-600 text-white rounded text-center font-bold animate-bounce">
                       CURRENT LEVEL
                     </div>
                   )}
