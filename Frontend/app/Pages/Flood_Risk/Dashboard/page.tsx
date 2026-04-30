@@ -53,62 +53,97 @@ export default function Dashboard() {
   const [floatStatuses, setFloatStatuses] = useState<FloatStatus[]>([]);
   const [latestFloat, setLatestFloat] = useState<FloatStatus | null>(null);
 
-  // Initial flood snapshot before live updates start.
-  const fetchFloodData = () => {
-    fetch("http://localhost:5000/api/flood")
-      .then((res) => res.json())
-      .then((data) => {
+  useEffect(() => {
+    let cancelled = false;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const fetchFloodData = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/flood", { cache: "no-store" });
+        if (!res.ok) return;
+        const data: FloodMeasurement[] = await res.json();
+        if (cancelled || !Array.isArray(data)) return;
         setMeasurements(data);
         if (data.length > 0) setLatest(data[0]);
-      })
-      .catch(console.error);
-  };
-
-  // Initial float sensor snapshot before live updates start.
-  const fetchFloatData = () => {
-    fetch("http://localhost:5000/api/flood/float")
-      .then((res) => res.json())
-      .then((data) => {
-        setFloatStatuses(data);
-        if (data.length > 0) setLatestFloat(data[0]);
-      })
-      .catch(console.error);
-  };
-
-  // Load both datasets once on mount.
-  useEffect(() => {
-    fetchFloodData();
-    fetchFloatData();
-  }, []);
-
-  // One socket stream carries both flood and float updates.
-  useEffect(() => {
-    const ws = new WebSocket("ws://localhost:5000");
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-
-      // Keep newest flood entries at the top (limit to 10).
-      if (msg.type === "FLOOD_UPDATE") {
-        const newMeasurement: FloodMeasurement = msg.data;
-        setMeasurements((prev) => [newMeasurement, ...prev].slice(0, 10));
-        setLatest(newMeasurement);
-      }
-
-      // Some events send `timestamp`; map it to `recorded_at`.
-      if (msg.type === "FLOAT_UPDATE") {
-        const d = msg.data;
-        const newFloat = {
-          ...d,
-          recorded_at: d.recorded_at ?? d.timestamp ?? "",
-        } as FloatStatus;
-        setFloatStatuses((prev) => [newFloat, ...prev].slice(0, 10));
-        setLatestFloat(newFloat);
+      } catch {
+        // Ignore temporary API/network failures; next tick retries.
       }
     };
 
-    // Clean up socket on unmount.
-    return () => ws.close();
+    const fetchFloatData = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/flood/float", { cache: "no-store" });
+        if (!res.ok) return;
+        const data: FloatStatus[] = await res.json();
+        if (cancelled || !Array.isArray(data)) return;
+        setFloatStatuses(data);
+        if (data.length > 0) setLatestFloat(data[0]);
+      } catch {
+        // Ignore temporary API/network failures; next tick retries.
+      }
+    };
+
+    const connect = () => {
+      if (cancelled) return;
+      ws = new WebSocket("ws://localhost:5000");
+      ws.onopen = () => {
+        // Refresh both datasets right after websocket reconnects.
+        void fetchFloodData();
+        void fetchFloatData();
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+
+          // Keep newest flood entries at the top (limit to 10).
+          if (msg.type === "FLOOD_UPDATE") {
+            const newMeasurement: FloodMeasurement = msg.data;
+            setMeasurements((prev) => [newMeasurement, ...prev].slice(0, 10));
+            setLatest(newMeasurement);
+          }
+
+          // Some events send `timestamp`; map it to `recorded_at`.
+          if (msg.type === "FLOAT_UPDATE") {
+            const d = msg.data;
+            const newFloat = {
+              ...d,
+              recorded_at: d.recorded_at ?? d.timestamp ?? "",
+            } as FloatStatus;
+            setFloatStatuses((prev) => [newFloat, ...prev].slice(0, 10));
+            setLatestFloat(newFloat);
+          }
+        } catch {
+          /* ignore malformed payloads */
+        }
+      };
+
+      ws.onclose = () => {
+        if (cancelled) return;
+        // Keep data moving while websocket is reconnecting.
+        void fetchFloodData();
+        void fetchFloatData();
+        reconnectTimer = setTimeout(connect, 2000);
+      };
+      ws.onerror = () => ws?.close();
+    };
+
+    fetchFloodData();
+    fetchFloatData();
+    connect();
+
+    const floodPoll = setInterval(fetchFloodData, 5000);
+    const floatPoll = setInterval(fetchFloatData, 5000);
+
+    // Clean up socket/timers on unmount.
+    return () => {
+      cancelled = true;
+      clearInterval(floodPoll);
+      clearInterval(floatPoll);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, []);
 
   // Prepared for future config-driven UI behavior based on active severity.
