@@ -53,6 +53,7 @@ export default function Dashboard() {
   const [floatStatuses, setFloatStatuses] = useState<FloatStatus[]>([]);
   const [latestFloat, setLatestFloat] = useState<FloatStatus | null>(null);
 
+  // Separate live clock for the UI card (not tied to backend timestamps).
   const [liveNow, setLiveNow] = useState<Date>(() => new Date());
   const [clockMounted, setClockMounted] = useState(false);
 
@@ -176,9 +177,10 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Flood quick stats */}
+        {/* Flood quick stats cards (top row). */}
         {latest && (
           <div className="grid md:grid-cols-4 gap-6 mb-12">
+            {/* Card 1: current measured water rise (mm). */}
             <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-blue-100 to-blue-200 rounded-2xl shadow-lg transform transition hover:scale-105">
               <Droplets className="text-blue-600" size={28} />
               <div>
@@ -189,6 +191,7 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Card 2: latest flood severity level label. */}
             <div className={`flex items-center gap-4 p-6 rounded-2xl shadow-lg transform transition hover:scale-105 ${severityColors[latest.severity]?.bg}`}>
               <AlertTriangle className={`text-[20px] ${severityColors[latest.severity]?.text}`} size={28} />
               <div>
@@ -201,6 +204,7 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Card 3: area first affected by current flood conditions. */}
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <MapPin className="text-blue-500" size={28} />
               <div>
@@ -211,6 +215,7 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Card 4: timestamp of the latest flood reading update. */}
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <RefreshCw className="text-blue-500" size={28} />
               <div>
@@ -223,9 +228,11 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Float sensor quick stats */}
+        {/* Float sensor cards (second row). */}
         {latestFloat && (
           <div className="grid md:grid-cols-4 gap-6 mb-12">
+            {/* Card 5: float sensor status + message (critical state highlighted). */}
+            {/* Turn the status card red when sensor reports DANGER. */}
             <div className={`flex items-center gap-4 p-6 rounded-2xl shadow-lg transform transition hover:scale-105 ${latestFloat.status === "DANGER" ? "bg-red-500" : "bg-white"}`}>
               <Droplets className={latestFloat.status === "DANGER" ? "text-white" : "text-blue-600"} size={28} />
               <div>
@@ -239,6 +246,7 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Card 6: device id that produced the latest float reading. */}
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <MapPin className="text-blue-500" size={28} />
               <div>
@@ -247,6 +255,7 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Card 7: backend-recorded time for latest float event. */}
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <Clock className="text-blue-500" size={28} />
               <div>
@@ -257,10 +266,12 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* Card 8: local live clock for dashboard operator reference. */}
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <CalendarClock className="text-blue-500" size={28} />
               <div className="min-w-0">
                 <p className="text-[17px] font-medium leading-normal text-gray-600">Live date & time</p>
+                {/* Keep this local clock ticking every second for operator awareness. */}
                 <p className="break-words text-[18px] font-semibold leading-snug text-gray-800">
                   {clockMounted
                     ? liveNow.toLocaleString(undefined, {
