@@ -111,11 +111,11 @@ export default function Dashboard() {
     return () => ws.close();
   }, []);
 
-  // Mapped level from config (kept for rule-based extensions).
+  // Prepared for future config-driven UI behavior based on active severity.
   const activeLevel = levels.find((l) => l.name === latest?.severity)?.name as LevelName | undefined;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased text-[15px]">
       {/* Shared page shell */}
       <Header />
       <Navbar />
@@ -226,6 +226,7 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
+                  {/* Rows are already ordered newest-first from fetch/socket updates. */}
                   {measurements.slice(0, 10).map((m, idx) => (
                     <tr key={`${m.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
                       <td className="px-6 py-4 text-[15px]">{idx + 1}</td>
@@ -241,6 +242,7 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-[15px] text-gray-600">{new Date(m.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
                     </tr>
                   ))}
+                  {/* First-load / empty-history fallback message. */}
                   {measurements.length === 0 && (
                     <tr>
                       <td colSpan={7} className="text-center py-6 text-gray-500">No flood measurements yet.</td>
@@ -271,6 +273,7 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
+                  {/* Mirror flood table behavior for visual consistency. */}
                   {floatStatuses.slice(0, 10).map((f, idx) => (
                     <tr key={`${f.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
                       <td className="px-6 py-4 text-[15px]">{idx + 1}</td>
@@ -280,6 +283,7 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-[15px] text-gray-600">{formatFloatTime(f.recorded_at)}</td>
                     </tr>
                   ))}
+                  {/* Empty-state when no float sensor events are available yet. */}
                   {floatStatuses.length === 0 && (
                     <tr>
                       <td colSpan={5} className="text-center py-6 text-gray-500">No float sensor data yet.</td>
