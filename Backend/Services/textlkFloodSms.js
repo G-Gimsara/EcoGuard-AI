@@ -4,7 +4,7 @@ const FloodAlertUser = require("../Models/FloodAlertUser");
 const TEXTLK_URL = "https://app.text.lk/api/v3/sms/send";
 const HIGH_LEVELS = new Set(["Major", "Critical"]);
 
-/** Strip non-depth filler words from config strings (SMS-friendly). */
+// Remove filler words so SMS keeps only area + depth essentials.
 const SOFT_NOISE = /\b(severe|evacuation|households|ankle-deep|pooling|roads|major homes|yards|home entry)\b/gi;
 
 function shouldSendFloodSms(previousSeverity, currentSeverity) {
@@ -18,10 +18,7 @@ function normalizeDepth(text) {
   return m ? `${m[1]} ft` : "";
 }
 
-/**
- * Parse one config line: "Area — depth text" → [{ name, depth }].
- * Splits "A/B — 3-5 ft" into two places sharing the same depth.
- */
+// Parse one config line (e.g. "A/B — 3-5 ft") into {name, depth} pairs.
 function parseConfigLine(line) {
   const cleaned = String(line).replace(SOFT_NOISE, "").replace(/\s+/g, " ").trim();
   const m = cleaned.match(/^(.+?)\s*[—\-]\s*(.+)$/);
@@ -40,9 +37,7 @@ function parseConfigLine(line) {
   return names.map((name) => ({ name, depth }));
 }
 
-/**
- * Build "First: A (x ft), B (y ft)." from multiline flood config text.
- */
+// Convert multiline affected-area text into one compact SMS line.
 function formatAffectedLine(label, raw) {
   if (!raw || !String(raw).trim() || /^no areas affected$/i.test(String(raw).trim())) {
     return `${label}: —.`;
@@ -62,9 +57,7 @@ function formatAffectedLine(label, raw) {
   return `${label}: ${segments.join(", ")}.`;
 }
 
-/**
- * SMS body: ft depths only, first + next areas, no mm, no words like "severe".
- */
+// Build final SMS body per severity using cleaned area/depth lines.
 function buildFloodMessage({ currentSeverity, firstAffected, nextAffected }) {
   const firstLine = formatAffectedLine("First Affected", firstAffected);
   const nextLine = formatAffectedLine("Next Affected", nextAffected);
@@ -88,6 +81,7 @@ async function sendSms(phoneNumber, message) {
     throw new Error("TEXTLK_API_TOKEN or TEXTLK_SENDER_ID is missing.");
   }
 
+  // Text.lk v3 send endpoint.
   await axios.post(
     TEXTLK_URL,
     {
@@ -106,10 +100,12 @@ async function sendSms(phoneNumber, message) {
 }
 
 async function sendMajorCriticalFloodSms({ previousSeverity, currentSeverity, firstAffected, nextAffected }) {
+  // Send only when crossing into Major/Critical.
   if (!shouldSendFloodSms(previousSeverity, currentSeverity)) {
     return { skipped: true, reason: "No eligible severity transition", sent: 0, failed: 0 };
   }
 
+  // Broadcast to all currently subscribed recipients.
   const subscribedUsers = await FloodAlertUser.findAll({
     where: { isSubscribed: true },
     attributes: ["phoneNumber"],
@@ -126,6 +122,7 @@ async function sendMajorCriticalFloodSms({ previousSeverity, currentSeverity, fi
   let sent = 0;
   let failed = 0;
 
+  // Send sequentially to keep provider calls predictable and logs readable.
   for (const user of subscribedUsers) {
     try {
       await sendSms(user.phoneNumber, message);
