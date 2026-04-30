@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 
-import { Droplets, AlertTriangle, MapPin, Clock, RefreshCw } from "lucide-react";
+import { Droplets, AlertTriangle, MapPin, Clock, RefreshCw, CalendarClock } from "lucide-react";
 import Header from "@/app/Header/page";
 import Navbar from "../NavBar/Navbar";
 import { levels, type LevelName } from "../Alert/floodLevelConfig";
@@ -52,6 +52,15 @@ export default function Dashboard() {
   // Float sensor rows + latest status for top cards.
   const [floatStatuses, setFloatStatuses] = useState<FloatStatus[]>([]);
   const [latestFloat, setLatestFloat] = useState<FloatStatus | null>(null);
+
+  const [liveNow, setLiveNow] = useState<Date>(() => new Date());
+  const [clockMounted, setClockMounted] = useState(false);
+
+  useEffect(() => {
+    setClockMounted(true);
+    const tick = setInterval(() => setLiveNow(new Date()), 1000);
+    return () => clearInterval(tick);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -155,7 +164,7 @@ export default function Dashboard() {
       <Header />
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="max-w-[88rem] mx-auto px-4 md:px-5 lg:px-6 py-8">
         {/* Dashboard header */}
         <div className="mb-10">
           <h1 className="text-4xl md:text-5xl font-bold text-blue-900 flex items-center gap-3 tracking-tight">
@@ -173,32 +182,40 @@ export default function Dashboard() {
             <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-blue-100 to-blue-200 rounded-2xl shadow-lg transform transition hover:scale-105">
               <Droplets className="text-blue-600" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Water Rise</p>
-                <h2 className="text-2xl font-bold text-blue-900">{latest.riseLevel.toFixed(1)} mm</h2>
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Water Rise</p>
+                <h2 className="text-[24px] font-bold leading-tight tracking-tight text-blue-900">
+                  {latest.riseLevel.toFixed(1)} mm
+                </h2>
               </div>
             </div>
 
             <div className={`flex items-center gap-4 p-6 rounded-2xl shadow-lg transform transition hover:scale-105 ${severityColors[latest.severity]?.bg}`}>
-              <AlertTriangle className={`text-xl ${severityColors[latest.severity]?.text}`} size={28} />
+              <AlertTriangle className={`text-[20px] ${severityColors[latest.severity]?.text}`} size={28} />
               <div>
-                <p className={`text-sm font-medium ${severityColors[latest.severity]?.text}`}>Severity</p>
-                <h2 className={`text-2xl font-bold ${severityColors[latest.severity]?.text}`}>{latest.severity}</h2>
+                <p className={`text-[17px] font-medium leading-normal ${severityColors[latest.severity]?.text}`}>
+                  Severity
+                </p>
+                <h2 className={`text-[24px] font-bold leading-tight tracking-tight ${severityColors[latest.severity]?.text}`}>
+                  {latest.severity}
+                </h2>
               </div>
             </div>
 
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <MapPin className="text-blue-500" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">First Affected</p>
-                <p className="text-gray-800 font-semibold truncate max-w-[180px]">{latest.firstAffected}</p>
+                <p className="text-[17px] font-medium leading-normal text-gray-600">First Affected</p>
+                <p className="truncate text-[18px] font-semibold leading-snug text-gray-800 max-w-[180px]">
+                  {latest.firstAffected}
+                </p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <RefreshCw className="text-blue-500" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Last Updated</p>
-                <p className="text-gray-800 font-semibold">
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Last Updated</p>
+                <p className="text-[18px] font-semibold leading-snug tabular-nums text-gray-800">
                   {new Date(latest.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
@@ -209,31 +226,52 @@ export default function Dashboard() {
         {/* Float sensor quick stats */}
         {latestFloat && (
           <div className="grid md:grid-cols-4 gap-6 mb-12">
-            <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
-              <Droplets className="text-blue-600" size={28} />
+            <div className={`flex items-center gap-4 p-6 rounded-2xl shadow-lg transform transition hover:scale-105 ${latestFloat.status === "DANGER" ? "bg-red-500" : "bg-white"}`}>
+              <Droplets className={latestFloat.status === "DANGER" ? "text-white" : "text-blue-600"} size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Float Sensor Status</p>
-                <h2 className={`text-2xl font-bold ${latestFloat.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>
+                <p className={`text-[17px] font-medium leading-normal ${latestFloat.status === "DANGER" ? "text-red-100" : "text-gray-600"}`}>Float Sensor Status</p>
+                <h2
+                  className={`text-[24px] font-bold leading-tight tracking-tight ${latestFloat.status === "DANGER" ? "text-white" : "text-green-600"}`}
+                >
                   {latestFloat.status}
                 </h2>
-                <p className="text-gray-500 text-sm">{latestFloat.message}</p>
+                <p className={`mt-[2px] text-[14px] font-medium leading-snug ${latestFloat.status === "DANGER" ? "text-red-100" : "text-gray-500"}`}>{latestFloat.message}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <MapPin className="text-blue-500" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Device</p>
-                <p className="text-gray-800 font-semibold">{latestFloat.device_id}</p>
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Device</p>
+                <p className="break-words text-[18px] font-semibold leading-snug text-gray-800">{latestFloat.device_id}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <Clock className="text-blue-500" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Recorded At</p>
-                <p className="text-gray-800 font-semibold">
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Recorded At</p>
+                <p className="text-[18px] font-semibold leading-snug tabular-nums text-gray-800">
                   {formatFloatTime(latestFloat.recorded_at)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
+              <CalendarClock className="text-blue-500" size={28} />
+              <div className="min-w-0">
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Live date & time</p>
+                <p className="break-words text-[18px] font-semibold leading-snug text-gray-800">
+                  {clockMounted
+                    ? liveNow.toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })
+                    : "—"}
                 </p>
               </div>
             </div>
@@ -264,10 +302,10 @@ export default function Dashboard() {
                   {/* Rows are already ordered newest-first from fetch/socket updates. */}
                   {measurements.slice(0, 10).map((m, idx) => (
                     <tr key={`${m.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 text-[15px]">{idx + 1}</td>
-                      <td className="px-6 py-4 text-[15px] font-semibold text-blue-700">{m.riseLevel.toFixed(1)}</td>
-                      <td className="px-6 py-4 text-[15px]">{m.floodFeet}</td>
-                      <td className="px-6 py-4 text-[15px]">
+                      <td className="px-6 py-4 text-[16px]">{idx + 1}</td>
+                      <td className="px-6 py-4 text-[16px] font-semibold text-blue-700">{m.riseLevel.toFixed(1)}</td>
+                      <td className="px-6 py-4 text-[16px]">{m.floodFeet}</td>
+                      <td className="px-6 py-4 text-[16px]">
                         <span className={`px-3 py-1.5 rounded-full text-[12px] font-semibold ${severityColors[m.severity]?.bg || "bg-gray-200"} ${severityColors[m.severity]?.text || "text-gray-800"}`}>
                           {m.severity}
                         </span>
@@ -300,22 +338,22 @@ export default function Dashboard() {
               <table className="min-w-full text-[13px] font-medium text-gray-900">
                 <thead>
                   <tr className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-xl">
-                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">#</th>
-                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">Device</th>
-                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">Message</th>
-                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">Recorded At</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">#</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Device</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Message</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Recorded At</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {/* Mirror flood table behavior for visual consistency. */}
                   {floatStatuses.slice(0, 10).map((f, idx) => (
                     <tr key={`${f.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 text-[15px]">{idx + 1}</td>
-                      <td className="px-6 py-4 text-[15px]">{f.device_id}</td>
-                      <td className={`px-6 py-4 text-[15px] font-semibold ${f.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>{f.status}</td>
-                      <td className="px-6 py-4 text-[15px]">{f.message}</td>
-                      <td className="px-6 py-4 text-[15px] text-gray-600">{formatFloatTime(f.recorded_at)}</td>
+                      <td className="px-6 py-4 text-[16px]">{idx + 1}</td>
+                      <td className="px-6 py-4 text-[16px]">{f.device_id}</td>
+                      <td className={`px-6 py-4 text-[16px] font-semibold ${f.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>{f.status}</td>
+                      <td className="px-6 py-4 text-[16px]">{f.message}</td>
+                      <td className="px-6 py-4 text-[16px] text-gray-600">{formatFloatTime(f.recorded_at)}</td>
                     </tr>
                   ))}
                   {/* Empty-state when no float sensor events are available yet. */}
