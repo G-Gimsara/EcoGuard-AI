@@ -7,6 +7,14 @@ const SL_PHONE_REGEX = /^947\d{8}$/;
 // OTP lives for 5 minutes.
 const OTP_TTL_MS = 5 * 60 * 1000;
 
+function handleSmsSendFailure(res, contextLabel, error) {
+  const details = error?.response?.data || error?.message || error;
+  console.error(`${contextLabel} SMS send error:`, details);
+  return res.status(503).json({
+    message: "SMS service is temporarily unavailable. Please try again in a moment.",
+  });
+}
+
 function generateOtp() {
   return String(randomInt(100000, 1000000));
 }
@@ -55,10 +63,14 @@ exports.registerAlertUser = async (req, res) => {
       }
 
       // Send via SMS provider.
-      await sendSms(
-        phoneNumber,
-        `Your EcoGuard AI Flood Alerts subscribe OTP is ${generatedOtp}. Do not share this code.`
-      );
+      try {
+        await sendSms(
+          phoneNumber,
+          `Your EcoGuard AI Flood Alerts subscribe OTP is ${generatedOtp}. Do not share this code.`
+        );
+      } catch (smsError) {
+        return handleSmsSendFailure(res, "Subscribe OTP", smsError);
+      }
 
       return res.json({ message: "OTP sent successfully." });
     }
@@ -219,10 +231,14 @@ exports.requestUnsubscribeOtp = async (req, res) => {
     await user.save();
 
     // Send OTP to confirm phone ownership.
-    await sendSms(
-      phoneNumber,
-      `Your EcoGuard AI unsubscribe OTP is ${otp}. Do not share this code.`
-    );
+    try {
+      await sendSms(
+        phoneNumber,
+        `Your EcoGuard AI unsubscribe OTP is ${otp}. Do not share this code.`
+      );
+    } catch (smsError) {
+      return handleSmsSendFailure(res, "Unsubscribe OTP", smsError);
+    }
 
     return res.json({ message: "OTP sent successfully." });
   } catch (error) {
