@@ -227,7 +227,7 @@ export default function FloodLiveAlertPage() {
   const alertPolicy = activeLevel ? webAlertPolicies[activeLevel] : null;
 
   return (
-    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900">
+    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900 text-[15px]">
       <Header />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Navbar />
