@@ -1,6 +1,6 @@
 "use client";
 
-// One notification row (card UI)
+// One notification card row in the notifications feed.
 import {
   getAffectedAreaLinesForLevel,
   getNormalAffectedAreasLabel,
@@ -18,8 +18,11 @@ export default function FloodNotificationItem({
   formatTimestamp,
   onMarkRead,
 }: FloodNotificationItemProps) {
+  // Visual tokens (badge, border, dot, icon) are derived from severity level.
   const style = floodNotificationVisuals[item.level];
+  // Prefer backend-provided affected areas; fall back to config defaults.
   const areas = item.affectedAreas ?? getAffectedAreaLinesForLevel(item.level);
+  // Build one compact line for the card body.
   const areasInline =
     item.level === "Normal"
       ? getNormalAffectedAreasLabel()
@@ -30,6 +33,7 @@ export default function FloodNotificationItem({
   return (
     <article
       className={`rounded-xl border p-5 shadow-sm transition ${style.cardClass} ${
+        // Unread cards get a subtle ring so they stand out in the list.
         item.isRead ? "opacity-80" : "ring-1 ring-blue-200"
       }`}
     >
@@ -49,11 +53,13 @@ export default function FloodNotificationItem({
             <span className="font-semibold text-slate-800">Affected Areas:</span> {areasInline}
           </p>
 
+          {/* Keep meta info lightweight compared to title/message. */}
           <p className="mt-1.5 text-sm text-slate-600">
             {formatTimestamp(item.timestamp)} | Water rise: {item.riseLevel} mm
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Hide action once the notification is already marked as read. */}
           {!item.isRead ? (
             <button
               type="button"
