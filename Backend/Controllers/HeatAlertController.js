@@ -146,7 +146,26 @@ Risk: Heat stress and dehydration.
 Stay hydrated and avoid midday sun.`;
   }
 
+  if (trend.type === "DAILY") {
+    return `EcoGuard Heat Alert: ${location}
+
+📅 Date: ${start}
+
+🌡️ Expected Heat Index: ${metrics.maxHI}°C
+
+High heat risk expected.
+
+Risk: Heat exhaustion possible.
+
+Stay hydrated and avoid midday sun.`;
+  }
+
+  // Fallback/generic message (with date and heat index)
   return `EcoGuard Heat Alert: ${location}
+
+📅 Date: ${start}
+
+🌡️ Expected Heat Index: ${metrics.maxHI}°C
 
 High heat risk expected.
 
