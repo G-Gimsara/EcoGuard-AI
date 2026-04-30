@@ -15,6 +15,7 @@ interface NotificationBellProps {
   href?: string;
 }
 
+// Treat nested notification routes as part of the notifications context.
 function isNotificationsPath(pathname: string, notificationsHref: string): boolean {
   return pathname === notificationsHref || pathname.startsWith(`${notificationsHref}/`);
 }
@@ -27,6 +28,7 @@ export default function NotificationBell({
   const router = useRouter();
 
   useEffect(() => {
+    // Warm route bundles so bell navigation feels instant.
     router.prefetch(href);
     router.prefetch(FLOOD_NOTIFICATIONS_FALLBACK);
   }, [router, href]);
@@ -37,8 +39,10 @@ export default function NotificationBell({
       const stored = getFloodReturnPath();
       clearFloodReturnPath();
       if (stored) {
+        // Browser back keeps user context (filters/scroll/history) when available.
         router.back();
       } else {
+        // Safe fallback when there is no saved return location.
         router.push(FLOOD_NOTIFICATIONS_FALLBACK);
       }
       return;
@@ -49,6 +53,7 @@ export default function NotificationBell({
   };
 
   const onNotifications = isNotificationsPath(pathname, href);
+  // Clamp visually at 99+ so badge width stays predictable.
   const badgeIsCompact = unreadCount >= 99;
 
   return (
