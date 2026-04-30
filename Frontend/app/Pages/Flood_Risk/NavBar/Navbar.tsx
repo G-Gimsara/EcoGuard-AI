@@ -43,7 +43,7 @@ const Navbar: React.FC = () => {
                 className="group relative inline-flex items-center"
               >
                 <span
-                  className={`px-8 py-4 text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300
+                  className={`px-8 py-4 text-[12px] font-black uppercase tracking-[0.2em] transition-all duration-300
                 bg-transparent text-black group-hover:text-orange-500
                 ${isActive ? "text-orange-500" : ""}`}
                 >
