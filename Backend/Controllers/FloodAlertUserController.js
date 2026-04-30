@@ -1,11 +1,45 @@
 const FloodAlertUser = require("../Models/FloodAlertUser");
 const { sendSms } = require("../Services/textlkFloodSms");
 const { randomInt } = require("crypto");
+const { DataTypes } = require("sequelize");
 
 // Local phone format: 947XXXXXXXX
 const SL_PHONE_REGEX = /^947\d{8}$/;
 // OTP lives for 5 minutes.
 const OTP_TTL_MS = 5 * 60 * 1000;
+let otpColumnsReady = false;
+let otpColumnsPromise = null;
+
+async function ensureAlertUserOtpColumns() {
+  if (otpColumnsReady) return;
+  if (otpColumnsPromise) return otpColumnsPromise;
+
+  otpColumnsPromise = (async () => {
+    const qi = FloodAlertUser.sequelize.getQueryInterface();
+    const table = await qi.describeTable("alert_users");
+
+    if (!table.unsubscribeOtp) {
+      await qi.addColumn("alert_users", "unsubscribeOtp", {
+        type: DataTypes.STRING(6),
+        allowNull: true,
+      });
+    }
+    if (!table.unsubscribeOtpExpiresAt) {
+      await qi.addColumn("alert_users", "unsubscribeOtpExpiresAt", {
+        type: DataTypes.DATE,
+        allowNull: true,
+      });
+    }
+
+    otpColumnsReady = true;
+  })();
+
+  try {
+    await otpColumnsPromise;
+  } finally {
+    otpColumnsPromise = null;
+  }
+}
 
 function handleSmsSendFailure(res, contextLabel, error) {
   const details = error?.response?.data || error?.message || error;
@@ -35,6 +69,8 @@ exports.registerAlertUser = async (req, res) => {
         message: "Phone number must be in format 947XXXXXXXX.",
       });
     }
+
+    await ensureAlertUserOtpColumns();
 
     // keep one row per phone number.
     let user = await FloodAlertUser.findOne({ where: { phoneNumber } });
@@ -139,6 +175,7 @@ exports.registerAlertUser = async (req, res) => {
 
 exports.getAlertUsers = async (_req, res) => {
   try {
+    await ensureAlertUserOtpColumns();
     const users = await FloodAlertUser.findAll({
       order: [["createdAt", "DESC"]],
       attributes: ["id", "name", "phoneNumber", "isSubscribed", "createdAt"],
@@ -163,6 +200,8 @@ exports.updateAlertUserSubscription = async (req, res) => {
     if (typeof isSubscribed !== "boolean") {
       return res.status(400).json({ message: "isSubscribed must be boolean." });
     }
+
+    await ensureAlertUserOtpColumns();
 
     const user = await FloodAlertUser.findByPk(id);
     if (!user) {
@@ -196,6 +235,8 @@ exports.deleteAlertUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid user id." });
     }
 
+    await ensureAlertUserOtpColumns();
+
     const user = await FloodAlertUser.findByPk(id);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -219,6 +260,8 @@ exports.requestUnsubscribeOtp = async (req, res) => {
         message: "Phone number must be in format 947XXXXXXXX.",
       });
     }
+
+    await ensureAlertUserOtpColumns();
 
     const user = await FloodAlertUser.findOne({ where: { phoneNumber } });
     if (!user || !user.isSubscribed) {
@@ -262,6 +305,8 @@ exports.verifyUnsubscribeOtp = async (req, res) => {
     if (!/^\d{6}$/.test(otp)) {
       return res.status(400).json({ message: "OTP must be a 6-digit number." });
     }
+
+    await ensureAlertUserOtpColumns();
 
     const user = await FloodAlertUser.findOne({ where: { phoneNumber } });
     if (!user || !user.isSubscribed) {
