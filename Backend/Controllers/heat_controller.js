@@ -4,7 +4,7 @@ const axios = require("axios");
 const Prediction = require("../Models/heat_prediction.js");
 const { Op, fn, col } = require("sequelize");
 
-// 1. syncPredictions function එක define කරන්න
+
 const syncPredictions = async (req, res) => {
   try {
     const response = await axios.get(`${process.env.FASTAPI_URL}/predict`);
@@ -33,7 +33,7 @@ const syncPredictions = async (req, res) => {
   }
 };
 
-// 2. getAllPredictions function එක define කරන්න
+
 const getAllPredictions = async (req, res) => {
   try {
     const data = await Prediction.findAll({
@@ -45,7 +45,7 @@ const getAllPredictions = async (req, res) => {
   }
 };
 
-// 3. getTodayMap function එක define කරන්න
+
 const getTodayMap = async (req, res) => {
   try {
     const results = await Prediction.findAll({
@@ -69,7 +69,7 @@ const getTodayMap = async (req, res) => {
   }
 };
 
-// 4. සියලුම functions එකවර export කරන්න
+
 module.exports = {
   syncPredictions,
   getAllPredictions,
