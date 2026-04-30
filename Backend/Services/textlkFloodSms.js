@@ -74,8 +74,9 @@ function buildFloodMessage({ currentSeverity, firstAffected, nextAffected }) {
 }
 
 async function sendSms(phoneNumber, message) {
-  const token = process.env.TEXTLK_API_TOKEN;
-  const senderId = process.env.TEXTLK_SENDER_ID;
+  // Trim env values so accidental trailing spaces in .env do not break auth.
+  const token = String(process.env.TEXTLK_API_TOKEN || "").trim();
+  const senderId = String(process.env.TEXTLK_SENDER_ID || "").trim();
 
   if (!token || !senderId) {
     throw new Error("TEXTLK_API_TOKEN or TEXTLK_SENDER_ID is missing.");
