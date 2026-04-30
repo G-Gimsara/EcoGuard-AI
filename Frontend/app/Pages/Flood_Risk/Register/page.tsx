@@ -349,7 +349,7 @@ export default function RegisterForAlertsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased text-[15px]">
       <Header />
       <Navbar />
 

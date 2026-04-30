@@ -137,6 +137,7 @@ export default function FloodLiveAlertPage() {
   const [currentSeverity, setCurrentSeverity] = useState("");
   const [riseLevel, setRiseLevel] = useState(0);
   const [criticalAcknowledged, setCriticalAcknowledged] = useState(false);
+  // Tracks previous level so we notify on transitions, not every render.
   const previousSeverityRef = useRef<string>("");
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -161,6 +162,7 @@ export default function FloodLiveAlertPage() {
         setRiseLevel(msg.data.riseLevel);
       }
     };
+    // Close socket on leave to avoid duplicate subscriptions.
     return () => ws.close();
   }, []);
 
@@ -175,6 +177,7 @@ export default function FloodLiveAlertPage() {
   }, [currentSeverity]);
 
   useEffect(() => {
+    // Browser notification policy is level-dependent (one-time + periodic reminders).
     const level = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
     if (!level) return;
     const policy = webAlertPolicies[level];
@@ -189,6 +192,7 @@ export default function FloodLiveAlertPage() {
     }
 
     
+    // Small helper keeps notification payload format consistent.
     const notify = (title: string, body: string) => {
       if (Notification.permission === "granted") {
         new Notification(title, { body, icon: "/favicon.ico" });
@@ -207,6 +211,7 @@ export default function FloodLiveAlertPage() {
       }
     }
 
+    // Repeat reminders for ongoing high-risk levels per policy settings.
     if (policy.repeatMinutes && (level === "Major" || (level === "Critical" && !criticalAcknowledged))) {
       const intervalId = window.setInterval(() => {
         notify(`${level} Flood Reminder`, `Flood level remains ${level}. Follow safety guidance immediately.`);
@@ -227,10 +232,11 @@ export default function FloodLiveAlertPage() {
   const alertPolicy = activeLevel ? webAlertPolicies[activeLevel] : null;
 
   return (
-    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900">
+    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900 text-[15px]">
       <Header />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Navbar />
+        {/* Alarm audio plays only during Major/Critical states. */}
         <audio ref={audioRef} src="/FloodAlarm.mp3" preload="auto" />
 
         <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pb-4 pt-3 sm:px-6 sm:pb-5 sm:pt-4 lg:overflow-hidden lg:px-10 lg:pb-6 xl:px-14 2xl:px-20">
@@ -270,6 +276,7 @@ export default function FloodLiveAlertPage() {
             </div>
           </header>
 
+          {/* First-load fallback before level data is available. */}
           {!warning && (
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200/80">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl">📡</div>
@@ -380,25 +387,9 @@ export default function FloodLiveAlertPage() {
             </div>
           )}
 
-          {warning && alertPolicy ? (
-            <section className="mt-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/80">
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-                <span aria-hidden>🔔</span>
-                Alert delivery
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Channels active for <strong>{activeLevel}</strong> status.
-              </p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                {alertPolicy.channels.map((channel) => (
-                  <li key={channel}>{channel}</li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
+          {/* Hard-stop modal for critical phase until user acknowledges. */}
           {activeLevel === "Critical" && alertPolicy?.showEmergencyModal && !criticalAcknowledged && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
               <div className="w-full max-w-2xl rounded-2xl border-4 border-red-500 bg-white p-6 shadow-2xl">
                 <h2 className="text-3xl font-extrabold text-red-700">CRITICAL FLOOD EMERGENCY</h2>
                 <p className="mt-3 text-base text-slate-700">

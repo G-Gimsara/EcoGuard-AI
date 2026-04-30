@@ -7,7 +7,7 @@ import Header from "@/app/Header/page";
 import Navbar from "../NavBar/Navbar";
 import { levels, type LevelName } from "../Alert/floodLevelConfig";
 
-// One flood reading from backend (or websocket) used across cards and table.
+// Single flood reading shape used by cards + table.
 interface FloodMeasurement {
   id: number;
   riseLevel: number;
@@ -18,7 +18,7 @@ interface FloodMeasurement {
   createdAt: string;
 }
 
-// Float device heartbeat/status record shown in the sensor widgets/table.
+// Single float sensor status row used across the dashboard.
 interface FloatStatus {
   id: number;
   device_id: string;
@@ -27,13 +27,14 @@ interface FloatStatus {
   recorded_at: string;
 }
 
+// Display a readable timestamp, or a dash when invalid.
 function formatFloatTime(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleString();
 }
 
-// Shared badge palette so severity meaning stays consistent across dashboard sections.
+// Reuse the same severity colors everywhere.
 const severityColors: Record<string, { bg: string; text: string }> = {
   Normal: { bg: "bg-green-100", text: "text-green-800" },
   Alert: { bg: "bg-yellow-100", text: "text-yellow-800" },
@@ -44,15 +45,15 @@ const severityColors: Record<string, { bg: string; text: string }> = {
 };
 
 export default function Dashboard() {
-  // Flood stream state.
+  // Flood table rows + latest reading for top cards.
   const [measurements, setMeasurements] = useState<FloodMeasurement[]>([]);
   const [latest, setLatest] = useState<FloodMeasurement | null>(null);
 
-  // Float sensor stream state.
+  // Float sensor rows + latest status for top cards.
   const [floatStatuses, setFloatStatuses] = useState<FloatStatus[]>([]);
   const [latestFloat, setLatestFloat] = useState<FloatStatus | null>(null);
 
-  // Initial fetch ensures UI has snapshot data before live socket messages arrive.
+  // Initial flood snapshot before live updates start.
   const fetchFloodData = () => {
     fetch("http://localhost:5000/api/flood")
       .then((res) => res.json())
@@ -63,7 +64,7 @@ export default function Dashboard() {
       .catch(console.error);
   };
 
-  // Same bootstrap fetch for float sensor status history.
+  // Initial float sensor snapshot before live updates start.
   const fetchFloatData = () => {
     fetch("http://localhost:5000/api/flood/float")
       .then((res) => res.json())
@@ -74,25 +75,27 @@ export default function Dashboard() {
       .catch(console.error);
   };
 
+  // Load both datasets once on mount.
   useEffect(() => {
     fetchFloodData();
     fetchFloatData();
   }, []);
 
-  // Single websocket channel that delivers both flood and float updates in real time.
+  // One socket stream carries both flood and float updates.
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:5000");
 
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
 
-      // Prepend newest flood reading and keep only latest 10 rows for a compact dashboard.
+      // Keep newest flood entries at the top (limit to 10).
       if (msg.type === "FLOOD_UPDATE") {
         const newMeasurement: FloodMeasurement = msg.data;
         setMeasurements((prev) => [newMeasurement, ...prev].slice(0, 10));
         setLatest(newMeasurement);
       }
 
+      // Some events send `timestamp`; map it to `recorded_at`.
       if (msg.type === "FLOAT_UPDATE") {
         const d = msg.data;
         const newFloat = {
@@ -104,18 +107,21 @@ export default function Dashboard() {
       }
     };
 
+    // Clean up socket on unmount.
     return () => ws.close();
   }, []);
 
+  // Prepared for future config-driven UI behavior based on active severity.
   const activeLevel = levels.find((l) => l.name === latest?.severity)?.name as LevelName | undefined;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased text-[15px]">
+      {/* Shared page shell */}
       <Header />
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-6 py-10">
-        {/* Header */}
+        {/* Dashboard header */}
         <div className="mb-10">
           <h1 className="text-4xl md:text-5xl font-bold text-blue-900 flex items-center gap-3 tracking-tight">
             <Droplets className="text-blue-600" size={36} />
@@ -126,7 +132,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Flood Mini Cards */}
+        {/* Flood quick stats */}
         {latest && (
           <div className="grid md:grid-cols-4 gap-6 mb-12">
             <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-blue-100 to-blue-200 rounded-2xl shadow-lg transform transition hover:scale-105">
@@ -165,7 +171,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Float Sensor Mini Cards */}
+        {/* Float sensor quick stats */}
         {latestFloat && (
           <div className="grid md:grid-cols-4 gap-6 mb-12">
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
@@ -199,7 +205,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Flood Measurements Table */}
+        {/* Flood measurements table */}
         {latest && (
           <div className="bg-white rounded-3xl shadow-2xl border border-blue-100 p-8 mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -207,34 +213,36 @@ export default function Dashboard() {
               Recent Flood Measurements
             </h2>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm font-medium text-gray-900">
+              <table className="min-w-full text-[13px] font-medium text-gray-900">
                 <thead>
                   <tr className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl">
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">#</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Rise (mm)</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Rise (ft)</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Severity</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">First Affected</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Next Affected</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Time</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">#</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Rise (mm)</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Rise (ft)</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Severity</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">First Affected</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Next Affected</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
+                  {/* Rows are already ordered newest-first from fetch/socket updates. */}
                   {measurements.slice(0, 10).map((m, idx) => (
-                    <tr key={`${m.id}-${idx}`} className="bg-white hover:bg-blue-50 transition transform hover:scale-[1.01] hover:shadow-md">
-                      <td className="px-6 py-3">{idx + 1}</td>
-                      <td className="px-6 py-3 font-semibold text-blue-700">{m.riseLevel.toFixed(1)}</td>
-                      <td className="px-6 py-3">{m.floodFeet}</td>
-                      <td className="px-6 py-3">
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${severityColors[m.severity]?.bg || "bg-gray-200"} ${severityColors[m.severity]?.text || "text-gray-800"}`}>
+                    <tr key={`${m.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 text-[15px]">{idx + 1}</td>
+                      <td className="px-6 py-4 text-[15px] font-semibold text-blue-700">{m.riseLevel.toFixed(1)}</td>
+                      <td className="px-6 py-4 text-[15px]">{m.floodFeet}</td>
+                      <td className="px-6 py-4 text-[15px]">
+                        <span className={`px-3 py-1.5 rounded-full text-[12px] font-semibold ${severityColors[m.severity]?.bg || "bg-gray-200"} ${severityColors[m.severity]?.text || "text-gray-800"}`}>
                           {m.severity}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-gray-800">{m.firstAffected.length > 20 ? `${m.firstAffected.slice(0, 20)}...` : m.firstAffected}</td>
-                      <td className="px-6 py-3 text-gray-800">{m.nextAffected && m.nextAffected.length > 20 ? `${m.nextAffected.slice(0, 20)}...` : m.nextAffected || "-"}</td>
-                      <td className="px-6 py-3 text-gray-600">{new Date(m.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
+                      <td className="px-6 py-4 text-[15px] text-gray-800">{m.firstAffected.length > 20 ? `${m.firstAffected.slice(0, 20)}...` : m.firstAffected}</td>
+                      <td className="px-6 py-4 text-[15px] text-gray-800">{m.nextAffected && m.nextAffected.length > 20 ? `${m.nextAffected.slice(0, 20)}...` : m.nextAffected || "-"}</td>
+                      <td className="px-6 py-4 text-[15px] text-gray-600">{new Date(m.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
                     </tr>
                   ))}
+                  {/* First-load / empty-history fallback message. */}
                   {measurements.length === 0 && (
                     <tr>
                       <td colSpan={7} className="text-center py-6 text-gray-500">No flood measurements yet.</td>
@@ -246,7 +254,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Float Status Table */}
+        {/* Float sensor status table */}
         {latestFloat && (
           <div className="bg-white rounded-3xl shadow-2xl border border-blue-100 p-8 mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -254,26 +262,28 @@ export default function Dashboard() {
               Recent Float Sensor Status
             </h2>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm font-medium text-gray-900">
+              <table className="min-w-full text-[13px] font-medium text-gray-900">
                 <thead>
                   <tr className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-xl">
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">#</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Device</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Message</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Recorded At</th>
+                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">#</th>
+                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">Device</th>
+                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">Message</th>
+                    <th className="px-6 py-4 text-left text-[16px] font-semibold uppercase tracking-wider">Recorded At</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
+                  {/* Mirror flood table behavior for visual consistency. */}
                   {floatStatuses.slice(0, 10).map((f, idx) => (
-                    <tr key={`${f.id}-${idx}`} className="bg-white hover:bg-green-50 transition transform hover:scale-[1.01] hover:shadow-md">
-                      <td className="px-6 py-3">{idx + 1}</td>
-                      <td className="px-6 py-3">{f.device_id}</td>
-                      <td className={`px-6 py-3 font-semibold ${f.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>{f.status}</td>
-                      <td className="px-6 py-3">{f.message}</td>
-                      <td className="px-6 py-3 text-gray-600">{formatFloatTime(f.recorded_at)}</td>
+                    <tr key={`${f.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 text-[15px]">{idx + 1}</td>
+                      <td className="px-6 py-4 text-[15px]">{f.device_id}</td>
+                      <td className={`px-6 py-4 text-[15px] font-semibold ${f.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>{f.status}</td>
+                      <td className="px-6 py-4 text-[15px]">{f.message}</td>
+                      <td className="px-6 py-4 text-[15px] text-gray-600">{formatFloatTime(f.recorded_at)}</td>
                     </tr>
                   ))}
+                  {/* Empty-state when no float sensor events are available yet. */}
                   {floatStatuses.length === 0 && (
                     <tr>
                       <td colSpan={5} className="text-center py-6 text-gray-500">No float sensor data yet.</td>
