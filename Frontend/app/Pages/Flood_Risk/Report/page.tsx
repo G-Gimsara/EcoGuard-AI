@@ -176,11 +176,11 @@ export default function Reports() {
       <Header />
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="max-w-[88rem] mx-auto px-4 md:px-5 lg:px-6 py-8">
 
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-blue-900 tracking-tight flex items-center gap-3">
+          <h1 className="text-[30px] md:text-[40px] font-extrabold text-blue-900 tracking-tight flex items-center gap-3">
             <Droplets size={32} className="text-blue-600 animate-pulse" />
             Flood Monitoring Reports
           </h1>
