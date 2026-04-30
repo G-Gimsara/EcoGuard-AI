@@ -104,7 +104,7 @@ export default function LiveMonitoringCard() {
 
   useEffect(() => {
     fetchData();
-    const timer = setInterval(fetchData, 3000);
+    const timer = setInterval(fetchData, 1000);
     return () => clearInterval(timer);
   }, [selectedLocation]);
 
