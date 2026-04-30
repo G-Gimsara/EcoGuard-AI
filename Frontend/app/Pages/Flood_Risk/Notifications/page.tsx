@@ -33,7 +33,7 @@ export default function FloodNotificationsPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden">
+      <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden text-[15px]">
         <main className="mx-auto max-w-6xl px-6 py-8 text-base">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <div>
