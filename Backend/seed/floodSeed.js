@@ -1,7 +1,8 @@
-// seed/floodSeed.js
+// Seed script for baseline flood impact area data.
 const sequelize = require('../Config/sequelize');
 const FloodAlert = require('../Models/FloodAear');
 
+// Scenario-style rows for each alert level used by area-impact views.
 const floodData = [
   {
     river_rise: "+55mm (Alert ~4ft total)",
@@ -89,10 +90,11 @@ const floodData = [
 
 const seedFloodAlerts = async () => {
   try {
-    await sequelize.sync({ force: true }); // Drops table and recreates
+    // Rebuild tables from model definitions before inserting seed rows.
+    await sequelize.sync({ force: true });
     await FloodAlert.bulkCreate(floodData);
     console.log("Flood data seeded successfully!");
-    process.exit(0);
+    // Exit explicitly 
   } catch (err) {
     console.error("Error seeding flood data:", err);
     process.exit(1);
