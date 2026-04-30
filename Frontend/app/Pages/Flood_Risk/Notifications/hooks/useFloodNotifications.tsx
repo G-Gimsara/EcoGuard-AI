@@ -103,38 +103,64 @@ export function FloodNotificationsProvider({ children }: { children: ReactNode }
     setNotifications([]);
   }, []);
 
-  // One REST snapshot + one WebSocket for all Flood_Risk routes (bell + list stay in sync).
+  // Shared live stream for bell/list with reconnect + polling fallback.
   useEffect(() => {
     if (!isHydrated) return;
+
     let cancelled = false;
-    fetch(FLOOD_API)
-      .then((res) => res.json())
-      .then((data: { severity: string; riseLevel: number }[]) => {
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const fetchLatest = async () => {
+      try {
+        const res = await fetch(FLOOD_API, { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { severity: string; riseLevel: number }[];
         if (cancelled || !Array.isArray(data) || data.length === 0) return;
         setCurrentSeverity(data[0].severity);
         setLiveRiseLevel(data[0].riseLevel);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [isHydrated]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    const ws = new WebSocket(FLOOD_WS);
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data as string);
-        if (msg.type === "FLOOD_UPDATE" && msg.data) {
-          setCurrentSeverity(msg.data.severity);
-          setLiveRiseLevel(msg.data.riseLevel);
-        }
       } catch {
-        /* ignore malformed payloads */
+        // Ignore temporary failures; next poll/reconnect will retry.
       }
     };
-    return () => ws.close();
+
+    const connect = () => {
+      if (cancelled) return;
+      ws = new WebSocket(FLOOD_WS);
+      ws.onopen = () => {
+        // Sync bell state right after websocket connects/reconnects.
+        void fetchLatest();
+      };
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data as string);
+          if (msg.type === "FLOOD_UPDATE" && msg.data) {
+            setCurrentSeverity(msg.data.severity);
+            setLiveRiseLevel(msg.data.riseLevel);
+          }
+        } catch {
+          /* ignore malformed payloads */
+        }
+      };
+      ws.onclose = () => {
+        if (cancelled) return;
+        // Continue refreshing from REST while websocket is reconnecting.
+        void fetchLatest();
+        reconnectTimer = setTimeout(connect, 2000);
+      };
+      ws.onerror = () => ws?.close();
+    };
+
+    fetchLatest();
+    connect();
+    const pollTimer = setInterval(fetchLatest, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(pollTimer);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, [isHydrated]);
 
   useEffect(() => {

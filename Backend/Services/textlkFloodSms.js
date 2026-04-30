@@ -8,6 +8,8 @@ const HIGH_LEVELS = new Set(["Major", "Critical"]);
 const SOFT_NOISE = /\b(severe|evacuation|households|ankle-deep|pooling|roads|major homes|yards|home entry)\b/gi;
 
 function shouldSendFloodSms(previousSeverity, currentSeverity) {
+  // Early warning: notify once when level rises from Minor to Moderate.
+  if (previousSeverity === "Minor" && currentSeverity === "Moderate") return true;
   if (!HIGH_LEVELS.has(currentSeverity)) return false;
   if (previousSeverity === currentSeverity) return false;
   return true;
@@ -62,6 +64,10 @@ function buildFloodMessage({ currentSeverity, firstAffected, nextAffected }) {
   const firstLine = formatAffectedLine("First Affected", firstAffected);
   const nextLine = formatAffectedLine("Next Affected", nextAffected);
 
+  if (currentSeverity === "Moderate") {
+    return `EcoGuard Flood EARLY WARNING (MODERATE).\n${firstLine}\n${nextLine}\nStay prepared and monitor local updates.`;
+  }
+
   if (currentSeverity === "Major") {
     return `EcoGuard Flood MAJOR alert.\n${firstLine}\n${nextLine}\nBe prepared to evacuate and stay alert.`;
   }
@@ -101,7 +107,7 @@ async function sendSms(phoneNumber, message) {
 }
 
 async function sendMajorCriticalFloodSms({ previousSeverity, currentSeverity, firstAffected, nextAffected }) {
-  // Send only when crossing into Major/Critical.
+  // Send on Minor->Moderate early warning and on Major/Critical transitions.
   if (!shouldSendFloodSms(previousSeverity, currentSeverity)) {
     return { skipped: true, reason: "No eligible severity transition", sent: 0, failed: 0 };
   }

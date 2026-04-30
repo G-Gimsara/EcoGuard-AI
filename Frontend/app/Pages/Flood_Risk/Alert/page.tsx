@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Droplets } from "lucide-react";
 import Header from "@/app/Header/page";
@@ -31,31 +31,160 @@ export default function FloodLevelsPage() {
   // Current live values shown in the header + cards.
   const [currentSeverity, setCurrentSeverity] = useState("");
   const [riseLevel, setRiseLevel] = useState(0);
+  const [audioReady, setAudioReady] = useState(false);
+  const previousAlarmSeverityRef = useRef("");
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
-    // Load latest saved reading first, then keep it live over websocket.
+    let cancelled = false;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Load latest saved reading first, then also as periodic fallback.
     const fetchData = async () => {
-      const res = await fetch("http://localhost:5000/api/flood");
-      const data: FloodMeasurement[] = await res.json();
-      if (data.length > 0) {
+      try {
+        const res = await fetch("http://localhost:5000/api/flood", { cache: "no-store" });
+        if (!res.ok) return;
+        const data: FloodMeasurement[] = await res.json();
+        if (cancelled || data.length === 0) return;
         setCurrentSeverity(data[0].severity);
         setRiseLevel(data[0].riseLevel);
+      } catch {
+        // Ignore temporary network/API issues; next poll or reconnect will retry.
       }
     };
-    fetchData();
 
-    // Stream updates from backend and patch only the two visible live fields.
-    const ws = new WebSocket("ws://localhost:5000");
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "FLOOD_UPDATE") {
-        setCurrentSeverity(msg.data.severity);
-        setRiseLevel(msg.data.riseLevel);
-      }
+    const connect = () => {
+      if (cancelled) return;
+      ws = new WebSocket("ws://localhost:5000");
+
+      ws.onopen = () => {
+        // Sync immediately after (re)connect so level cards don't wait for next poll tick.
+        void fetchData();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === "FLOOD_UPDATE") {
+            setCurrentSeverity(msg.data.severity);
+            setRiseLevel(msg.data.riseLevel);
+          }
+        } catch {
+          /* ignore malformed payloads */
+        }
+      };
+
+      ws.onclose = () => {
+        if (cancelled) return;
+        // Pull latest known value while socket is down.
+        void fetchData();
+        reconnectTimer = setTimeout(connect, 2000);
+      };
+      ws.onerror = () => ws?.close();
     };
-    // Close socket on unmount to avoid duplicate listeners after navigation.
-    return () => ws.close();
+
+    fetchData();
+    connect();
+
+    // Fallback polling keeps UI fresh even if WS disconnects silently.
+    const pollTimer = setInterval(fetchData, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(pollTimer);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.load();
+
+    // Unlock audio on first user gesture to satisfy browser autoplay policy.
+    const unlockAudio = () => {
+      const el = audioRef.current;
+      if (!el) return;
+      el.muted = true;
+      el
+        .play()
+        .then(() => {
+          el.pause();
+          el.currentTime = 0;
+          el.muted = false;
+          setAudioReady(true);
+          window.removeEventListener("pointerdown", unlockAudio);
+          window.removeEventListener("keydown", unlockAudio);
+          window.removeEventListener("touchstart", unlockAudio);
+        })
+        .catch(() => {
+          // Keep listeners until browser accepts a gesture event.
+        });
+    };
+
+    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+    window.addEventListener("keydown", unlockAudio);
+    window.addEventListener("touchstart", unlockAudio, { passive: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+      window.removeEventListener("touchstart", unlockAudio);
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const highRisk = currentSeverity === "Major" || currentSeverity === "Critical";
+    if (!highRisk) {
+      audio.pause();
+      audio.currentTime = 0;
+      previousAlarmSeverityRef.current = currentSeverity;
+      return;
+    }
+
+    // Play once per high-risk transition (no nonstop loop).
+    if (previousAlarmSeverityRef.current === currentSeverity) return;
+
+    // If browser already has user activation in this tab, allow immediate playback.
+    const browserActivated =
+      typeof navigator !== "undefined" &&
+      "userActivation" in navigator &&
+      Boolean((navigator as Navigator & { userActivation?: { hasBeenActive?: boolean } }).userActivation?.hasBeenActive);
+    if (!audioReady && browserActivated) {
+      setAudioReady(true);
+    }
+    if (!audioReady && !browserActivated) return;
+
+    let cleanedUp = false;
+    const retryEvents: Array<keyof WindowEventMap> = ["click", "keydown", "touchstart"];
+
+    const tryPlayAlarm = () => {
+      if (!audioRef.current) return;
+      audioRef.current
+        .play()
+        .then(() => {
+          if (cleanedUp) return;
+          previousAlarmSeverityRef.current = currentSeverity;
+          retryEvents.forEach((eventName) => window.removeEventListener(eventName, tryPlayAlarm));
+        })
+        .catch(() => {
+          // Keep listeners attached; next interaction will retry.
+        });
+    };
+
+    tryPlayAlarm();
+    retryEvents.forEach((eventName) => window.addEventListener(eventName, tryPlayAlarm, { passive: true }));
+
+    return () => {
+      cleanedUp = true;
+      retryEvents.forEach((eventName) => window.removeEventListener(eventName, tryPlayAlarm));
+    };
+  }, [currentSeverity, audioReady]);
 
   // Resolve all UI blocks from the current level once.
   const activeLevel = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
@@ -67,6 +196,7 @@ export default function FloodLevelsPage() {
       <Header />
       <div className="min-h-screen bg-gray-50 text-black overflow-x-hidden text-[15px]">
         <Navbar />
+        <audio ref={audioRef} src="/FloodAlarm.mp3" preload="auto" />
 
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
