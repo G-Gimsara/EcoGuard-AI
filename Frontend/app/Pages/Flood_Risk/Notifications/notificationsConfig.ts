@@ -1,6 +1,7 @@
-// Types, messages, and styles for flood notifications (per severity level).
+// Shared config for flood notification content + visuals.
 import { getAffectedAreaLinesForLevel, type LevelName } from "../Alert/floodLevelConfig";
 
+// Shape stored in localStorage and rendered in notification cards.
 export interface FloodNotification {
   id: string;
   level: LevelName;
@@ -19,9 +20,11 @@ export interface NotificationVisual {
   dotClass: string;
 }
 
-export const FLOOD_NOTIFICATIONS_STORAGE_KEY = "flood_notifications_v1"; // localStorage key
-export const FLOOD_NOTIFICATIONS_LIMIT = 100; // max saved items
+// Storage and retention settings for client-side notification history.
+export const FLOOD_NOTIFICATIONS_STORAGE_KEY = "flood_notifications_v1";
+export const FLOOD_NOTIFICATIONS_LIMIT = 100;
 
+// User-facing title/body text per flood level.
 export const floodNotificationContent: Record<LevelName, { title: string; message: string }> = {
   Normal: {
     title: "Normal Level",
@@ -49,7 +52,7 @@ export const floodNotificationContent: Record<LevelName, { title: string; messag
   },
 };
 
-// Emoji + Tailwind classes for card, badge, and dot
+// Visual tokens used by notification list items.
 export const floodNotificationVisuals: Record<LevelName, NotificationVisual> = {
   Normal: {
     icon: "✅",
@@ -89,10 +92,11 @@ export const floodNotificationVisuals: Record<LevelName, NotificationVisual> = {
   },
 };
 
-// Called when live flood level changes; builds a new list row
+// Create one notification row from the latest detected level.
 export function createNotificationFromLevel(level: LevelName, riseLevel: number): FloodNotification {
   const content = floodNotificationContent[level];
   return {
+    // Timestamp + random suffix is enough uniqueness for client-side history.
     id: `${Date.now()}-${level}-${Math.random().toString(36).slice(2, 8)}`,
     level,
     title: content.title,
