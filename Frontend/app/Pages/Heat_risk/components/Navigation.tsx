@@ -10,7 +10,7 @@ const NavigationBar: React.FC = () => {
   const navLinks = [
     { name: "Risk Alerts", href: "/Pages/Heat_risk/alerts" },
     { name: "Alert Subscription", href: "/Pages/Heat_risk/alert-subscription" },
-    { name: "15-Day Forecast", href: "/Pages/Heat_risk/prediction" },
+    { name: "Forecasts", href: "/Pages/Heat_risk/prediction" },
     { name: "Division Comparison", href: "/Pages/Heat_risk/divisionHeatmap" },
     { name: "Geographical Map", href: "/Pages/Heat_risk/map" },
   ] as const;
