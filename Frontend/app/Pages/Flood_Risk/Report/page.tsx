@@ -15,6 +15,9 @@ interface FloodMeasurement {
   createdAt: string;
 }
 
+const FLOOD_API = "http://localhost:5000/api/flood";
+const FLOOD_WS = "ws://localhost:5000";
+
 export default function Reports() {
   // Flood history from backend; the UI derives filter + pagination from this single source of truth.
   const [measurements, setMeasurements] = useState<FloodMeasurement[]>([]);
@@ -25,11 +28,30 @@ export default function Reports() {
   const rowsPerPage = 10;
 
   useEffect(() => {
-    // Fetch once on mount. This endpoint is assumed to return an array of `FloodMeasurement`.
-    fetch("http://localhost:5000/api/flood")
+    // Full history on load (newest first, same order as backend).
+    fetch(FLOOD_API)
       .then((res) => res.json())
       .then((data) => setMeasurements(data))
       .catch((err) => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    const ws = new WebSocket(FLOOD_WS);
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data as string);
+        if (msg.type !== "FLOOD_UPDATE" || !msg.data) return;
+        const row = msg.data as FloodMeasurement;
+        if (typeof row.id !== "number") return;
+        setMeasurements((prev) => {
+          if (prev.some((m) => m.id === row.id)) return prev;
+          return [row, ...prev];
+        });
+      } catch {
+        /* ignore */
+      }
+    };
+    return () => ws.close();
   }, []);
 
   // Apply year filter in-memory (fast enough for typical report sizes).
@@ -150,15 +172,15 @@ export default function Reports() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased text-[15px]">
       <Header />
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="max-w-[88rem] mx-auto px-4 md:px-5 lg:px-6 py-8">
 
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-blue-900 tracking-tight flex items-center gap-3">
+          <h1 className="text-[30px] md:text-[40px] font-extrabold text-blue-900 tracking-tight flex items-center gap-3">
             <Droplets size={32} className="text-blue-600 animate-pulse" />
             Flood Monitoring Reports
           </h1>
@@ -202,16 +224,16 @@ export default function Reports() {
         {/* Table Card */}
         <div className="overflow-hidden bg-white rounded-3xl shadow-2xl border border-gray-200">
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm font-medium text-gray-900">
+            <table className="min-w-full text-[15px] font-medium text-gray-900">
               <thead>
-                <tr className="bg-gradient-to-r from-blue-700 to-blue-600 text-white uppercase text-xs tracking-wider">
-                  <th className="px-6 py-3 text-left">#</th>
-                  <th className="px-6 py-3 text-left">Rise (mm)</th>
-                  <th className="px-6 py-3 text-left">Rise (ft)</th>
-                  <th className="px-6 py-3 text-left">Severity</th>
-                  <th className="px-6 py-3 text-left">First Affected</th>
-                  <th className="px-6 py-3 text-left">Next Affected</th>
-                  <th className="px-6 py-3 text-left">Date / Time</th>
+                <tr className="bg-gradient-to-r from-blue-700 to-blue-600 text-white uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-[16px] font-semibold">#</th>
+                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Rise (mm)</th>
+                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Rise (ft)</th>
+                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Severity</th>
+                  <th className="px-6 py-3 text-left text-[16px] font-semibold">First Affected</th>
+                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Next Affected</th>
+                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Date / Time</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -221,25 +243,25 @@ export default function Reports() {
                       key={m.id}
                       className="hover:shadow-xl hover:bg-blue-50 transition transform hover:scale-[1.01]"
                     >
-                      <td className="px-6 py-3 text-gray-700">{indexOfFirstRow + idx + 1}</td>
-                      <td className="px-6 py-3 text-blue-700 font-semibold">{m.riseLevel.toFixed(1)}</td>
-                      <td className="px-6 py-3">{m.floodFeet}</td>
+                      <td className="px-6 py-3 text-[15px] text-gray-700">{indexOfFirstRow + idx + 1}</td>
+                      <td className="px-6 py-3 text-[15px] text-blue-700 font-semibold">{m.riseLevel.toFixed(1)}</td>
+                      <td className="px-6 py-3 text-[15px]">{m.floodFeet}</td>
 
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-3 text-[15px]">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${severityColors[m.severity]?.bg} ${severityColors[m.severity]?.text}`}>
                           {m.severity}
                         </span>
                       </td>
 
-                      <td className="px-6 py-3 text-gray-800 whitespace-pre-wrap truncate max-w-[150px]">
+                      <td className="px-6 py-3 text-[15px] text-gray-800 whitespace-pre-wrap truncate max-w-[150px]">
                         {m.firstAffected.length > 30 ? `${m.firstAffected.slice(0,30)}...` : m.firstAffected}
                       </td>
 
-                      <td className="px-6 py-3 text-gray-800 whitespace-pre-wrap truncate max-w-[150px]">
+                      <td className="px-6 py-3 text-[15px] text-gray-800 whitespace-pre-wrap truncate max-w-[150px]">
                         {m.nextAffected && m.nextAffected.length > 30 ? `${m.nextAffected.slice(0,30)}...` : m.nextAffected || "-"}
                       </td>
 
-                      <td className="px-6 py-3 text-gray-600 font-mono">
+                      <td className="px-6 py-3 text-[15px] text-gray-600 font-mono">
                         {new Date(m.createdAt).toLocaleString("en-GB", {
                           day: "2-digit",
                           month: "short",

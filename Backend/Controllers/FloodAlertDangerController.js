@@ -1,5 +1,6 @@
 const FloodAlert = require('../Models/FloodDangerAlert');
 
+// Ingest float sensor state, broadcast it live, and persist only meaningful changes.
 const receiveFloatStatus = async (req, res) => {
   try {
     const { device_id, status, message } = req.body;
@@ -10,7 +11,7 @@ const receiveFloatStatus = async (req, res) => {
 
     const now = new Date();
 
-    // Always broadcast to WebSocket
+    // Push every incoming status to websocket clients for real-time UI updates.
     const wss = req.app.get('wss');
     if (wss) {
       wss.clients.forEach(client => {
@@ -23,13 +24,13 @@ const receiveFloatStatus = async (req, res) => {
       });
     }
 
-    // Check last saved status for this device
+    // Read the latest DB row for this device to detect duplicate state.
     const lastRecord = await FloodAlert.findOne({
       where: { device_id },
       order: [['recorded_at', 'DESC']],
     });
 
-    // Only save if status changed from last saved record
+    // Store a new record only when status actually changes.
     if (!lastRecord || lastRecord.status !== status) {
       await FloodAlert.create({
         device_id,
@@ -50,6 +51,7 @@ const receiveFloatStatus = async (req, res) => {
   }
 };
 
+// Return recent float alert history (newest first) for dashboard tables.
 const getAlerts = async (req, res) => {
   try {
     const alerts = await FloodAlert.findAll({
@@ -62,8 +64,10 @@ const getAlerts = async (req, res) => {
   }
 };
 
+// Return one latest row per device using grouped MAX(id) subquery.
 const getLatestStatus = async (req, res) => {
   try {
+    // Imported here to keep module load lightweight for non-query paths.
     const { Op, literal } = require('sequelize');
     const latest = await FloodAlert.findAll({
       where: {

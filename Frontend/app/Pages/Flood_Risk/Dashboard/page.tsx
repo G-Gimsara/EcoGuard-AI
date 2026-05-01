@@ -2,13 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 
-import { Droplets, AlertTriangle, MapPin, Clock, RefreshCw } from "lucide-react";
+import { Droplets, AlertTriangle, MapPin, Clock, RefreshCw, CalendarClock } from "lucide-react";
 import Header from "@/app/Header/page";
 import Navbar from "../NavBar/Navbar";
 import { levels, type LevelName } from "../Alert/floodLevelConfig";
-import { useFloodNotifications } from "../Notifications/hooks/useFloodNotifications";
 
-// One flood reading from backend (or websocket) used across cards and table.
+// Single flood reading shape used by cards + table.
 interface FloodMeasurement {
   id: number;
   riseLevel: number;
@@ -19,7 +18,7 @@ interface FloodMeasurement {
   createdAt: string;
 }
 
-// Float device heartbeat/status record shown in the sensor widgets/table.
+// Single float sensor status row used across the dashboard.
 interface FloatStatus {
   id: number;
   device_id: string;
@@ -28,7 +27,14 @@ interface FloatStatus {
   recorded_at: string;
 }
 
-// Shared badge palette so severity meaning stays consistent across dashboard sections.
+// Display a readable timestamp, or a dash when invalid.
+function formatFloatTime(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString();
+}
+
+// Reuse the same severity colors everywhere.
 const severityColors: Record<string, { bg: string; text: string }> = {
   Normal: { bg: "bg-green-100", text: "text-green-800" },
   Alert: { bg: "bg-yellow-100", text: "text-yellow-800" },
@@ -39,76 +45,128 @@ const severityColors: Record<string, { bg: string; text: string }> = {
 };
 
 export default function Dashboard() {
-  // Flood stream state.
+  // Flood table rows + latest reading for top cards.
   const [measurements, setMeasurements] = useState<FloodMeasurement[]>([]);
   const [latest, setLatest] = useState<FloodMeasurement | null>(null);
 
-  // Float sensor stream state.
+  // Float sensor rows + latest status for top cards.
   const [floatStatuses, setFloatStatuses] = useState<FloatStatus[]>([]);
   const [latestFloat, setLatestFloat] = useState<FloatStatus | null>(null);
 
-  // Initial fetch ensures UI has snapshot data before live socket messages arrive.
-  const fetchFloodData = () => {
-    fetch("http://localhost:5000/api/flood")
-      .then((res) => res.json())
-      .then((data) => {
-        setMeasurements(data);
-        if (data.length > 0) setLatest(data[0]);
-      })
-      .catch(console.error);
-  };
-
-  // Same bootstrap fetch for float sensor status history.
-  const fetchFloatData = () => {
-    fetch("http://localhost:5000/api/flood/float")
-      .then((res) => res.json())
-      .then((data) => {
-        setFloatStatuses(data);
-        if (data.length > 0) setLatestFloat(data[0]);
-      })
-      .catch(console.error);
-  };
+  // Separate live clock for the UI card (not tied to backend timestamps).
+  const [liveNow, setLiveNow] = useState<Date>(() => new Date());
+  const [clockMounted, setClockMounted] = useState(false);
 
   useEffect(() => {
-    fetchFloodData();
-    fetchFloatData();
+    setClockMounted(true);
+    const tick = setInterval(() => setLiveNow(new Date()), 1000);
+    return () => clearInterval(tick);
   }, []);
 
-  // Single websocket channel that delivers both flood and float updates in real time.
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:5000");
+    let cancelled = false;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-
-      // Prepend newest flood reading and keep only latest 10 rows for a compact dashboard.
-      if (msg.type === "FLOOD_UPDATE") {
-        const newMeasurement: FloodMeasurement = msg.data;
-        setMeasurements((prev) => [newMeasurement, ...prev].slice(0, 10));
-        setLatest(newMeasurement);
-      }
-
-      // Same rolling-window logic for float sensor stream.
-      if (msg.type === "FLOAT_UPDATE") {
-        const newFloat: FloatStatus = msg.data;
-        setFloatStatuses((prev) => [newFloat, ...prev].slice(0, 10));
-        setLatestFloat(newFloat);
+    const fetchFloodData = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/flood", { cache: "no-store" });
+        if (!res.ok) return;
+        const data: FloodMeasurement[] = await res.json();
+        if (cancelled || !Array.isArray(data)) return;
+        setMeasurements(data);
+        if (data.length > 0) setLatest(data[0]);
+      } catch {
+        // Ignore temporary API/network failures; next tick retries.
       }
     };
 
-    return () => ws.close();
+    const fetchFloatData = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/flood/float", { cache: "no-store" });
+        if (!res.ok) return;
+        const data: FloatStatus[] = await res.json();
+        if (cancelled || !Array.isArray(data)) return;
+        setFloatStatuses(data);
+        if (data.length > 0) setLatestFloat(data[0]);
+      } catch {
+        // Ignore temporary API/network failures; next tick retries.
+      }
+    };
+
+    const connect = () => {
+      if (cancelled) return;
+      ws = new WebSocket("ws://localhost:5000");
+      ws.onopen = () => {
+        // Refresh both datasets right after websocket reconnects.
+        void fetchFloodData();
+        void fetchFloatData();
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+
+          // Keep newest flood entries at the top (limit to 10).
+          if (msg.type === "FLOOD_UPDATE") {
+            const newMeasurement: FloodMeasurement = msg.data;
+            setMeasurements((prev) => [newMeasurement, ...prev].slice(0, 10));
+            setLatest(newMeasurement);
+          }
+
+          // Some events send `timestamp`; map it to `recorded_at`.
+          if (msg.type === "FLOAT_UPDATE") {
+            const d = msg.data;
+            const newFloat = {
+              ...d,
+              recorded_at: d.recorded_at ?? d.timestamp ?? "",
+            } as FloatStatus;
+            setFloatStatuses((prev) => [newFloat, ...prev].slice(0, 10));
+            setLatestFloat(newFloat);
+          }
+        } catch {
+          /* ignore malformed payloads */
+        }
+      };
+
+      ws.onclose = () => {
+        if (cancelled) return;
+        // Keep data moving while websocket is reconnecting.
+        void fetchFloodData();
+        void fetchFloatData();
+        reconnectTimer = setTimeout(connect, 2000);
+      };
+      ws.onerror = () => ws?.close();
+    };
+
+    fetchFloodData();
+    fetchFloatData();
+    connect();
+
+    const floodPoll = setInterval(fetchFloodData, 5000);
+    const floatPoll = setInterval(fetchFloatData, 5000);
+
+    // Clean up socket/timers on unmount.
+    return () => {
+      cancelled = true;
+      clearInterval(floodPoll);
+      clearInterval(floatPoll);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, []);
 
+  // Prepared for future config-driven UI behavior based on active severity.
   const activeLevel = levels.find((l) => l.name === latest?.severity)?.name as LevelName | undefined;
-  useFloodNotifications(activeLevel, latest?.riseLevel ?? 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white font-sans antialiased text-[15px]">
+      {/* Shared page shell */}
       <Header />
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        {/* Header */}
+      <div className="max-w-[88rem] mx-auto px-4 md:px-5 lg:px-6 py-8">
+        {/* Dashboard header */}
         <div className="mb-10">
           <h1 className="text-4xl md:text-5xl font-bold text-blue-900 flex items-center gap-3 tracking-tight">
             <Droplets className="text-blue-600" size={36} />
@@ -119,38 +177,50 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Flood Mini Cards */}
+        {/* Flood quick stats cards (top row). */}
         {latest && (
           <div className="grid md:grid-cols-4 gap-6 mb-12">
+            {/* Card 1: current measured water rise (mm). */}
             <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-blue-100 to-blue-200 rounded-2xl shadow-lg transform transition hover:scale-105">
               <Droplets className="text-blue-600" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Water Rise</p>
-                <h2 className="text-2xl font-bold text-blue-900">{latest.riseLevel.toFixed(1)} mm</h2>
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Water Rise</p>
+                <h2 className="text-[24px] font-bold leading-tight tracking-tight text-blue-900">
+                  {latest.riseLevel.toFixed(1)} mm
+                </h2>
               </div>
             </div>
 
+            {/* Card 2: latest flood severity level label. */}
             <div className={`flex items-center gap-4 p-6 rounded-2xl shadow-lg transform transition hover:scale-105 ${severityColors[latest.severity]?.bg}`}>
-              <AlertTriangle className={`text-xl ${severityColors[latest.severity]?.text}`} size={28} />
+              <AlertTriangle className={`text-[20px] ${severityColors[latest.severity]?.text}`} size={28} />
               <div>
-                <p className={`text-sm font-medium ${severityColors[latest.severity]?.text}`}>Severity</p>
-                <h2 className={`text-2xl font-bold ${severityColors[latest.severity]?.text}`}>{latest.severity}</h2>
+                <p className={`text-[17px] font-medium leading-normal ${severityColors[latest.severity]?.text}`}>
+                  Severity
+                </p>
+                <h2 className={`text-[24px] font-bold leading-tight tracking-tight ${severityColors[latest.severity]?.text}`}>
+                  {latest.severity}
+                </h2>
               </div>
             </div>
 
+            {/* Card 3: area first affected by current flood conditions. */}
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <MapPin className="text-blue-500" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">First Affected</p>
-                <p className="text-gray-800 font-semibold truncate max-w-[180px]">{latest.firstAffected}</p>
+                <p className="text-[17px] font-medium leading-normal text-gray-600">First Affected</p>
+                <p className="truncate text-[18px] font-semibold leading-snug text-gray-800 max-w-[180px]">
+                  {latest.firstAffected}
+                </p>
               </div>
             </div>
 
+            {/* Card 4: timestamp of the latest flood reading update. */}
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <RefreshCw className="text-blue-500" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Last Updated</p>
-                <p className="text-gray-800 font-semibold">
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Last Updated</p>
+                <p className="text-[18px] font-semibold leading-snug tabular-nums text-gray-800">
                   {new Date(latest.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
@@ -158,41 +228,68 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Float Sensor Mini Cards */}
+        {/* Float sensor cards (second row). */}
         {latestFloat && (
           <div className="grid md:grid-cols-4 gap-6 mb-12">
-            <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
-              <Droplets className="text-blue-600" size={28} />
+            {/* Card 5: float sensor status + message (critical state highlighted). */}
+            {/* Turn the status card red when sensor reports DANGER. */}
+            <div className={`flex items-center gap-4 p-6 rounded-2xl shadow-lg transform transition hover:scale-105 ${latestFloat.status === "DANGER" ? "bg-red-500" : "bg-white"}`}>
+              <Droplets className={latestFloat.status === "DANGER" ? "text-white" : "text-blue-600"} size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Float Sensor Status</p>
-                <h2 className={`text-2xl font-bold ${latestFloat.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>
+                <p className={`text-[17px] font-medium leading-normal ${latestFloat.status === "DANGER" ? "text-red-100" : "text-gray-600"}`}>Float Sensor Status</p>
+                <h2
+                  className={`text-[24px] font-bold leading-tight tracking-tight ${latestFloat.status === "DANGER" ? "text-white" : "text-green-600"}`}
+                >
                   {latestFloat.status}
                 </h2>
-                <p className="text-gray-500 text-sm">{latestFloat.message}</p>
+                <p className={`mt-[2px] text-[14px] font-medium leading-snug ${latestFloat.status === "DANGER" ? "text-red-100" : "text-gray-500"}`}>{latestFloat.message}</p>
               </div>
             </div>
 
+            {/* Card 6: device id that produced the latest float reading. */}
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <MapPin className="text-blue-500" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Device</p>
-                <p className="text-gray-800 font-semibold">{latestFloat.device_id}</p>
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Device</p>
+                <p className="break-words text-[18px] font-semibold leading-snug text-gray-800">{latestFloat.device_id}</p>
               </div>
             </div>
 
+            {/* Card 7: backend-recorded time for latest float event. */}
             <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
               <Clock className="text-blue-500" size={28} />
               <div>
-                <p className="text-gray-600 text-sm font-medium">Recorded At</p>
-                <p className="text-gray-800 font-semibold">
-                  {new Date(latestFloat.recorded_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Recorded At</p>
+                <p className="text-[18px] font-semibold leading-snug tabular-nums text-gray-800">
+                  {formatFloatTime(latestFloat.recorded_at)}
+                </p>
+              </div>
+            </div>
+
+            {/* Card 8: local live clock for dashboard operator reference. */}
+            <div className="flex items-center gap-4 p-6 bg-white rounded-2xl shadow-lg transform transition hover:scale-105">
+              <CalendarClock className="text-blue-500" size={28} />
+              <div className="min-w-0">
+                <p className="text-[17px] font-medium leading-normal text-gray-600">Live date & time</p>
+                {/* Keep this local clock ticking every second for operator awareness. */}
+                <p className="break-words text-[18px] font-semibold leading-snug text-gray-800">
+                  {clockMounted
+                    ? liveNow.toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })
+                    : "—"}
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Flood Measurements Table */}
+        {/* Flood measurements table */}
         {latest && (
           <div className="bg-white rounded-3xl shadow-2xl border border-blue-100 p-8 mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -200,34 +297,36 @@ export default function Dashboard() {
               Recent Flood Measurements
             </h2>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm font-medium text-gray-900">
+              <table className="min-w-full text-[13px] font-medium text-gray-900">
                 <thead>
                   <tr className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl">
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">#</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Rise (mm)</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Rise (ft)</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Severity</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">First Affected</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Next Affected</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Time</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">#</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Rise (mm)</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Rise (ft)</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Severity</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">First Affected</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Next Affected</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
+                  {/* Rows are already ordered newest-first from fetch/socket updates. */}
                   {measurements.slice(0, 10).map((m, idx) => (
-                    <tr key={`${m.id}-${idx}`} className="bg-white hover:bg-blue-50 transition transform hover:scale-[1.01] hover:shadow-md">
-                      <td className="px-6 py-3">{idx + 1}</td>
-                      <td className="px-6 py-3 font-semibold text-blue-700">{m.riseLevel.toFixed(1)}</td>
-                      <td className="px-6 py-3">{m.floodFeet}</td>
-                      <td className="px-6 py-3">
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${severityColors[m.severity]?.bg || "bg-gray-200"} ${severityColors[m.severity]?.text || "text-gray-800"}`}>
+                    <tr key={`${m.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 text-[16px]">{idx + 1}</td>
+                      <td className="px-6 py-4 text-[16px] font-semibold text-blue-700">{m.riseLevel.toFixed(1)}</td>
+                      <td className="px-6 py-4 text-[16px]">{m.floodFeet}</td>
+                      <td className="px-6 py-4 text-[16px]">
+                        <span className={`px-3 py-1.5 rounded-full text-[12px] font-semibold ${severityColors[m.severity]?.bg || "bg-gray-200"} ${severityColors[m.severity]?.text || "text-gray-800"}`}>
                           {m.severity}
                         </span>
                       </td>
-                      <td className="px-6 py-3 text-gray-800">{m.firstAffected.length > 20 ? `${m.firstAffected.slice(0, 20)}...` : m.firstAffected}</td>
-                      <td className="px-6 py-3 text-gray-800">{m.nextAffected && m.nextAffected.length > 20 ? `${m.nextAffected.slice(0, 20)}...` : m.nextAffected || "-"}</td>
-                      <td className="px-6 py-3 text-gray-600">{new Date(m.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
+                      <td className="px-6 py-4 text-[15px] text-gray-800">{m.firstAffected.length > 20 ? `${m.firstAffected.slice(0, 20)}...` : m.firstAffected}</td>
+                      <td className="px-6 py-4 text-[15px] text-gray-800">{m.nextAffected && m.nextAffected.length > 20 ? `${m.nextAffected.slice(0, 20)}...` : m.nextAffected || "-"}</td>
+                      <td className="px-6 py-4 text-[15px] text-gray-600">{new Date(m.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
                     </tr>
                   ))}
+                  {/* First-load / empty-history fallback message. */}
                   {measurements.length === 0 && (
                     <tr>
                       <td colSpan={7} className="text-center py-6 text-gray-500">No flood measurements yet.</td>
@@ -239,7 +338,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Float Status Table */}
+        {/* Float sensor status table */}
         {latestFloat && (
           <div className="bg-white rounded-3xl shadow-2xl border border-blue-100 p-8 mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -247,26 +346,28 @@ export default function Dashboard() {
               Recent Float Sensor Status
             </h2>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm font-medium text-gray-900">
+              <table className="min-w-full text-[13px] font-medium text-gray-900">
                 <thead>
                   <tr className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-t-xl">
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">#</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Device</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Message</th>
-                    <th className="px-6 py-3 text-left uppercase tracking-wider">Recorded At</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">#</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Device</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Message</th>
+                    <th className="px-6 py-4 text-left text-[17px] font-semibold uppercase tracking-wider">Recorded At</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
+                  {/* Mirror flood table behavior for visual consistency. */}
                   {floatStatuses.slice(0, 10).map((f, idx) => (
-                    <tr key={`${f.id}-${idx}`} className="bg-white hover:bg-green-50 transition transform hover:scale-[1.01] hover:shadow-md">
-                      <td className="px-6 py-3">{idx + 1}</td>
-                      <td className="px-6 py-3">{f.device_id}</td>
-                      <td className={`px-6 py-3 font-semibold ${f.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>{f.status}</td>
-                      <td className="px-6 py-3">{f.message}</td>
-                      <td className="px-6 py-3 text-gray-600">{new Date(f.recorded_at).toLocaleString()}</td>
+                    <tr key={`${f.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 text-[16px]">{idx + 1}</td>
+                      <td className="px-6 py-4 text-[16px]">{f.device_id}</td>
+                      <td className={`px-6 py-4 text-[16px] font-semibold ${f.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>{f.status}</td>
+                      <td className="px-6 py-4 text-[16px]">{f.message}</td>
+                      <td className="px-6 py-4 text-[16px] text-gray-600">{formatFloatTime(f.recorded_at)}</td>
                     </tr>
                   ))}
+                  {/* Empty-state when no float sensor events are available yet. */}
                   {floatStatuses.length === 0 && (
                     <tr>
                       <td colSpan={5} className="text-center py-6 text-gray-500">No float sensor data yet.</td>

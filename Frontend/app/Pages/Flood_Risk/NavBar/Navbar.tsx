@@ -1,13 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import NotificationBell from "../Notifications/components/NotificationBell";
 import { useFloodNotifications } from "../Notifications/hooks/useFloodNotifications";
 
 const Navbar: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { unreadCount } = useFloodNotifications();
 
   // Central route list for Flood Risk module tabs.
@@ -16,8 +17,13 @@ const Navbar: React.FC = () => {
     { name: "Alert", path: "/Pages/Flood_Risk/Alert" },
     { name: "Report", path: "/Pages/Flood_Risk/Report" },
     { name: "Safety", path: "/Pages/Flood_Risk/Safety" },
-    { name: "Register", path: "/Pages/Flood_Risk/Register" },
+    { name: "Alert Subscription", path: "/Pages/Flood_Risk/Register" },
   ] as const;
+
+  // Preload Flood routes to reduce click-to-render delay between tabs.
+  useEffect(() => {
+    navLinks.forEach((link) => router.prefetch(link.path));
+  }, [router]);
 
   return (
     <nav className="relative z-20 flex w-full justify-center py-4">
@@ -33,15 +39,16 @@ const Navbar: React.FC = () => {
               <Link
                 key={link.path}
                 href={link.path}
+                prefetch
                 className="group relative inline-flex items-center"
               >
-                <button
-                  className={`px-8 py-4 text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300
+                <span
+                  className={`px-8 py-4 text-[12px] font-black uppercase tracking-[0.2em] transition-all duration-300
                 bg-transparent text-black group-hover:text-orange-500
                 ${isActive ? "text-orange-500" : ""}`}
                 >
                   {link.name}
-                </button>
+                </span>
 
                 {/* Active underline */}
                 <div

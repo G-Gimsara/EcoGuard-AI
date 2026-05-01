@@ -13,7 +13,6 @@ import {
   getLevelRow,
   type LevelName,
 } from "../floodLevelConfig";
-import { useFloodNotifications } from "../../Notifications/hooks/useFloodNotifications";
 
 interface FloodMeasurement {
   id: number;
@@ -138,44 +137,167 @@ export default function FloodLiveAlertPage() {
   const [currentSeverity, setCurrentSeverity] = useState("");
   const [riseLevel, setRiseLevel] = useState(0);
   const [criticalAcknowledged, setCriticalAcknowledged] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
+  // Tracks previous level so we notify on transitions, not every render.
   const previousSeverityRef = useRef<string>("");
+  const previousAlarmSeverityRef = useRef<string>("");
   const audioRef = useRef<HTMLAudioElement>(null);
+  const shouldPlayAlarm = currentSeverity === "Major" || currentSeverity === "Critical";
 
   useEffect(() => {
-    // Bootstrap with the latest saved measurement.
+    let cancelled = false;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Bootstrap with the latest saved measurement and use it as fallback polling.
     const fetchData = async () => {
-      const res = await fetch("http://localhost:5000/api/flood");
-      const data: FloodMeasurement[] = await res.json();
-      if (data.length > 0) {
+      try {
+        const res = await fetch("http://localhost:5000/api/flood", { cache: "no-store" });
+        if (!res.ok) return;
+        const data: FloodMeasurement[] = await res.json();
+        if (cancelled || data.length === 0) return;
         setCurrentSeverity(data[0].severity);
         setRiseLevel(data[0].riseLevel);
+      } catch {
+        // Ignore temporary API/network failures; next tick retries.
       }
     };
-    fetchData();
 
-    // Keep this screen synchronized with sensor updates in real time.
-    const ws = new WebSocket("ws://localhost:5000");
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "FLOOD_UPDATE") {
-        setCurrentSeverity(msg.data.severity);
-        setRiseLevel(msg.data.riseLevel);
-      }
+    const connect = () => {
+      if (cancelled) return;
+      ws = new WebSocket("ws://localhost:5000");
+
+      ws.onopen = () => {
+        // Pull latest level immediately after socket reconnect.
+        void fetchData();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === "FLOOD_UPDATE") {
+            setCurrentSeverity(msg.data.severity);
+            setRiseLevel(msg.data.riseLevel);
+          }
+        } catch {
+          /* ignore malformed payloads */
+        }
+      };
+
+      ws.onclose = () => {
+        if (cancelled) return;
+        // Keep UI moving even while websocket is reconnecting.
+        void fetchData();
+        reconnectTimer = setTimeout(connect, 2000);
+      };
+      ws.onerror = () => ws?.close();
     };
-    return () => ws.close();
+
+    fetchData();
+    connect();
+    const pollTimer = setInterval(fetchData, 5000);
+
+    // Close socket/timers on leave to avoid duplicate subscriptions.
+    return () => {
+      cancelled = true;
+      clearInterval(pollTimer);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, []);
 
   useEffect(() => {
-    // Audible alert is enabled only for Major/Critical to avoid alert fatigue.
-    if ((currentSeverity === "Major" || currentSeverity === "Critical") && audioRef.current) {
-      audioRef.current.play().catch((err) => console.log("Audio play error:", err));
-    } else if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-  }, [currentSeverity]);
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.load();
+
+    // Prime audio once after first user gesture to satisfy browser autoplay rules.
+    const unlockAudio = () => {
+      const el = audioRef.current;
+      if (!el) return;
+      el.muted = true;
+      el
+        .play()
+        .then(() => {
+          el.pause();
+          el.currentTime = 0;
+          el.muted = false;
+          setAudioReady(true);
+          window.removeEventListener("pointerdown", unlockAudio);
+          window.removeEventListener("keydown", unlockAudio);
+          window.removeEventListener("touchstart", unlockAudio);
+        })
+        .catch(() => {
+          // Keep listeners attached and retry on next user gesture.
+        });
+    };
+
+    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+    window.addEventListener("keydown", unlockAudio);
+    window.addEventListener("touchstart", unlockAudio, { passive: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+      window.removeEventListener("touchstart", unlockAudio);
+    };
+  }, []);
 
   useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    // Pause/reset when level is below Major.
+    if (!shouldPlayAlarm) {
+      audio.pause();
+      audio.currentTime = 0;
+      previousAlarmSeverityRef.current = currentSeverity;
+      return;
+    }
+
+    // Play only when entering/changing a high-risk level (no nonstop loop).
+    if (previousAlarmSeverityRef.current === currentSeverity) return;
+
+    // If browser already saw user activation in this tab, allow alarm immediately.
+    const browserActivated =
+      typeof navigator !== "undefined" &&
+      "userActivation" in navigator &&
+      Boolean((navigator as Navigator & { userActivation?: { hasBeenActive?: boolean } }).userActivation?.hasBeenActive);
+    if (!audioReady && browserActivated) {
+      setAudioReady(true);
+    }
+    // If browser hasn't unlocked audio yet, wait for first gesture.
+    if (!audioReady && !browserActivated) return;
+
+    let cleanedUp = false;
+    const events: Array<keyof WindowEventMap> = ["click", "keydown", "touchstart"];
+
+    // Retry after user interaction when autoplay is blocked by browser policy.
+    const tryStartAlarm = () => {
+      if (!audioRef.current) return;
+      audioRef.current
+        .play()
+        .then(() => {
+          if (cleanedUp) return;
+          previousAlarmSeverityRef.current = currentSeverity;
+          events.forEach((eventName) => window.removeEventListener(eventName, tryStartAlarm));
+        })
+        .catch(() => {
+          // Keep listeners attached; next interaction will retry.
+        });
+    };
+
+    tryStartAlarm();
+    events.forEach((eventName) => window.addEventListener(eventName, tryStartAlarm, { passive: true }));
+
+    return () => {
+      cleanedUp = true;
+      events.forEach((eventName) => window.removeEventListener(eventName, tryStartAlarm));
+    };
+  }, [shouldPlayAlarm, currentSeverity, audioReady]);
+
+  useEffect(() => {
+    // Browser notification policy is level-dependent (one-time + periodic reminders).
     const level = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
     if (!level) return;
     const policy = webAlertPolicies[level];
@@ -189,6 +311,8 @@ export default function FloodLiveAlertPage() {
       return;
     }
 
+    
+    // Small helper keeps notification payload format consistent.
     const notify = (title: string, body: string) => {
       if (Notification.permission === "granted") {
         new Notification(title, { body, icon: "/favicon.ico" });
@@ -207,6 +331,7 @@ export default function FloodLiveAlertPage() {
       }
     }
 
+    // Repeat reminders for ongoing high-risk levels per policy settings.
     if (policy.repeatMinutes && (level === "Major" || (level === "Critical" && !criticalAcknowledged))) {
       const intervalId = window.setInterval(() => {
         notify(`${level} Flood Reminder`, `Flood level remains ${level}. Follow safety guidance immediately.`);
@@ -225,13 +350,13 @@ export default function FloodLiveAlertPage() {
   const levelRow = activeLevel ? getLevelRow(activeLevel) : undefined;
   const chrome = activeLevel ? liveChrome(activeLevel) : null;
   const alertPolicy = activeLevel ? webAlertPolicies[activeLevel] : null;
-  useFloodNotifications(activeLevel, riseLevel);
 
   return (
-    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900">
+    <div className="flex h-dvh max-h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900 text-[15px]">
       <Header />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <Navbar />
+        {/* Alarm audio plays only during Major/Critical states. */}
         <audio ref={audioRef} src="/FloodAlarm.mp3" preload="auto" />
 
         <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pb-4 pt-3 sm:px-6 sm:pb-5 sm:pt-4 lg:overflow-hidden lg:px-10 lg:pb-6 xl:px-14 2xl:px-20">
@@ -271,6 +396,7 @@ export default function FloodLiveAlertPage() {
             </div>
           </header>
 
+          {/* First-load fallback before level data is available. */}
           {!warning && (
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200/80">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl">📡</div>
@@ -381,25 +507,9 @@ export default function FloodLiveAlertPage() {
             </div>
           )}
 
-          {warning && alertPolicy ? (
-            <section className="mt-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/80">
-              <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
-                <span aria-hidden>🔔</span>
-                Alert delivery
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Channels active for <strong>{activeLevel}</strong> status.
-              </p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-                {alertPolicy.channels.map((channel) => (
-                  <li key={channel}>{channel}</li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
+          {/* Hard-stop modal for critical phase until user acknowledges. */}
           {activeLevel === "Critical" && alertPolicy?.showEmergencyModal && !criticalAcknowledged && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
               <div className="w-full max-w-2xl rounded-2xl border-4 border-red-500 bg-white p-6 shadow-2xl">
                 <h2 className="text-3xl font-extrabold text-red-700">CRITICAL FLOOD EMERGENCY</h2>
                 <p className="mt-3 text-base text-slate-700">
