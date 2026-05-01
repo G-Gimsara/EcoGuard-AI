@@ -7,6 +7,7 @@ import axios from "axios";
 import Logo from "@/app/Images/logo.png";
 import Header from "@/app/Header/page";
 import ManageSubscription from "@/app/Pages/air_quality/ManageSubscription/page";
+import Navbar from "../NavBar/Navbar";
 
 type FormType = {
   name: string;
@@ -97,6 +98,7 @@ const verifyOTP = async (): Promise<void> => {
     <div className="min-h-screen flex flex-col" style={{ background: "#f0f4fb" }}>
 
       <Header />
+       <Navbar />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-12">
         <div className="grid md:grid-cols-5 gap-8 items-start">
@@ -143,18 +145,14 @@ const verifyOTP = async (): Promise<void> => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Alert Frequency</label>
-                <select
-                  name="alert_frequency"
-                  value={form.alert_frequency}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none transition-all duration-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 bg-white"
-                >
-                  <option value="daily">📅 Daily Alerts</option>
-                  <option value="weekly">📆 Weekly Digest</option>
-                  <option value="off">🔕 Paused</option>
-                </select>
-              </div>
+  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+    Alert Frequency
+  </label>
+
+  <div className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 bg-gray-50">
+    📅 Daily Alerts
+  </div>
+</div>
 
               <div className="border-t border-gray-100 my-1" />
 

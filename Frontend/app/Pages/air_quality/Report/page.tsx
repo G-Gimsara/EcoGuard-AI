@@ -43,14 +43,7 @@ const SENSOR_CONFIG: Record<string, {
   pillClass: string;
   iconClass: string;
 }> = {
-  dust: {
-    label: "Dust(Tiny particles,PM2.5)",
-    icon: <Wind size={13} />,
-    unit: "µg/m³",
-    activeClass: "bg-blue-500 border-blue-600",
-    pillClass: "bg-blue-50 text-blue-600",
-    iconClass: "text-gray-800",
-  },
+ 
   gas: {
     label: "NH3(Ammonia)",
     icon: <Flame size={13} />,
@@ -75,6 +68,14 @@ const SENSOR_CONFIG: Record<string, {
     pillClass: "bg-blue-50 text-blue-600",
     iconClass: "text-gray-800",
   },
+   dust: {
+    label: "Dust(Tiny particles,PM2.5)",
+    icon: <Wind size={13} />,
+    unit: "µg/m³",
+    activeClass: "bg-blue-500 border-blue-600",
+    pillClass: "bg-blue-50 text-blue-600",
+    iconClass: "text-gray-800",
+  },
   temp: {
     label: "Temperature",
     icon: <Thermometer size={13} />,
@@ -87,10 +88,10 @@ const SENSOR_CONFIG: Record<string, {
 
 const SENSOR_TABS: { value: SensorType; label: string }[] = [
   { value: "all",  label: "All Sensors" },
-  { value: "dust", label: "Dust" },
   { value: "gas",  label: "NH3" },
   { value: "co",   label: "CO" },
   { value: "co2",  label: "CO₂" },
+   { value: "dust", label: "Dust" },
   { value: "temp", label: "Temperature" },
 ];
 
@@ -153,10 +154,8 @@ const StatCard = ({
         {cfg.icon}
         <span>{cfg.label}</span>
       </div>
-      <span className={`text-2xl font-bold tracking-tight ${active ? "text-white" : "text-gray-900"}`}>
-        {count}
-      </span>
-      <span className={`text-[15px] ${active ? "text-white/60" : "text-gray-400"}`}>readings</span>
+      
+      
     </button>
   );
 };
@@ -216,29 +215,46 @@ export default function SensorReport() {
       .catch(() => setLoading(false));
   }, []);
 
+  const removeDuplicates = (data: TableRow[]) => {
+  const seen = new Map();
+
+  return data.filter((item) => {
+    const key = `${item.type}-${item.device_id}-${item.value ?? item.temperature}-${item.createdAt}`;
+
+    if (seen.has(key)) return false;
+
+    seen.set(key, true);
+    return true;
+  });
+};
+
   /* NORMALIZE */
   const tableData: TableRow[] = useMemo(() => {
-    const dust = dustData.map(d => ({ type: "dust" as const, device_id: d.device_id, value: d.dust_density, status: d.air_status, createdAt: d.createdAt || d.recorded_at }));
+  
     const gas  = gasData.map(g  => ({ type: "gas"  as const, device_id: g.device_id, value: g.gas_ppm,      status: g.air_status, createdAt: g.createdAt || g.recorded_at }));
     const co   = coData.map(c   => ({ type: "co"   as const, device_id: c.device_id, value: c.co_value,     status: c.status,     createdAt: c.createdAt || c.recorded_at }));
     const co2  = co2Data.map(c  => ({ type: "co2"  as const, device_id: c.device_id, value: c.eco2,         status: c.status,     createdAt: c.createdAt || c.recorded_at }));
+      const dust = dustData.map(d => ({ type: "dust" as const, device_id: d.device_id, value: d.dust_density, status: d.air_status, createdAt: d.createdAt || d.recorded_at }));
     const temp = airData.map(a  => ({ type: "temp" as const, device_id: a.device_id, temperature: a.temperature, humidity: a.humidity, createdAt: a.createdAt || a.recorded_at }));
     return [...dust, ...gas, ...co, ...co2, ...temp].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-  }, [dustData, gasData, coData, co2Data, airData]);
+  }, [ gasData, coData, co2Data,dustData, airData]);
 
   /* COUNTS */
   const counts = useMemo(() => ({
     dust: dustData.length, gas: gasData.length,
     co: coData.length, co2: co2Data.length, temp: airData.length,
-  }), [dustData, gasData, coData, co2Data, airData]);
+  }), [ gasData, coData, co2Data,dustData, airData]);
 
   /* FILTER */
- const filteredData = useMemo(() => {
-  return selectedSensor === "all"
-    ? tableData
-    : tableData.filter(r => r.type === selectedSensor);
+const filteredData = useMemo(() => {
+  let data =
+    selectedSensor === "all"
+      ? tableData
+      : tableData.filter(r => r.type === selectedSensor);
+
+  return removeDuplicates(data);
 }, [tableData, selectedSensor]);
 
   /* COLUMNS */

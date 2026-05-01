@@ -247,6 +247,15 @@ app.use("/api/water-quality", waterQualityRoute);
 
 /* -------------------- DATABASE SYNC -------------------- */
 
+sequelize.sync({ alter: true })
+.then(() => {
+    console.log("✅ Database synced");
+})
+ .catch((err) => {
+   console.error("❌ Database sync error:", err);
+ });
+
+
 /* -------------------- SERVER START -------------------- */
 const PORT = process.env.PORT || 5000;
 

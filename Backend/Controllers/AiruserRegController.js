@@ -207,7 +207,7 @@ ${nextAlertText}
 ━━━━━━━━━━━━━━
 
 🤖 Smart Health Assistant:
-http://your-domain.com/chat
+https://fir-8506f.web.app/chat
 
 Stay safe 🌱
 `;
