@@ -233,7 +233,7 @@ app.use("/api/water-quality", waterQualityRoute);
 sequelize.sync({ alter: true })
 .then(() => {
     console.log("✅ Database synced");
- })
+})
  .catch((err) => {
    console.error("❌ Database sync error:", err);
  });

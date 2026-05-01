@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import Header from "@/app/Header/page";
 import Navbar from "../NavBar/Navbar";
+import Image from "next/image";
+import Qrcode from "@/app/Images/qr.jpeg";
 import {
   LineChart,
   Line,
@@ -87,58 +89,6 @@ const statusTheme = (status?: StatusType) => {
   };
 };
 
-/* ────────────────────────────────
-   QR CODE GENERATOR (canvas-based)
-──────────────────────────────── */
-const QRCanvas: React.FC<{ url: string; size?: number }> = ({ url, size = 120 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const MODULES = 21;
-    const CELL = Math.floor(size / MODULES);
-
-    const isFinderZone = (r: number, c: number) =>
-      (r < 7 && c < 7) || (r < 7 && c >= MODULES - 7) || (r >= MODULES - 7 && c < 7);
-
-    const finderDark = (r: number, c: number): boolean => {
-      const check = (ro: number, co: number) => {
-        const lr = r - ro, lc = c - co;
-        if (lr < 0 || lr > 6 || lc < 0 || lc > 6) return false;
-        if (lr === 0 || lr === 6 || lc === 0 || lc === 6) return true;
-        if (lr >= 2 && lr <= 4 && lc >= 2 && lc <= 4) return true;
-        return false;
-      };
-      return check(0, 0) || check(0, MODULES - 7) || check(MODULES - 7, 0);
-    };
-
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, size, size);
-
-    for (let r = 0; r < MODULES; r++) {
-      for (let c = 0; c < MODULES; c++) {
-        let dark = false;
-        if (isFinderZone(r, c)) {
-          dark = finderDark(r, c);
-        } else {
-          const h = Array.from(url).reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) & 0xffff, 0);
-          dark = ((h ^ (r * 17 + c * 13)) & 1) === 0;
-          if (r === 6 || c === 6) dark = (r + c) % 2 === 0;
-        }
-        ctx.fillStyle = dark ? "#1a1a2e" : "#ffffff";
-        ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
-      }
-    }
-    // Center accent
-    const mid = Math.floor(MODULES / 2) * CELL;
-    ctx.fillStyle = "#185FA5";
-    ctx.fillRect(mid - CELL, mid - CELL, CELL * 3, CELL * 3);
-  }, [url, size]);
-
-  return <canvas ref={canvasRef} width={size} height={size} className="rounded-xl border border-gray-200" aria-label={`QR code for ${url}`} />;
-};
 
 /* ────────────────────────────────
    QR ACCESS STRIP
@@ -146,14 +96,19 @@ const QRCanvas: React.FC<{ url: string; size?: number }> = ({ url, size = 120 })
 const QRAccessStrip: React.FC = () => (
   <div className="bg-white border border-gray-200 mb-4 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row items-center gap-6">
 
-    {/* BIG QR CODE */}
-    <div className="flex-shrink-0">
-      <QRCanvas url="air.monitor.local/dash" size={180} />
-      <p className="text-center text-[11px] text-gray-400 mt-2 font-mono">
-        Scan to access dashboard
-      </p>
-    </div>
+   <div className="flex-shrink-0">
+  <Image
+    src={Qrcode}
+    alt="QR Code"
+    width={180}
+    height={180}
+    className="rounded-xl border border-gray-200"
+  />
 
+  <p className="text-center text-[11px] text-gray-400 mt-2 font-mono">
+    Scan to access dashboard
+  </p>
+</div>
     {/* DETAILS */}
     <div className="flex-1 min-w-0">
       
@@ -593,26 +548,42 @@ const mapChart = (arr: AirReading[], key: string): ChartPoint[] =>
 
       <ul className="text-xs text-gray-600 space-y-1">
         <li>
-          WHO Air Quality Guidelines – 
-          <a href="https://www.who.int" target="_blank" className="text-blue-600 hover:underline ml-1">
-            https://www.who.int
+          Good, Moderate, Poor range guideline – public research paper
+          <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9676776/#Tab3" target="_blank" className="text-blue-600 hover:underline ml-1">
+            https://pmc.ncbi.nlm.nih.gov/articles/PMC9676776/#Tab3
+          </a>
+        </li>
+        
+        <li>
+          India's CPCB National AQI (NAQI) standards 
+          <a href="http://www.airquality.cpcb.gov.in/ccr_docs/About_AQI.pdf" target="_blank" className="text-blue-600 hover:underline ml-1">
+           http://www.airquality.cpcb.gov.in/ccr_docs/About_AQI.pdf
+          </a>
+        </li>
+        <li>
+          Good, Moderate, Poor range guideline – Co2 (CARBON DIOXIDE) 
+          <a href="https://www.ashrae.org/file%20library/about/position%20documents/pd-on-indoor-carbon-dioxide-english.pdf" target="_blank" className="text-blue-600 hover:underline ml-1">
+            https://www.ashrae.org/file%20library/about/position%20documents/pd-on-indoor-carbon-dioxide-english.pdf
           </a>
         </li>
 
         <li>
-          US EPA Air Quality Index – 
-          <a href="https://www.epa.gov/aqi" target="_blank" className="text-blue-600 hover:underline ml-1">
-            https://www.epa.gov/aqi
+          CO, NH₃, CO₂, PM2.5, temperature — human health effects
+          <a href="https://fir-8506f.web.app/reference" target="_blank" className="text-blue-600 hover:underline ml-1">
+            https://fir-8506f.web.app/reference
+          </a>
+        </li>
+         <li>
+         Watch a real-time practical video with sensor accuracy.
+          <a href="https://fir-8506f.web.app/reference" target="_blank" className="text-blue-600 hover:underline ml-1">
+            https://fir-8506f.web.app/reference
           </a>
         </li>
 
-        <li>
-          CO & CO₂ Safety Standards – 
-          <span className="ml-1">Environmental Monitoring Research Papers</span>
-        </li>
+        
 
         <li>
-          Sensor Data: Local IoT Devices (MQ Sensors, DHT11)
+          Sensor Data: Local IoT Devices (MQ 7, DHT11, MQ 135, ENS160, DUST Sensor)
         </li>
       </ul>
     </div>
