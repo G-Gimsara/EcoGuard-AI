@@ -26,7 +26,7 @@ export const levelWarnings: Record<LevelName, { headline: string; detail: string
     bannerClass: "bg-green-600 text-white",
   },
   Alert: {
-    headline: "Flood alert — early rise detected",
+    headline: "Flood alert - early rise detected",
     detail: "Low-lying areas may see shallow water. Monitor official advisories and avoid unnecessary travel near streams and drains.",
     bannerClass: "bg-yellow-500 text-yellow-950",
   },
@@ -55,37 +55,37 @@ export const levelWarnings: Record<LevelName, { headline: string; detail: string
 // Web alert escalation plan for each risk level.
 export const webAlertPolicies: Record<LevelName, WebAlertPolicy> = {
   Normal: {
-    channels: ["In-app status card"],
+    channels: ["In-app status card","Browser Notification Bell "],
     repeatMinutes: null,
     requiresAcknowledge: false,
     showEmergencyModal: false,
   },
   Alert: {
-    channels: ["In-app banner"],
+    channels: ["In-app banner","Browser Notification Bell "],
     repeatMinutes: null,
     requiresAcknowledge: false,
     showEmergencyModal: false,
   },
   Minor: {
-    channels: ["In-app banner"],
+    channels: ["In-app banner", "Browser Notification Bell "],
     repeatMinutes: null,
     requiresAcknowledge: false,
     showEmergencyModal: false,
   },
   Moderate: {
-    channels: ["In-app banner", "Browser push (recommended)"],
+    channels: ["In-app banner", "Browser Notification Bell "],
     repeatMinutes: null,
     requiresAcknowledge: false,
     showEmergencyModal: false,
   },
   Major: {
-    channels: ["In-app banner", "Browser push", "SMS/Email (integrated backend)"],
+    channels: ["In-app banner", "Browser Notification Bell ", "SMS)"],
     repeatMinutes: 15,
     requiresAcknowledge: false,
     showEmergencyModal: false,
   },
   Critical: {
-    channels: ["Full-screen emergency modal", "Browser push", "SMS/Email (integrated backend)"],
+    channels: ["Full-screen emergency modal", "Browser push","Browser Notification Bell ", "SMS"],
     repeatMinutes: 5,
     requiresAcknowledge: true,
     showEmergencyModal: true,
@@ -115,7 +115,7 @@ export const safetyGuidelines: Record<LevelName, string[]> = {
     "If you must travel, use only confirmed safe routes; never cross a flooded road.",
   ],
   Major: [
-    "Evacuate to higher ground or a designated shelter when advised — delay increases risk.",
+    "Evacuate to higher ground or a designated shelter when advised - delay increases risk.",
     "Never enter flood water: it can hide currents, debris, and live electrical hazards.",
     "Help neighbours who need assistance only if you can do so without putting yourself at risk.",
   ],

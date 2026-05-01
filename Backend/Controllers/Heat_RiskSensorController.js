@@ -1,4 +1,105 @@
 const SensorReading = require('../Models/HeatRiskSeonsor');
+const axios = require("axios");
+const Subscriber = require("../Models/subscriber.model");
+
+const lastAlertState = {};
+// Format:
+// {
+//   device_id: {
+//     riskLevel: "Danger" | "Extreme Danger",
+//     timestamp: number
+//   }
+// }
+
+const ALERT_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
+
+const TEXTLK_API_URL = process.env.TEXTLK_API_URL || "https://app.text.lk/api/v3/sms/send";
+const TEXTLK_API_KEY = process.env.TEXTLK_API_KEY || "";
+const TEXTLK_SENDER_ID = process.env.TEXTLK_SENDER_ID || "TextLKDemo";
+
+if (!TEXTLK_API_KEY) {
+  console.warn("[HeatRiskSensor] TEXTLK_API_KEY is not set. SMS dispatch is disabled.");
+}
+
+function normalizePhone(value = "") {
+  const digits = String(value).replace(/[^\d]/g, "");
+  if (digits.startsWith("94")) return digits;
+  if (digits.startsWith("0")) return `94${digits.slice(1)}`;
+  return digits;
+}
+
+function buildLiveSensorSms(temperature, heatIndex, riskLevel) {
+  const location = "Kaduwela"; // Assuming Kaduwela for now, can be made dynamic later
+  const riskText = riskLevel === "Extreme Danger" ? "Extreme Danger" : "Danger";
+  const heatText = riskLevel === "Extreme Danger" ? "Extreme heat" : "High heat";
+  const riskDescription = riskLevel === "Extreme Danger" ? "Heat stroke likely." : "Heat exhaustion possible.";
+
+  return `EcoGuard Alert: ${location}
+${heatText} detected NOW!
+Air Temperature: ${temperature}°C
+You feel like: ${heatIndex}°C
+Risk Level: ${riskText}
+
+Risk: ${riskDescription}
+
+Immediate Actions:
+- Avoid outdoor activity
+- Drink plenty of water
+
+Stay safe.`;
+}
+
+async function sendLiveSensorAlert(temperature, heatIndex, riskLevel) {
+  if (!TEXTLK_API_KEY) {
+    console.log("[HeatRiskSensor] SMS skipped: TEXTLK_API_KEY not configured.");
+    return;
+  }
+
+  try {
+    const subscribers = await Subscriber.findAll({
+      where: { isSubscribed: true },
+      attributes: ["phoneNumber"],
+    });
+
+    const recipients = Array.from(
+      new Set(
+        subscribers
+          .map((subscriber) => normalizePhone(subscriber.phoneNumber))
+          .filter((phone) => /^94\d{9}$/.test(phone))
+      )
+    );
+
+    if (recipients.length === 0) {
+      console.log("[HeatRiskSensor] No active SMS subscribers found.");
+      return;
+    }
+
+    const message = buildLiveSensorSms(temperature, heatIndex, riskLevel);
+
+    await axios.post(
+      TEXTLK_API_URL,
+      {
+        recipient: recipients.join(","),
+        sender_id: TEXTLK_SENDER_ID,
+        type: "plain",
+        message,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${TEXTLK_API_KEY}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
+
+    console.log(`[HeatRiskSensor] SMS sent to ${recipients.length} subscriber(s) for live sensor alert`);
+  } catch (err) {
+    const status = err?.response?.status;
+    const data = err?.response?.data;
+    console.error("[HeatRiskSensor] Failed to send SMS via Text.lk:", status || "", data || err.message);
+  }
+}
 
 function calculateHeatIndex(temp_c, humidity) {
 
@@ -28,6 +129,36 @@ function classifyRisk(level) {
   if (level < 51) return "Danger";
 
   return "Extreme Danger";
+}
+
+function shouldSendAlert(deviceId, riskLevel) {
+
+  if (riskLevel !== "Danger" && riskLevel !== "Extreme Danger") {
+    return false;
+  }
+
+  const now = Date.now();
+  const last = lastAlertState[deviceId];
+
+  // First alert
+  if (!last) {
+    lastAlertState[deviceId] = { riskLevel, timestamp: now };
+    return true;
+  }
+
+  // Escalation (Danger -> Extreme Danger)
+  if (last.riskLevel === "Danger" && riskLevel === "Extreme Danger") {
+    lastAlertState[deviceId] = { riskLevel, timestamp: now };
+    return true;
+  }
+
+  // Cooldown passed
+  if (now - last.timestamp > ALERT_COOLDOWN_MS) {
+    lastAlertState[deviceId] = { riskLevel, timestamp: now };
+    return true;
+  }
+
+  return false;
 }
 
 
@@ -77,6 +208,11 @@ const receiveSensorData = async (req, res) => {
 
       });
 
+    }
+
+    // Send SMS alert if danger or extreme danger
+    if (shouldSendAlert(device_id, riskLevel)) {
+      sendLiveSensorAlert(temperature, heatIndex, riskLevel);
     }
 
     res.json({ success: true, id: reading.id });

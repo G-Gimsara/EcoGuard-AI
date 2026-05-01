@@ -116,18 +116,18 @@ def startup_tasks():
         scheduler.add_job(
             periodic_weather_update,
             "interval",
-            minutes=1
+            minutes=2
         )
 
         scheduler.start()
-        print("⏰ Scheduler started (10 min interval)")
+        print("⏰ Scheduler started (2 min interval)")
 
     print("✅ Startup tasks completed")
 
 
 # -----------------------------
 # Shutdown event
-# -----------------------------
+# ----------------------------- 
 @app.on_event("shutdown")
 def shutdown_event():
     scheduler.shutdown()

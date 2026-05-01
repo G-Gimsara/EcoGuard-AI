@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import PredictionsTable from "../components/PredictionsTable";
-import HeatIndexChart from "../components/HeatIndexChart";
-import SummaryCards from "../components/SummaryCards"; // ← Add this
-import DivisionHeatMap from "../components/DivisionHeatMap";
 import HistoricalForecastChart from "../components/HistoricalForecastChart";
 import Navigation from "../components/Navigation";
 import HeatSensor from "../components/HeatSensor";
@@ -46,18 +43,7 @@ export default function PredictionPage() {
           <HeatSensor />
         </div>
          
-          {/* Summary Cards at the very top */}
-<<<<<<< HEAD
-          <SummaryCards data={tableData} />
-          <HeatSensor />
-=======
-           {/* <SummaryCards data={tableData} />  */}
           
->>>>>>> 2ae796edc070db97a5c1dea88bf78fe17705f627
-
-
-          {/* Chart */}
-          {/*<HeatIndexChart data={tableData} />*/}
 
           <HistoricalForecastChart data={tableData}/>
 

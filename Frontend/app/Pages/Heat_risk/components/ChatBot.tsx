@@ -15,7 +15,6 @@ interface Message {
 
 interface WeatherData {
   heatIndex: number | null;
-  dewpoint: number | null;
   solarRadiation: number | null;
 }
 
@@ -35,24 +34,18 @@ const ChatBot: React.FC = () => {
   const [currentField, setCurrentField] = useState(0);
   const [weatherData, setWeatherData] = useState<WeatherData>({
     heatIndex: null,
-    dewpoint: null,
     solarRadiation: null,
   });
   const [isCollectingData, setIsCollectingData] = useState(true);
   const chatBoxRef = useRef<HTMLDivElement | null>(null);
 
+  // Removed Dew Point from the fields array
   const fields: FieldConfig[] = [
     {
       name: "heatIndex",
       label: "Heat Index (°C)",
       unit: "°C",
       icon: "🌡️",
-    },
-    {
-      name: "dewpoint",
-      label: "Dew Point (°C)",
-      unit: "°C",
-      icon: "💧",
     },
     {
       name: "solarRadiation",
@@ -62,7 +55,7 @@ const ChatBot: React.FC = () => {
     },
   ];
 
-  const API_KEY = ""; // TODO: inject via env variable in production
+  const API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY || ""; // TODO: inject via env variable in production
 
   const toggleChat = () => {
     setIsOpen((prev) => !prev);
@@ -83,7 +76,6 @@ const ChatBot: React.FC = () => {
     setIsCollectingData(true);
     setWeatherData({
       heatIndex: null,
-      dewpoint: null,
       solarRadiation: null,
     });
   };
@@ -102,7 +94,7 @@ const ChatBot: React.FC = () => {
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       const welcomeMessage: Message = {
-        text: "🔍 **Heat Risk Analysis Advisor**\n\nI'll analyze your **Heat Index, Dew Point, and Solar Radiation** data to provide heat risk assessment.",
+        text: "🔍 **Heat Risk Analysis Advisor**\n\nI'll analyze your **Heat Index and Solar Radiation** data to provide heat risk assessment.",
         sender: "bot",
       };
       setMessages([welcomeMessage]);
@@ -152,15 +144,14 @@ const ChatBot: React.FC = () => {
     const dataToUse = finalData || weatherData;
 
     const collectingMessage: Message = {
-      text: `📊 **Data Collection Complete**\n\n✅ **Heat Index:** ${dataToUse.heatIndex}${fields[0].unit}\n✅ **Dew Point:** ${dataToUse.dewpoint}${fields[1].unit}\n✅ **Solar Radiation:** ${dataToUse.solarRadiation}${fields[2].unit}\n\n🔍 *Analyzing heat risk...*`,
+      text: `📊 **Data Collection Complete**\n\n✅ **Heat Index:** ${dataToUse.heatIndex}${fields[0].unit}\n✅ **Solar Radiation:** ${dataToUse.solarRadiation}${fields[1].unit}\n\n🔍 *Analyzing heat risk...*`,
       sender: "bot",
     };
     setMessages((prev) => [...prev, collectingMessage]);
 
-    const analysisPrompt = `Analyze ONLY these three parameters for heat risk assessment:
+    const analysisPrompt = `Analyze ONLY these two parameters for heat risk assessment:
 1. Heat Index: ${dataToUse.heatIndex}°C
-2. Dew Point: ${dataToUse.dewpoint}°C  
-3. Solar Radiation: ${dataToUse.solarRadiation} W/m²
+2. Solar Radiation: ${dataToUse.solarRadiation} W/m²
 
 Provide analysis with risk levels and mitigation methods.`;
 
@@ -168,7 +159,7 @@ Provide analysis with risk levels and mitigation methods.`;
       setMessages((prev) => [
         ...prev,
         {
-          text: "⚙️ API key not configured. Please add your OpenRouter API key.",
+          text: "⚙️ API key not configured. Please add your OpenAI API key.",
           sender: "bot",
         },
       ]);
@@ -179,22 +170,20 @@ Provide analysis with risk levels and mitigation methods.`;
 
     try {
       const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
+        "https://api.openai.com/v1/chat/completions",
         {
           method: "POST",
           headers: {
             Authorization: "Bearer " + API_KEY,
-            "HTTP-Referer": "http://localhost",
-            "X-Title": "Weather Risk Chatbot",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "deepseek/deepseek-r1-0528:free",
+            model: "gpt-3.5-turbo",
             messages: [
               {
                 role: "system",
                 content:
-                  "You are a professional heat risk analyst and advisor. Respond with heat risk analysis based on Heat Index, Dew Point, and Solar Radiation like how affect risk to people concidering Heat Index, Dew Point, and Solar Radiation data.And provide risk mitigation methods with description for genaral public simply,clearly and friendly (very important) and not use ## in responce.you must response only heat risk or weather related question . Do NOT provide any other information. if user ask onother topic,respond this '❌ **Invalid Request**\nI can only assist with heat risk analysis based on Heat Index, Dew Point, and Solar Radiation data. Please provide relevant data for analysis.",
+                  "You are a professional heat risk analyst and advisor. Respond with heat risk analysis based on Heat Index and Solar Radiation like how affect risk to people considering Heat Index and Solar Radiation data. And provide risk mitigation methods with description for general public simply, clearly and friendly (very important) and not use ## in response. You must response only heat risk or weather related question. Do NOT provide any other information. if user ask another topic, respond this '❌ **Invalid Request**\nI can only assist with heat risk analysis based on Heat Index and Solar Radiation data. Please provide relevant data for analysis.",
               },
               { role: "user", content: analysisPrompt },
             ],
@@ -229,7 +218,7 @@ Provide analysis with risk levels and mitigation methods.`;
       setMessages((prev) => [
         ...prev,
         {
-          text: "⚙️ API key not configured. Please add your OpenRouter API key.",
+          text: "⚙️ API key not configured. Please add your OpenAI API key.",
           sender: "bot",
         },
       ]);
@@ -238,7 +227,7 @@ Provide analysis with risk levels and mitigation methods.`;
     setIsTyping(true);
     try {
       const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
+        "https://api.openai.com/v1/chat/completions",
         {
           method: "POST",
           headers: {
@@ -246,7 +235,7 @@ Provide analysis with risk levels and mitigation methods.`;
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "deepseek/deepseek-r1-0528:free",
+            model: "gpt-3.5-turbo",
             messages: [{ role: "user", content: message }],
           }),
         }
@@ -348,7 +337,7 @@ Provide analysis with risk levels and mitigation methods.`;
       '<h2 class="text-sm font-bold mt-4 mb-2 text-red-600">$1</h2>'
     );
     formattedText = formattedText.replace(
-      /^(✅|🔴|🟡|🟢|⚠️|🔥|💧|☀️|❄️|📌|🎯|🛡️|🌡️|📊)\s+(.*$)/gm,
+      /^(✅|🔴|🟡|🟢|⚠️|🔥|💧|☀️|❄️|📌|🎯|🛡️|🛡️|🌡️|📊)\s+(.*$)/gm,
       '<div class="flex items-start my-1"><span class="mr-2 text-lg">$1</span><span>$2</span></div>'
     );
     formattedText = formattedText.replace(/\n/g, "<br>");
@@ -460,4 +449,3 @@ Provide analysis with risk levels and mitigation methods.`;
 };
 
 export default ChatBot;
-

@@ -51,11 +51,21 @@ interface EmergencyContact {
   borderClass: string;
 }
 
-// Static guidance data: each safety card represents one flood severity level.
+// Centralized font-size classes so size changes are easy to manage.
+const FONT = {
+  pageBase: "text-[15px]",
+  title: "text-[30px]",
+  heading: "text-[24px]",
+  body: "text-[16px]",
+  label: "text-[17px]",
+  tiny: "text-[12px]",
+} as const;
+
+// Card definitions for each severity level.
 const safetyLevels: SafetyLevel[] = [
   {
     level: "NORMAL",
-    code: "LVL-0",
+    code: "LVL-1",
     textClass: "text-green-600",
     borderLeft: "border-l-4 border-green-500",
     bgActive: "bg-green-50",
@@ -75,7 +85,7 @@ const safetyLevels: SafetyLevel[] = [
   },
   {
     level: "ALERT",
-    code: "LVL-1",
+    code: "LVL-2",
     textClass: "text-yellow-600",
     borderLeft: "border-l-4 border-yellow-500",
     bgActive: "bg-yellow-50",
@@ -95,7 +105,7 @@ const safetyLevels: SafetyLevel[] = [
   },
   {
     level: "MINOR",
-    code: "LVL-1.5",
+    code: "LVL-3",
     textClass: "text-amber-600",
     borderLeft: "border-l-4 border-amber-500",
     bgActive: "bg-amber-50",
@@ -115,7 +125,7 @@ const safetyLevels: SafetyLevel[] = [
   },
   {
     level: "MODERATE",
-    code: "LVL-2",
+    code: "LVL-4",
     textClass: "text-orange-600",
     borderLeft: "border-l-4 border-orange-500",
     bgActive: "bg-orange-50",
@@ -126,7 +136,7 @@ const safetyLevels: SafetyLevel[] = [
     icon: <TriangleAlert size={26} />,
     status: "WARNING",
     actions: [
-      "Water entering home entry points — act now",
+      "Water entering home entry points - act now",
       "Do NOT walk or drive through flooded roads",
       "Walpola zone: move to upper floors immediately",
       "Turn off electrical appliances at breaker level",
@@ -135,7 +145,7 @@ const safetyLevels: SafetyLevel[] = [
   },
   {
     level: "MAJOR",
-    code: "LVL-2.5",
+    code: "LVL-5",
     textClass: "text-red-500",
     borderLeft: "border-l-4 border-red-500",
     bgActive: "bg-red-50",
@@ -155,7 +165,7 @@ const safetyLevels: SafetyLevel[] = [
   },
   {
     level: "CRITICAL",
-    code: "LVL-3",
+    code: "LVL-6",
     textClass: "text-red-600",
     borderLeft: "border-l-4 border-red-600",
     bgActive: "bg-red-50",
@@ -208,31 +218,31 @@ const SafetyGuidancePage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className={`min-h-screen bg-gray-50 flex flex-col ${FONT.pageBase}`}>
       <Header />
       <Navbar />
 
-      <main className="p-6 lg:p-8 flex-grow">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <main className="py-8 flex-grow">
+        <div className="max-w-[88rem] mx-auto px-4 md:px-5 lg:px-6 space-y-8">
 
-          {/* Page Heading */}
+          {/* Top heading + status clock */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <ShieldCheck size={44} className="text-blue-800 shrink-0" />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Safety Protocols & Guidance</h1>
-                <p className="text-gray-600 text-base">Based on Flood Risk Level Monitor Thresholds</p>
-              </div>
+            <div>
+              <h1 className="text-[30px] md:text-[36px] font-extrabold text-blue-900 flex items-center gap-3 tracking-tight">
+                <ShieldCheck size={36} className="text-blue-600 shrink-0" />
+                Safety Protocols & Guidance
+              </h1>
+              <p className="mt-2 text-gray-600 text-sm md:text-lg">Based on Flood Risk Level Monitor Thresholds</p>
             </div>
 
             {/* Live Clock */}
-            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm text-sm text-gray-500 self-start sm:self-auto">
+            <div className={`flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm ${FONT.label} text-gray-500 self-start sm:self-auto`}>
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               <Clock size={14} />
-              <span className="font-mono font-medium text-gray-700 text-sm">{mounted ? currentTime.toLocaleTimeString() : '--:--:-- --'}</span>
+              <span className={`font-mono font-medium text-gray-700 ${FONT.label}`}>{mounted ? currentTime.toLocaleTimeString() : '--:--:-- --'}</span>
               <span className="text-gray-300">|</span>
               <Radio size={14} className="text-blue-500" />
-              <span className="text-blue-600 font-semibold text-xs">LIVE</span>
+              <span className={`text-blue-600 font-semibold ${FONT.tiny}`}>LIVE</span>
             </div>
           </div>
 
@@ -240,10 +250,11 @@ const SafetyGuidancePage = () => {
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Radio size={15} className="text-blue-700" />
-              <h2 className="text-sm font-bold text-blue-700 uppercase tracking-widest">Alert Levels & Response Protocols</h2>
+              <h2 className={`${FONT.label} font-bold text-blue-700 uppercase tracking-widest`}>Alert Levels & Response Protocols</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
               {safetyLevels.map((item, index) => {
+                // Clicking same card toggles it closed.
                 const isActive = activeLevel === index;
                 return (
                   <button
@@ -253,24 +264,24 @@ const SafetyGuidancePage = () => {
                       ${item.borderLeft} ${isActive ? `${item.bgActive} shadow-lg ${item.glowClass} scale-[1.02]` : "bg-white shadow-sm hover:shadow-md hover:scale-[1.01]"}`}
                   >
                     {/* Badge */}
-                    <span className={`absolute top-0 right-0 text-sm font-black px-2 py-1 rounded-bl-xl ${item.badgeBg} ${item.badgeText}`}>{item.code}</span>
+                    <span className={`absolute top-0 right-0 ${FONT.label} font-black px-2 py-1 rounded-bl-xl ${item.badgeBg} ${item.badgeText}`}>{item.code}</span>
 
                     <div className="flex items-center gap-3 mb-4">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${item.textClass} bg-gray-100`}>{item.icon}</div>
                       <div>
-                        <p className="text-sm text-gray-400 uppercase tracking-wider">{item.status}</p>
-                        <h3 className={`font-black text-2xl leading-tight ${item.textClass}`}>{item.level}</h3>
+                        <p className={`${FONT.label} text-gray-400 uppercase tracking-wider`}>{item.status}</p>
+                        <h3 className={`font-black ${FONT.heading} leading-tight ${item.textClass}`}>{item.level}</h3>
                       </div>
                     </div>
 
 
-                    <div className={`inline-flex items-center gap-1 text-sm font-semibold rounded-full px-3 py-1 mb-3 bg-gray-100 ${item.textClass}`}>
+                    <div className={`inline-flex items-center gap-1 ${FONT.label} font-semibold rounded-full px-3 py-1 mb-3 bg-gray-100 ${item.textClass}`}>
                       <Zap size={12} /> TRIGGER: {item.threshold}
                     </div>
 
                     <ul className="space-y-2">
                       {item.actions.map((action, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700 leading-snug">
+                        <li key={i} className={`flex items-start gap-2 ${FONT.label} text-gray-700 leading-snug`}>
                           <ChevronRight size={14} className={`mt-0.5 shrink-0 ${item.textClass}`} /> {action}
                         </li>
                       ))}
@@ -285,7 +296,7 @@ const SafetyGuidancePage = () => {
 
           {/* Operational response section: shelters + hotline numbers. */}
           <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200">
-            <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center gap-2">
+            <h2 className={`${FONT.heading} font-bold text-blue-900 mb-6 flex items-center gap-2`}>
               <PhoneCall size={26} /> Emergency Action Plan
             </h2>
             <div className="grid lg:grid-cols-3 gap-8">
@@ -294,7 +305,7 @@ const SafetyGuidancePage = () => {
               <div className="lg:col-span-2 space-y-2">
                 <div className="flex items-center gap-2 mb-3">
                   <MapPin size={16} className="text-red-500" />
-                  <p className="font-bold text-gray-800 text-sm uppercase tracking-wide">Evacuation Centres</p>
+                  <p className={`font-bold text-gray-800 ${FONT.label} uppercase tracking-wide`}>Evacuation Centres</p>
                 </div>
                 {evacuationZones.map((zone, i) => (
                   <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
@@ -303,14 +314,14 @@ const SafetyGuidancePage = () => {
                         <Home size={15} className="text-gray-500" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">{zone.name}</p>
-                        <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
+                        <p className={`${FONT.label} font-semibold text-gray-800`}>{zone.name}</p>
+                        <div className={`flex items-center gap-3 mt-0.5 ${FONT.tiny} text-gray-400`}>
                           <span className="flex items-center gap-1"><Users size={11} /> {zone.capacity}</span>
                           <span className="flex items-center gap-1"><MapPin size={11} /> {zone.distance}</span>
                         </div>
                       </div>
                     </div>
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full border ${zone.status === "Open" ? "text-green-700 bg-green-50 border-green-200" : "text-yellow-700 bg-yellow-50 border-yellow-200"}`}>
+                    <span className={`${FONT.tiny} font-bold px-3 py-1 rounded-full border ${zone.status === "Open" ? "text-green-700 bg-green-50 border-green-200" : "text-yellow-700 bg-yellow-50 border-yellow-200"}`}>
                       {zone.status.toUpperCase()}
                     </span>
                   </div>
@@ -319,11 +330,11 @@ const SafetyGuidancePage = () => {
 
               {/* Emergency Hotlines */}
               <div className="space-y-2">
-                <p className="font-bold text-gray-800 text-sm uppercase tracking-wide mb-3">Emergency Hotlines</p>
+                <p className={`font-bold text-gray-800 ${FONT.label} uppercase tracking-wide mb-3`}>Emergency Hotlines</p>
                 {emergencyContacts.map((c, i) => (
                   <div key={i} className={`rounded-xl border ${c.borderClass} ${c.bgClass} px-4 py-3 flex items-center justify-between`}>
-                    <p className="text-sm md:text-base text-gray-600 leading-tight max-w-[180px]">{c.label}</p>
-                    <span className={`text-2xl font-black font-mono tracking-tight ${c.colorClass}`}>{c.number}</span>
+                    <p className={`${FONT.label} md:${FONT.body} text-gray-600 leading-tight max-w-[180px]`}>{c.label}</p>
+                    <span className={`${FONT.heading} font-black font-mono tracking-tight ${c.colorClass}`}>{c.number}</span>
                   </div>
                 ))}
               </div>
@@ -370,11 +381,11 @@ const SafetyGuidancePage = () => {
               <div key={i} className={`rounded-xl ${section.borderLeft} ${section.bg} p-6 shadow-sm`}>
                 <div className={`flex items-center gap-2 mb-4 ${section.text}`}>
                   {section.icon}
-                  <h3 className="font-bold text-base uppercase tracking-wide">{section.title}</h3>
+                  <h3 className={`font-bold ${FONT.body} uppercase tracking-wide`}>{section.title}</h3>
                 </div>
                 <ul className="space-y-3">
                   {section.items.map((item, j) => (
-                    <li key={j} className="flex items-start gap-3 text-base text-gray-700 leading-snug">
+                    <li key={j} className={`flex items-start gap-3 ${FONT.body} text-gray-700 leading-snug`}>
                       <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${section.dot}`} />{item}
                     </li>
                   ))}
