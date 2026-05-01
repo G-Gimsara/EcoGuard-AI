@@ -8,10 +8,10 @@ const HIGH_LEVELS = new Set(["Major", "Critical"]);
 const SOFT_NOISE = /\b(severe|evacuation|households|ankle-deep|pooling|roads|major homes|yards|home entry)\b/gi;
 
 function shouldSendFloodSms(previousSeverity, currentSeverity) {
-  // Early warning: notify once when level rises from Minor to Moderate.
-  if (previousSeverity === "Minor" && currentSeverity === "Moderate") return true;
-  if (!HIGH_LEVELS.has(currentSeverity)) return false;
   if (previousSeverity === currentSeverity) return false;
+  // Early warning: any transition into Moderate (first reading, Alert→Moderate, Minor→Moderate, etc.).
+  if (currentSeverity === "Moderate") return true;
+  if (!HIGH_LEVELS.has(currentSeverity)) return false;
   return true;
 }
 
@@ -81,25 +81,31 @@ function buildFloodMessage({ currentSeverity, firstAffected, nextAffected }) {
 
 async function sendSms(phoneNumber, message) {
   // Trim env values so accidental trailing spaces in .env do not break auth.
-  const token = String(process.env.TEXTLK_API_TOKEN || "").trim();
+  const token = String(
+    process.env.TEXTLK_API_TOKEN || process.env.TEXTLK_API_KEY || ""
+  ).trim();
   const senderId = String(process.env.TEXTLK_SENDER_ID || "").trim();
 
   if (!token || !senderId) {
-    throw new Error("TEXTLK_API_TOKEN or TEXTLK_SENDER_ID is missing.");
+    throw new Error(
+      "TEXTLK_API_TOKEN (or TEXTLK_API_KEY) or TEXTLK_SENDER_ID is missing."
+    );
   }
 
-  // Text.lk v3 send endpoint.
+  // Text.lk v3 send endpoint — `type` is required per API docs (same as sms.service.js).
   await axios.post(
     TEXTLK_URL,
     {
       recipient: phoneNumber,
       sender_id: senderId,
+      type: "plain",
       message,
     },
     {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        Accept: "application/json",
       },
       timeout: 10000,
     }
@@ -107,7 +113,7 @@ async function sendSms(phoneNumber, message) {
 }
 
 async function sendMajorCriticalFloodSms({ previousSeverity, currentSeverity, firstAffected, nextAffected }) {
-  // Send on Minor->Moderate early warning and on Major/Critical transitions.
+  // Send on transition into Moderate (early warning) and on Major/Critical transitions.
   if (!shouldSendFloodSms(previousSeverity, currentSeverity)) {
     return { skipped: true, reason: "No eligible severity transition", sent: 0, failed: 0 };
   }
@@ -136,7 +142,9 @@ async function sendMajorCriticalFloodSms({ previousSeverity, currentSeverity, fi
       sent += 1;
     } catch (error) {
       failed += 1;
-      console.error(`[flood-sms] Failed for ${user.phoneNumber}:`, error.message);
+      const detail =
+        error?.response?.data?.message || error?.response?.data || error.message;
+      console.error(`[flood-sms] Failed for ${user.phoneNumber}:`, detail);
     }
   }
 

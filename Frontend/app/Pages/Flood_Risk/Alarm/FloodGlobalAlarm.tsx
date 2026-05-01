@@ -5,18 +5,26 @@ import { usePathname } from "next/navigation";
 import { levelWarnings, webAlertPolicies, type LevelName } from "../Alert/floodLevelConfig";
 import { useFloodNotifications } from "../Notifications/hooks/useFloodNotifications";
 
-// Major/Critical are the only levels that trigger global alarm behavior.
+// Major/Critical drive siren audio only.
 function isHighRiskLevel(level: LevelName | undefined) {
   return level === "Major" || level === "Critical";
 }
+
+// Matches webAlertPolicies: browser alerts from Alert upward (not Normal).
+const BROWSER_ALERT_LEVELS: LevelName[] = [
+  "Alert",
+  "Minor",
+  "Moderate",
+  "Major",
+  "Critical",
+];
 
 export default function FloodGlobalAlarm() {
   const pathname = usePathname();
   const { liveLevel, liveRiseLevel } = useFloodNotifications();
   const [criticalAcknowledged, setCriticalAcknowledged] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  // Prevent duplicate alerts by tracking last processed high-risk level.
-  const previousLevelRef = useRef<LevelName | null>(null);
+  const previousBrowserLevelRef = useRef<LevelName | null>(null);
 
   useEffect(() => {
     // Reset acknowledgment once level drops below Critical.
@@ -38,26 +46,25 @@ export default function FloodGlobalAlarm() {
   }, [liveLevel]);
 
   useEffect(() => {
-    if (!liveLevel || !isHighRiskLevel(liveLevel)) {
-      previousLevelRef.current = liveLevel ?? null;
-      return;
-    }
-    if (typeof window === "undefined" || typeof Notification === "undefined") {
-      previousLevelRef.current = liveLevel;
+    if (!liveLevel || typeof window === "undefined" || typeof Notification === "undefined") {
+      if (liveLevel) previousBrowserLevelRef.current = liveLevel;
       return;
     }
 
-    // Shared wrapper for browser push notifications.
+    if (!BROWSER_ALERT_LEVELS.includes(liveLevel)) {
+      previousBrowserLevelRef.current = liveLevel;
+      return;
+    }
+
     const notify = (title: string, body: string) => {
       if (Notification.permission === "granted") {
         new Notification(title, { body, icon: "/favicon.ico" });
       }
     };
 
-    const levelChanged = previousLevelRef.current !== liveLevel;
+    const levelChanged = previousBrowserLevelRef.current !== liveLevel;
     const warningDetail = `${levelWarnings[liveLevel].detail} Rise level: ${liveRiseLevel} mm.`;
 
-    // Fire immediate alert only when level changes into a high-risk state.
     if (levelChanged) {
       if (Notification.permission === "default") {
         Notification.requestPermission().then((permission) => {
@@ -70,17 +77,16 @@ export default function FloodGlobalAlarm() {
       }
     }
 
-    // Follow repeat interval policy while risk remains active.
     const policy = webAlertPolicies[liveLevel];
     if (policy.repeatMinutes && (liveLevel === "Major" || (liveLevel === "Critical" && !criticalAcknowledged))) {
       const intervalId = window.setInterval(() => {
         notify(`${liveLevel} Flood Reminder`, `Flood level remains ${liveLevel}. Follow safety guidance immediately.`);
       }, policy.repeatMinutes * 60 * 1000);
-      previousLevelRef.current = liveLevel;
+      previousBrowserLevelRef.current = liveLevel;
       return () => window.clearInterval(intervalId);
     }
 
-    previousLevelRef.current = liveLevel;
+    previousBrowserLevelRef.current = liveLevel;
   }, [liveLevel, liveRiseLevel, criticalAcknowledged]);
 
   // Show global modal on Alert overview only; Live page has its own modal.
