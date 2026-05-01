@@ -10,14 +10,8 @@ function isHighRiskLevel(level: LevelName | undefined) {
   return level === "Major" || level === "Critical";
 }
 
-// Matches webAlertPolicies: browser alerts from Alert upward (not Normal).
-const BROWSER_ALERT_LEVELS: LevelName[] = [
-  "Alert",
-  "Minor",
-  "Moderate",
-  "Major",
-  "Critical",
-];
+// OS Notification API only for levels that include "Browser push" in webAlertPolicies.
+const BROWSER_ALERT_LEVELS: LevelName[] = ["Moderate", "Major", "Critical"];
 
 export default function FloodGlobalAlarm() {
   const pathname = usePathname();
