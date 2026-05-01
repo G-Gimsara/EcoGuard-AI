@@ -169,7 +169,7 @@ export default function Chat() {
             <p className="font-semibold text-sm sm:text-base text-gray-800 group-hover:text-[#123985]">
               {s.label}
             </p>
-            <p className="text-[11px] sm:text-xs text-gray-500">
+            <p className="text-[17px] sm:text-xs text-gray-800">
               {s.desc}
             </p>
           </div>
