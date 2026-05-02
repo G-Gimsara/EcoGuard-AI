@@ -37,8 +37,8 @@ def get_yesterday():
     return datetime.now().date() - timedelta(days=1)
 
 # -------------------------------------------------
-def is_after_3pm():
-    return datetime.now().hour >= 15
+def is_after_4pm():
+    return datetime.now().hour >= 16
 
 # -------------------------------------------------
 def get_update_range(last_date):
@@ -134,14 +134,14 @@ def fetch_today(location_name, coords):
         # Always fetch hourly data to get peak solar radiation
         solar_val = 0.0
         try:
-            # Use ARCHIVE if after 3pm for better accuracy, else FORECAST
-            url = ARCHIVE_BASE if is_after_3pm() else FORECAST_BASE
+            # Use ARCHIVE if after 4pm for better accuracy, else FORECAST
+            url = ARCHIVE_BASE if is_after_4pm() else FORECAST_BASE
             params = {
                 "latitude": lat, "longitude": lon, 
                 "hourly": "shortwave_radiation", 
                 "timezone": "Asia/Colombo"
             }
-            if is_after_3pm():
+            if is_after_4pm():
                 params["start_date"] = today.strftime("%Y-%m-%d")
                 params["end_date"] = today.strftime("%Y-%m-%d")
             
@@ -161,8 +161,8 @@ def fetch_today(location_name, coords):
                 "solarradiation": round(solar_val, 1)
             }]
 
-    # 2. Standard Logic for other locations (using 3PM rule)
-    if is_after_3pm():
+    # 2. Standard Logic for other locations (using 4PM rule)
+    if is_after_4pm():
         params = {
             "latitude": lat, "longitude": lon,
             "start_date": today.strftime("%Y-%m-%d"), "end_date": today.strftime("%Y-%m-%d"),
@@ -184,7 +184,7 @@ def fetch_today(location_name, coords):
             }]
         except: return []
     else:
-        # Before 3PM: Get current hour values
+        # Before 4PM: Get current hour values
         params = {
             "latitude": lat, "longitude": lon,
             "hourly": "temperature_2m,relative_humidity_2m,shortwave_radiation",
@@ -209,14 +209,14 @@ def fetch_today(location_name, coords):
 
 # -------------------------------------------------
 def update_weather_csv():
-    print(f"🔄 Checking CSV: {CSV_PATH}")
+    print(f" Checking CSV: {CSV_PATH}")
     if not os.path.exists(CSV_PATH):
         pd.DataFrame(columns=["location", "datetime", "tempmax", "humidity", "solarradiation"]).to_csv(CSV_PATH, index=False)
 
     try:
         df = pd.read_csv(CSV_PATH)
     except Exception as e:
-        print(f"❌ Cannot read CSV: {e}"); return
+        print(f" Cannot read CSV: {e}"); return
 
     df["datetime_parsed"] = pd.to_datetime(df["datetime"], errors="coerce")
     valid = df.dropna(subset=["datetime_parsed"])
@@ -226,7 +226,7 @@ def update_weather_csv():
     new_rows = []
 
     for loc_name, coords in LOCATIONS.items():
-        print(f"🌦️ Processing {loc_name}...")
+        print(f" Processing {loc_name}...")
         try:
             if hist_start and hist_end and hist_start <= hist_end:
                 hist_data = fetch_historical(loc_name, coords, hist_start, hist_end)
@@ -240,7 +240,7 @@ def update_weather_csv():
             print(f"   Error in {loc_name}: {e}")
 
     if not new_rows:
-        print("⚠️ No new data retrieved."); return
+        print(" No new data retrieved."); return
 
     new_df = pd.DataFrame(new_rows)
     today_str = today.strftime("%Y-%m-%d")
@@ -255,9 +255,9 @@ def update_weather_csv():
 
     try:
         combined.to_csv(CSV_PATH, index=False)
-        print(f"✅ Saved {len(new_rows)} rows. Data up to: {today}")
+        print(f" Saved {len(new_rows)} rows. Data up to: {today}")
     except Exception as e:
-        print(f"❌ Save failed: {e}")
+        print(f" Save failed: {e}")
 
 if __name__ == "__main__":
     update_weather_csv()

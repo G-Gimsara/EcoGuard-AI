@@ -30,7 +30,7 @@ const locations: Record<string, { lat: number; lon: number; name: string }> = {
 
 function calculateHeatIndex(tempC: number, humidity: number) {
   const tempF = (tempC * 9) / 5 + 32;
-  let hiF =
+  const rawHiF =
     -42.379 +
     2.04901523 * tempF +
     10.14333127 * humidity -
@@ -41,8 +41,10 @@ function calculateHeatIndex(tempC: number, humidity: number) {
     0.00085282 * tempF * humidity * humidity -
     0.00000199 * tempF * tempF * humidity * humidity;
 
-  const hiC = tempF < 80 ? tempC : (hiF - 32) * 5 / 9;
-  return { hiC: hiC.toFixed(1), hiF };
+  // NOAA regression is intended for warmer conditions; below 80F use actual air temperature.
+  const effectiveHiF = tempF < 80 ? tempF : rawHiF;
+  const hiC = (effectiveHiF - 32) * 5 / 9;
+  return { hiC: hiC.toFixed(1), hiF: effectiveHiF };
 }
 
 export default function LiveMonitoringCard() {
@@ -75,7 +77,11 @@ export default function LiveMonitoringCard() {
           `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&timezone=auto`
         );
         const json = await res.json();
-        const { temperature_2m: temp, relative_humidity_2m: hum } = json.current;
+        const temp = Number(json?.current?.temperature_2m);
+        const hum = Number(json?.current?.relative_humidity_2m);
+        if (!Number.isFinite(temp) || !Number.isFinite(hum)) {
+          throw new Error("Invalid Open-Meteo current weather response");
+        }
 
         const { hiC, hiF } = calculateHeatIndex(temp, hum);
 
@@ -133,6 +139,90 @@ export default function LiveMonitoringCard() {
       return { color: "rose", bg: "bg-rose-700", text: "text-rose-700", isCritical: true };
 
     return { color: "red", bg: "bg-red-600", text: "text-red-600", isCritical: true };
+  }, [data?.risk_level]);
+
+  const riskGuidance = useMemo(() => {
+    const level = (data?.risk_level || "").toLowerCase();
+
+    if (level === "caution") {
+      return {
+        title: "Caution",
+        range: "27°C - 32°C",
+        effect: "Fatigue possible with prolonged exposure and physical activity.",
+        tips: [
+          "Stay hydrated by drinking water regularly, even if not thirsty",
+          "Wear lightweight, loose-fitting, light-colored clothing",
+          "Take breaks in shaded or cooler areas",
+        ],
+        box: "from-amber-50 to-yellow-50 border-amber-300",
+        titleText: "text-amber-700",
+        bodyText: "text-amber-900",
+      };
+    }
+
+    if (level === "extreme caution") {
+      return {
+        title: "Extreme Caution",
+        range: "32°C - 41°C",
+        effect: "Heat cramps and heat exhaustion possible.",
+        tips: [
+          "Drink more fluids and avoid alcohol or caffeine",
+          "Schedule outdoor activities during cooler parts of the day",
+          "Use sunscreen and wear protective clothing like hats",
+          "Check on vulnerable individuals such as elderly and children",
+        ],
+        box: "from-orange-50 to-amber-50 border-orange-300",
+        titleText: "text-orange-700",
+        bodyText: "text-orange-900",
+      };
+    }
+
+    if (level === "danger") {
+      return {
+        title: "Danger",
+        range: "41°C - 54°C",
+        effect: "Heat exhaustion likely; heat stroke possible.",
+        tips: [
+          "Limit outdoor activity and stay indoors in air-conditioned places",
+          "Take cool showers or use wet cloths to reduce body temperature",
+          "Increase rest breaks and reduce physical exertion",
+          "Drink electrolyte solutions if sweating heavily",
+        ],
+        box: "from-red-50 to-orange-50 border-red-300",
+        titleText: "text-red-700",
+        bodyText: "text-red-900",
+      };
+    }
+
+    if (level === "extreme danger") {
+      return {
+        title: "Extreme Danger",
+        range: ">= 54°C",
+        effect: "Heat stroke highly likely.",
+        tips: [
+          "Avoid all outdoor activities",
+          "Seek immediate medical attention if symptoms occur",
+          "Move to cooling centers or air-conditioned shelters",
+          "Continuously monitor for signs of heat stroke",
+        ],
+        box: "from-rose-50 to-red-50 border-rose-400",
+        titleText: "text-rose-700",
+        bodyText: "text-rose-900",
+      };
+    }
+
+    return {
+      title: "Normal",
+      range: "< 27°C",
+      effect: "Low immediate heat stress risk under current conditions.",
+      tips: [
+        "Maintain regular hydration through the day",
+        "Continue normal activity with periodic rest",
+      ],
+      box: "from-emerald-50 to-lime-50 border-emerald-300",
+      titleText: "text-emerald-700",
+      bodyText: "text-emerald-900",
+    };
   }, [data?.risk_level]);
 
   if (!data) {
@@ -318,6 +408,41 @@ export default function LiveMonitoringCard() {
                   }%` }}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Risk Effect & Recommendations */}
+          <div className={`mt-7 rounded-2xl border-2 bg-gradient-to-br ${riskGuidance.box} p-6`}>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h3 className={`text-xl font-bold ${riskGuidance.titleText}`}>
+                {riskGuidance.title} Guidance
+              </h3>
+              <span className={`px-3 py-1.5 rounded-full text-sm font-bold bg-white/80 ${riskGuidance.titleText}`}>
+                {riskGuidance.range}
+              </span>
+            </div>
+
+            <div className="mb-4">
+              <p className={`text-sm font-bold uppercase tracking-wide mb-1 ${riskGuidance.titleText}`}>
+                Physiological Effect
+              </p>
+              <p className={`text-base font-semibold ${riskGuidance.bodyText}`}>
+                "{riskGuidance.effect}"
+              </p>
+            </div>
+
+            <div>
+              <p className={`text-sm font-bold uppercase tracking-wide mb-2 ${riskGuidance.titleText}`}>
+                Mitigation Strategy
+              </p>
+              <ul className={`space-y-1.5 text-sm font-semibold ${riskGuidance.bodyText}`}>
+                {riskGuidance.tips.map((tip) => (
+                  <li key={tip} className="flex items-start gap-2">
+                    <span className={riskGuidance.titleText}>•</span>
+                    <span>{tip}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
