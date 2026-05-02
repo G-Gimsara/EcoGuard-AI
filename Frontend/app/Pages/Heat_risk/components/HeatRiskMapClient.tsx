@@ -191,14 +191,15 @@ export default function HeatRiskMapClient({ data = [] }: HeatRiskMapClientProps)
             pane: "heatBlendPane",
             style: {
               stroke: false,
-              weight: 0,
+              weight: 1,
               opacity: 0,
               color: "transparent",
               fillOpacity: 0.94,
             },
+            
             onEachFeature: (_: unknown, layer: any) => {
               layer.on({
-                mouseover: () => layer.setStyle({ fillOpacity: 0.98 }),
+                mouseover: () => layer.setStyle({ fillOpacity: 0.99 }),
                 mouseout: () => layer.setStyle({ fillOpacity: 0.94 }),
               });
             },
@@ -340,7 +341,7 @@ export default function HeatRiskMapClient({ data = [] }: HeatRiskMapClientProps)
 
       <div ref={containerRef} className="w-full h-full rounded-xl" />
 
-      <div className="absolute left-4 top-24 z-1000 w-72">
+      <div className="absolute left-4 top-5 z-1000 w-72">
         <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-lg border border-white/60 p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-gray-900">Map Layer</h3>
