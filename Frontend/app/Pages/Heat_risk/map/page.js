@@ -88,9 +88,7 @@ export default function MapPage() {
   return (
     <main className="min-h-screen bg-gray-100 p-3">
       <Navigation />
-      <h1 className="text-2xl font-bold text-center text-amber-600 mb-3">
-        Colombo District Heat Map
-      </h1>
+      
 
       <section className="relative bg-white rounded-xl shadow overflow-hidden">
         <HeatRiskMapClient data={mapData} />
