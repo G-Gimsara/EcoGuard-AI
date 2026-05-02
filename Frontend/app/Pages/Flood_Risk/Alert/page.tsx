@@ -259,13 +259,13 @@ export default function FloodLevelsPage() {
               className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-6 shadow-sm"
               aria-labelledby="safety-guidelines-heading"
             >
-              <h2 id="safety-guidelines-heading" className="text-[28px] font-bold text-blue-900 mb-2">
+              <h2 id="safety-guidelines-heading" className="text-[30px] font-bold text-blue-900 mb-2">
                 Safety guidelines
               </h2>
               <p className="text-blue-800 mb-4 text-[18px]">
                 Follow these steps for the <strong>{currentSeverity}</strong> level. Adjust as local authorities direct.
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-blue-900 text-[17px] leading-relaxed">
+              <ul className="list-disc pl-6 space-y-2 text-blue-900 text-[18px] leading-relaxed">
                 {guidelines.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
