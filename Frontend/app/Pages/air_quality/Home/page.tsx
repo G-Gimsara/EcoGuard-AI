@@ -284,6 +284,27 @@ const verifyOTP = async (): Promise<void> => {
 )}
 
 
+<div className="mt-8 py-5 border-t border-gray-200 flex flex-wrap gap-5 items-center">
+  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+    References
+  </h3>
+
+  <ul className="text-xs text-gray-600 space-y-1">
+    <li>
+      Alert Example
+      <a
+        href="https://drive.google.com/file/d/1bU45eSIUxxThSlohcEmEOBiOQowEhboy/view?usp=sharing"
+        target="_blank"
+        className="text-blue-600 hover:underline ml-1"
+      >
+        Alert Example
+      </a>
+    </li>
+  </ul>
+</div>
+      
+
+
     </div>
   );
 }

@@ -23,12 +23,12 @@ const MODULES = [
   },
   {
     id: 2,
-    title: 'Air Quality Management',
-    description: 'Real-time air quality monitoring with PM2.5, PM10, CO₂ levels and health recomendations system.',
+    title: 'Air Quality Monitoring',
+    description: 'Real-time air quality monitoring  and health recomendations system.',
     icon: Wind,
     image: AirImg,
     link: '/Pages/air_quality/Dashboard',
-    tag: 'IoT • Environmental Health'
+    tag: 'IoT • AI • Air Quality'
   },
   {
     id: 3,

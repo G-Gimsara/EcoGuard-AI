@@ -174,7 +174,7 @@ Hello ${name},
 📅 ${time}
 
 ━━━━━━━━━━━━━━
-📌 Alert Type: ${user.alert_frequency.toUpperCase()}
+📌 Alert : ${user.alert_frequency.toUpperCase()}
 
 ⏰ Next Alert:
 ${nextAlertText}
@@ -202,7 +202,6 @@ ${nextAlertText}
 ━━━━━━━━━━━━━━
 🌡 Temperature
 • Temp: ${air?.temperature ?? "--"} °C
-• Status: ${air?.air_status ?? "Normal"}
 
 ━━━━━━━━━━━━━━
 
