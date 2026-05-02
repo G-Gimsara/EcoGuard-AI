@@ -72,6 +72,32 @@ function formatDatesWithHeatIndex(entries = []) {
   return formatListWithAnd(dateItems);
 }
 
+function toStringArray(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value
+      .split(/\r?\n|[,;]+/)
+      .map((item) => item.replace(/^[-*•\d.)\s]+/, "").trim())
+      .filter(Boolean);
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value).map((item) => String(item).trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function normalizeWarningMessage(raw = {}) {
+  return {
+    risky_day: String(raw?.risky_day || "").trim(),
+    location: String(raw?.location || "").trim(),
+    main_warning_message: String(raw?.main_warning_message || "").trim(),
+    possible_situations: toStringArray(raw?.possible_situations),
+    mitigation_strategies: toStringArray(raw?.mitigation_strategies),
+  };
+}
+
 function calculateMetrics(entries) {
   const uniqueDates = new Set(entries.map(e => e.datetime.split("T")[0]));
   const sortedDates = Array.from(uniqueDates).sort();
@@ -444,7 +470,7 @@ Keep the entire message friendly, easy to understand, and encouraging. Act as a 
 
     // Parse the JSON response
     const parsed = JSON.parse(text);
-    return parsed;
+    return normalizeWarningMessage(parsed);
 
   } catch (err) {
     console.error(`[OpenAI failed for date ${date}]:`, err.message);
@@ -595,7 +621,7 @@ Structure your response as a JSON object with keys: "risky_day", "location", "ma
 
     // Parse the JSON response
     const parsed = JSON.parse(text);
-    return parsed;
+    return normalizeWarningMessage(parsed);
 
   } catch (err) {
     console.error(`[OpenAI failed for trend ${location} ${start_date}-${end_date}]:`, err.message);
