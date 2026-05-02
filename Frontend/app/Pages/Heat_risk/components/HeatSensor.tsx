@@ -253,8 +253,8 @@ export default function LiveMonitoringCard() {
               <ShieldAlert size={24} />
             </div>
             <div>
-              <h1 className="font-bold text-xl text-slate-900">EcoGuard Live Monitoring</h1>
-              <p className="text-sm text-emerald-600 font-medium -mt-1">Real-Time Heat Risk Surveillance</p>
+              <h1 className="font-bold text-3xl text-slate-900">EcoGuard Live Monitoring</h1>
+              <p className="text-lg text-emerald-800 font-medium -mt-1">Real-Time Heat Risk Surveillance</p>
             </div>
           </div>
 
@@ -300,10 +300,10 @@ export default function LiveMonitoringCard() {
                 </div>
               </div>
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-500 mb-2">AIR TEMPERATURE</p>
+                <p className="text-lg font-semibold text-slate-700 mb-2">AIR TEMPERATURE</p>
                 <div className="flex items-baseline">
                   <span className="text-4xl font-bold text-slate-900">{data.temperature}</span>
-                  <span className="text-lg text-slate-400 ml-1">°C</span>
+                  <span className="text-lg text-slate-800 ml-1">°C</span>
                 </div>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-3">
@@ -326,10 +326,10 @@ export default function LiveMonitoringCard() {
                 </div>
               </div>
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-500 mb-2">HUMIDITY</p>
+                <p className="text-lg font-semibold text-slate-700 mb-2">HUMIDITY</p>
                 <div className="flex items-baseline">
                   <span className="text-4xl font-bold text-slate-900">{data.humidity}</span>
-                  <span className="text-lg text-slate-400 ml-1">%</span>
+                  <span className="text-lg text-slate-800 ml-1">%</span>
                 </div>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-3">
@@ -346,16 +346,16 @@ export default function LiveMonitoringCard() {
                 <div className="p-3 bg-orange-100 rounded-xl text-orange-600">
                   <Activity size={24} />
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">
-                  <Zap size={14} />
-                  Feels Like
+                 <div className="flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                  LIVE
                 </div>
               </div>
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-500 mb-2">HEAT INDEX</p>
+                <p className="text-lg font-semibold text-slate-700 mb-2">HEAT INDEX - Feels Like Temp</p>
                 <div className="flex items-baseline">
                   <span className="text-4xl font-bold text-slate-900">{data.heat_index}</span>
-                  <span className="text-lg text-slate-400 ml-1">°C</span>
+                  <span className="text-lg text-slate-800 ml-1">°C</span>
                 </div>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-3">
@@ -385,7 +385,7 @@ export default function LiveMonitoringCard() {
                 </div>
               </div>
               <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-500 mb-2">RISK LEVEL</p>
+                <p className="text-lg font-semibold text-slate-700 mb-2">RISK LEVEL</p>
                 <div className="flex items-baseline">
                   <span className={`text-2xl font-bold ${riskTheme.text}`}>{data.risk_level}</span>
                 </div>
