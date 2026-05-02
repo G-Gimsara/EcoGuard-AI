@@ -313,17 +313,17 @@ export default function Dashboard() {
                   {/* Rows are already ordered newest-first from fetch/socket updates. */}
                   {measurements.slice(0, 10).map((m, idx) => (
                     <tr key={`${m.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 text-[16px]">{idx + 1}</td>
-                      <td className="px-6 py-4 text-[16px] font-semibold text-blue-700">{m.riseLevel.toFixed(1)}</td>
-                      <td className="px-6 py-4 text-[16px]">{m.floodFeet}</td>
-                      <td className="px-6 py-4 text-[16px]">
+                      <td className="px-6 py-4 text-[17px]">{idx + 1}</td>
+                      <td className="px-6 py-4 text-[17px] font-semibold text-blue-700">{m.riseLevel.toFixed(1)}</td>
+                      <td className="px-6 py-4 text-[17px]">{m.floodFeet}</td>
+                      <td className="px-6 py-4 text-[17px]">
                         <span className={`px-3 py-1.5 rounded-full text-[12px] font-semibold ${severityColors[m.severity]?.bg || "bg-gray-200"} ${severityColors[m.severity]?.text || "text-gray-800"}`}>
                           {m.severity}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-[15px] text-gray-800">{m.firstAffected.length > 20 ? `${m.firstAffected.slice(0, 20)}...` : m.firstAffected}</td>
-                      <td className="px-6 py-4 text-[15px] text-gray-800">{m.nextAffected && m.nextAffected.length > 20 ? `${m.nextAffected.slice(0, 20)}...` : m.nextAffected || "-"}</td>
-                      <td className="px-6 py-4 text-[15px] text-gray-600">{new Date(m.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
+                      <td className="px-6 py-4 text-[17px] text-gray-800">{m.firstAffected.length > 20 ? `${m.firstAffected.slice(0, 20)}...` : m.firstAffected}</td>
+                      <td className="px-6 py-4 text-[17px] text-gray-800">{m.nextAffected && m.nextAffected.length > 20 ? `${m.nextAffected.slice(0, 20)}...` : m.nextAffected || "-"}</td>
+                      <td className="px-6 py-4 text-[17px] text-gray-600">{new Date(m.createdAt).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
                     </tr>
                   ))}
                   {/* First-load / empty-history fallback message. */}
@@ -360,11 +360,11 @@ export default function Dashboard() {
                   {/* Mirror flood table behavior for visual consistency. */}
                   {floatStatuses.slice(0, 10).map((f, idx) => (
                     <tr key={`${f.id}-${idx}`} className="bg-white hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 text-[16px]">{idx + 1}</td>
-                      <td className="px-6 py-4 text-[16px]">{f.device_id}</td>
-                      <td className={`px-6 py-4 text-[16px] font-semibold ${f.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>{f.status}</td>
-                      <td className="px-6 py-4 text-[16px]">{f.message}</td>
-                      <td className="px-6 py-4 text-[16px] text-gray-600">{formatFloatTime(f.recorded_at)}</td>
+                      <td className="px-6 py-4 text-[17px]">{idx + 1}</td>
+                      <td className="px-6 py-4 text-[17px]">{f.device_id}</td>
+                      <td className={`px-6 py-4 text-[17px] font-semibold ${f.status === "DANGER" ? "text-red-600" : "text-green-600"}`}>{f.status}</td>
+                      <td className="px-6 py-4 text-[17px]">{f.message}</td>
+                      <td className="px-6 py-4 text-[17px] text-gray-600">{formatFloatTime(f.recorded_at)}</td>
                     </tr>
                   ))}
                   {/* Empty-state when no float sensor events are available yet. */}
