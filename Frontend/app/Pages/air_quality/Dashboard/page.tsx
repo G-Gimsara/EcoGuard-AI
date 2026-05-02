@@ -703,11 +703,21 @@ export default function Dashboard() {
               <li>
                 Watch a real-time practical video with sensor accuracy.
                 <a
-                  href="https://fir-8506f.web.app/reference"
+                  href="https://drive.google.com/file/d/1Wb6NxfKyswIgcUWkrpRBZgyFFuFZrLj1/view?usp=sharing"
                   target="_blank"
                   className="text-blue-600 hover:underline ml-1"
                 >
-                  https://fir-8506f.web.app/reference
+                 practical video
+                </a>
+              </li>
+              <li>
+             Why is ammonia used in window cleaner
+                <a
+                  href="https://skyswc.com/blog/why-is-ammonia-used-in-window-cleaner"
+                  target="_blank"
+                  className="text-blue-600 hover:underline ml-1"
+                >
+                 ammonia used in window cleaner
                 </a>
               </li>
 
