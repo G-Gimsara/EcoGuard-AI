@@ -46,6 +46,9 @@ const CORAL_AREAS = [
   { id: "weligama",    name: "Weligama",                 coast: "South Coast",      emoji: "🪸", risk: "MODERATE", rivers: ["Nilwala Ganga", "Polwatta Ganga"] },
 ];
 
+
+
+
 const getRiskBadge = (risk: string) => {
   if (risk === "CRITICAL") return "bg-red-600 text-white";
   if (risk === "HIGH")     return "bg-orange-500 text-white";
@@ -115,6 +118,9 @@ export default function AnalyzeCoral() {
   const [chatInput, setChatInput] = useState<string>("");
   const [chatLoading, setChatLoading] = useState<boolean>(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
+  const [showAreaPopup, setShowAreaPopup] = useState(false);
+const [popupAreaName, setPopupAreaName] = useState("");
 
   const isQualityTooLow = (q: ImageQualityScore | null) =>
     !!q && q.overall === "poor" && [q.brightness, q.contrast, q.sharpness].filter(v => v < 25).length >= 2;
@@ -143,6 +149,10 @@ export default function AnalyzeCoral() {
     setFile(f); setResult(null); setShowBanner(false); setShowRivers(false);
     setQualityError(false); setOverrideQuality(false); setQuality(null);
     setChatOpen(false); setChatMsgs([]); setChatInput(""); setChatLoading(false); setChatError(null);
+
+     // ✅ POPUP TRIGGER HERE
+  setShowPopup(true);
+
     const reader = new FileReader();
     reader.onloadend = () => {
       const dataUrl = reader.result as string;
@@ -258,6 +268,54 @@ export default function AnalyzeCoral() {
       <Header />
       <Navbar />
       <div className="max-w-5xl mx-auto px-6 py-12">
+      {showAreaPopup && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    
+    <div className="bg-white rounded-2xl p-6 shadow-xl w-[90%] max-w-md text-center border-l-4 border-yellow-500">
+      
+      <h2 className="text-xl font-bold mb-2 text-yellow-600">
+        ⚠️ Location Selection Notice
+      </h2>
+
+      <p className="text-gray-700 text-sm mb-3">
+        You selected <span className="font-semibold">{popupAreaName}</span>
+      </p>
+
+      <p className="text-gray-600 text-sm mb-5">
+        Incorrect location selection may lead to inaccurate coral health predictions, 
+        as water quality and environmental conditions vary by region.
+      </p>
+
+      <button
+        onClick={() => setShowAreaPopup(false)}
+        className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-xl font-semibold transition"
+      >
+        I Understand
+      </button>
+
+    </div>
+  </div>
+)}
+      {showPopup && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl p-6 shadow-xl w-[90%] max-w-md text-center">
+      
+      <h2 className="text-xl font-bold mb-2">🪸 Coral Image Selected</h2>
+      
+      <p className="text-gray-600 text-sm mb-4">
+        Your coral image has been uploaded successfully.  
+        You can now proceed with AI analysis.
+      </p>
+
+      <button
+        onClick={() => setShowPopup(false)}
+        className="bg-blue-600 text-white px-5 py-2 rounded-xl font-semibold"
+      >
+        OK
+      </button>
+    </div>
+  </div>
+)}
 
         {showBanner && banner && (
           <div className={`${banner.color} rounded-2xl px-6 py-4 mb-6 shadow-lg`}>
@@ -332,7 +390,16 @@ export default function AnalyzeCoral() {
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {CORAL_AREAS.map(area => (
-                  <div key={area.id} onClick={() => { setSelectedArea(area); setShowRivers(false); setResult(null); setShowBanner(false); }}
+                  <div key={area.id} onClick={() => {
+                    setSelectedArea(area);
+                    setShowRivers(false);
+                    setResult(null);
+                    setShowBanner(false);
+                  
+                    // ✅ popup data
+                    setPopupAreaName(area.name);
+                    setShowAreaPopup(true);
+                  }}
                     className={`p-4 rounded-xl border-2 cursor-pointer transition ${selectedArea?.id === area.id ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}>
                     <div className="flex items-center justify-between">
                       <p className="font-semibold text-black">{area.emoji} {area.name}</p>
@@ -470,62 +537,89 @@ export default function AnalyzeCoral() {
             </div>
 
             {chatOpen && (
-              <div className="bg-white rounded-xl shadow p-6 border-l-4 border-purple-500 print:hidden">
-                <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
-                  <Brain className="text-purple-600" /> Chatbot (Ask about current situation)
-                </h2>
-                <p className="text-xs text-gray-400 mb-4">
-                  Uses {selectedArea.name} + live IoT water data (pH/turbidity/temp) automatically.
-                </p>
+  <div className="bg-white rounded-2xl shadow-xl p-8 border-l-4 border-purple-500 print:hidden">
+    
+    {/* Header */}
+    <h2 className="text-2xl font-bold flex items-center gap-3 mb-3">
+      <Brain className="text-purple-600" size={26} />
+      Chatbot Assistant
+    </h2>
 
-                <div className="border rounded-xl bg-gray-50 p-4 h-72 overflow-y-auto space-y-3">
-                  {chatMsgs.length === 0 ? (
-                    <p className="text-sm text-gray-500">Chat will appear after prediction.</p>
-                  ) : (
-                    chatMsgs.map((m, i) => (
-                      <div key={`${m.ts}-${i}`} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm whitespace-pre-line shadow-sm ${
-                          m.role === "user" ? "bg-blue-600 text-white" : "bg-white text-gray-900 border"
-                        }`}>
-                          {m.content}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                  {chatLoading && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[85%] rounded-2xl px-4 py-2 text-sm bg-white text-gray-700 border">
-                        Thinking…
-                      </div>
-                    </div>
-                  )}
-                </div>
+    <p className="text-sm text-gray-500 mb-5">
+      Ask anything about <span className="font-semibold">{selectedArea.name}</span> using live IoT water data.
+    </p>
 
-                {chatError && (
-                  <p className="text-xs text-red-600 mt-3">Chat error: {chatError}</p>
-                )}
+    {/* Chat Messages */}
+    <div className="border rounded-2xl bg-gray-50 p-5 h-[500px] overflow-y-auto space-y-4">
+      
+      {chatMsgs.length === 0 ? (
+        <p className="text-base text-gray-500 text-center mt-10">
+          Chat will appear after prediction.
+        </p>
+      ) : (
+        chatMsgs.map((m, i) => (
+          <div
+            key={`${m.ts}-${i}`}
+            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+          >
+            <div
+              className={`max-w-[95%] rounded-2xl px-5 py-3 text-base whitespace-pre-line shadow ${
+                m.role === "user"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-900 border"
+              }`}
+            >
+              {m.content}
+            </div>
+          </div>
+        ))
+      )}
 
-                <div className="mt-4 flex gap-2">
-                  <input
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!chatLoading) sendChat(); }
-                    }}
-                    disabled={chatLoading}
-                    placeholder="Type your question about the current water conditions…"
-                    className="flex-1 rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white"
-                  />
-                  <button
-                    onClick={() => { if (!chatLoading) sendChat(); }}
-                    disabled={chatLoading || !chatInput.trim()}
-                    className="px-5 py-3 rounded-xl font-semibold bg-purple-600 text-white disabled:opacity-50"
-                  >
-                    Send
-                  </button>
-                </div>
-              </div>
-            )}
+      {/* Loading */}
+      {chatLoading && (
+        <div className="flex justify-start">
+          <div className="max-w-[95%] rounded-2xl px-5 py-3 text-base bg-white text-gray-700 border shadow">
+            Thinking…
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Error */}
+    {chatError && (
+      <p className="text-sm text-red-600 mt-4">
+        Chat error: {chatError}
+      </p>
+    )}
+
+    {/* Input */}
+    <div className="mt-5 flex gap-3">
+      <input
+        value={chatInput}
+        onChange={(e) => setChatInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (!chatLoading) sendChat();
+          }
+        }}
+        disabled={chatLoading}
+        placeholder="Ask about water quality, coral health, risks..."
+        className="flex-1 rounded-2xl border px-5 py-4 text-base focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white shadow-sm"
+      />
+
+      <button
+        onClick={() => {
+          if (!chatLoading) sendChat();
+        }}
+        disabled={chatLoading || !chatInput.trim()}
+        className="px-6 py-4 rounded-2xl font-semibold text-base bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50 shadow"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+)}
 
             <button onClick={() => window.print()} className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold print:hidden">🖨️ Print Report</button>
             <button onClick={() => { setFile(null); setPreview(null); setQuality(null); setResult(null); setShowBanner(false); setShowRivers(false); setSelectedArea(null); }}

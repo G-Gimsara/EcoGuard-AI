@@ -30,12 +30,16 @@ app.add_middleware(
 device      = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 num_classes = 3
 
-# ✅ FIXED: alphabetical order to match ImageFolder training order
-class_names = ["bleach_1_40", "bleach_40_100", "healthy_corals"]
+class_names = ["bleach_11_50", "bleach_50_100", "healthy_corals"]
 
-model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-model.fc = nn.Linear(model.fc.in_features, num_classes)
-model.load_state_dict(torch.load("my_model.pth", map_location=device))
+model = models.efficientnet_b0(weights=None)
+model.classifier[1] = nn.Linear(
+    model.classifier[1].in_features,
+    num_classes
+)
+model.load_state_dict(
+    torch.load("efficientnetb0_model.pth", map_location=device)
+)
 model = model.to(device)
 model.eval()
 
@@ -45,112 +49,163 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
+# ─────────────────────────────────────────────────────────────
+#  RESEARCH CONTEXT
+#  IoT sensors measure INLAND river water quality.
+#  Degraded inland water flows downstream into coral reef zones.
+#  pH < 6.5  = acidic (agri/industrial runoff, acid rain)
+#  pH > 8.5  = alkaline (household soap/detergent, sewage)
+#  Both extremes stress/bleach coral when they reach the reef.
+# ─────────────────────────────────────────────────────────────
+
+CORE_RULES = """Rules:
+- Coral diagnosis comes from the AI image model only — do not override with water data.
+- Sensor data is INLAND river water, not seawater. Explain the inland-to-reef pollution pathway.
+- pH < 6.5 = acidic pollution (agri chemicals, acid rain, industrial waste).
+- pH > 8.5 = alkaline pollution (household soap, detergent, sewage effluent).
+- Connect inland pH extremes to coral bleaching where relevant.
+- If coral is bleached but water is currently safe, consider past pollution events or other stressors."""
+
+
+def inland_ph_label(ph_str: str) -> str:
+    """One-line pH label — concise, low token cost."""
+    try:
+        ph = float(ph_str)
+    except (ValueError, TypeError):
+        return ""
+    if ph < 6.5:
+        return f"ACIDIC ({ph}) — likely agri/industrial runoff; acidifies reef water downstream"
+    elif ph > 8.5:
+        return f"ALKALINE ({ph}) — likely household soap/detergent/sewage; chemical stress to reef"
+    return f"SAFE ({ph}) — within 6.5–8.5 inland safe range"
+
+
+def build_water_section(
+    coral_area: str, rivers: str,
+    ph_value: str, ph_status: str,
+    turbidity_ntu: str, turbidity_status: str,
+    temperature: str, temp_status: str,
+) -> str:
+    """Build the water quality block. Returns empty string if no data."""
+    if not any([ph_value, turbidity_ntu, temperature]):
+        return ""
+    ph_label = inland_ph_label(ph_value) if ph_value else "N/A"
+    return (
+        f"Inland river sensor readings (rivers flowing INTO {coral_area} reef — not seawater):\n"
+        f"  pH         : {ph_value or 'N/A'} — {ph_label}\n"
+        f"  Turbidity  : {turbidity_ntu or 'N/A'} NTU ({turbidity_status}) — safe ≤10 NTU\n"
+        f"  Temperature: {temperature or 'N/A'}°C ({temp_status}) — safe 23–29°C\n"
+        f"  Rivers     : {rivers}\n"
+        f"Research context: acidic (<6.5) or alkaline (>8.5) inland water flows downstream and stresses coral."
+    )
+
+
+async def call_openai(messages: list, max_tokens: int = 500, temperature: float = 0.5) -> str:
+    """Call gpt-4o-mini with web search fallback. Returns text content."""
+    for use_tools in [True, False]:
+        try:
+            kwargs = dict(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            if use_tools:
+                kwargs["tools"] = [{"type": "web_search_preview"}]
+            response = openai_client.chat.completions.create(**kwargs)
+            return (response.choices[0].message.content or "").strip()
+        except Exception as e:
+            if not use_tools:
+                return f"Unable to generate response. Error: {str(e)}"
+    return "Unable to generate response."
+
 
 async def get_coral_suggestions(
-    raw_prediction,
-    role=None,
-    coral_area="", coast="", rivers="",
-    ph_value="", ph_status="",
-    turbidity_ntu="", turbidity_status="",
-    temperature="", temp_status=""
+    raw_prediction: str,
+    role: str = None,
+    coral_area: str = "",
+    coast: str = "",
+    rivers: str = "",
+    ph_value: str = "",
+    ph_status: str = "",
+    turbidity_ntu: str = "",
+    turbidity_status: str = "",
+    temperature: str = "",
+    temp_status: str = "",
 ) -> str:
 
-    has_water = any([ph_value, turbidity_ntu, temperature])
-    water_section = ""
-    if has_water:
-        water_section = f"""
-Current river water quality at {coral_area}:
-- pH         : {ph_value} → status: {ph_status}  (coral safe range: 8.0–8.3)
-- Turbidity  : {turbidity_ntu} NTU → status: {turbidity_status}  (coral safe range: 0–10 NTU)
-- Temperature: {temperature}°C → status: {temp_status}  (coral safe range: 23–29°C)
-Affecting rivers: {rivers}"""
-
-    # ✅ FIXED: updated condition_map keys to match new class_names order
     condition_map = {
-        "bleach_1_40":    "BLEACHED 1–40% — partial bleaching detected",
-        "bleach_40_100":  "BLEACHED 40–100% — severe bleaching detected",
-        "healthy_corals": "HEALTHY — no visible bleaching detected",
+        "bleach_11_50":   "partial bleaching (11–50%)",
+        "bleach_50_100":  "severe bleaching (50–100%)",
+        "healthy_corals": "healthy — no visible bleaching",
     }
     coral_condition = condition_map.get(raw_prediction, raw_prediction)
 
-    core_instruction = f"""
-IMPORTANT RULES:
-1. The coral condition ({coral_condition}) comes ONLY from image analysis by a trained AI model. Do NOT use water quality to change or doubt this diagnosis.
-2. Water quality assessment is SEPARATE — assess whether current water conditions support coral health independently.
-3. If coral is bleached but water quality is currently good, explain that bleaching may have been caused by PAST conditions, other stressors (e.g. sedimentation, disease, physical damage), or the bleaching is ongoing and water quality alone does not reverse it.
-4. Never say the coral is healthy just because water quality is currently good.
-5. Be location-specific for {coral_area}, {coast}, Sri Lanka."""
+    water = build_water_section(
+        coral_area, rivers,
+        ph_value, ph_status,
+        turbidity_ntu, turbidity_status,
+        temperature, temp_status,
+    )
+
+    header = (
+        f"Location: {coral_area}, {coast}, Sri Lanka\n"
+        f"Coral AI image diagnosis: {coral_condition}\n"
+        f"{water}\n"
+        f"{CORE_RULES}\n\n"
+    )
 
     if role == "researcher":
-        system_prompt = "You are a marine biologist specializing in coral reef ecology in Sri Lanka. Give scientific, evidence-based analysis."
-        prompt = f"""Location: {coral_area}, {coast}, Sri Lanka
-Coral image AI diagnosis: {coral_condition}
-{water_section}
-{core_instruction}
-
-Provide a scientific report with:
-1. Coral condition analysis — what does {coral_condition} mean for this reef at {coral_area}? What are likely causes specific to this location?
-2. Water quality analysis — assess each parameter independently. Is the current river water safe for corals? (Do NOT use this to change the coral diagnosis.)
-3. If bleaching is detected despite good water quality — explain possible reasons (past thermal events, disease, physical damage, historical pollution from {rivers}).
-4. 3 specific research actions to take at {coral_area}.
-Keep responses concise and scientific."""
+        system_prompt = (
+            "You are a marine biologist specializing in inland-to-reef "
+            "pollution pathways in Sri Lanka. Be scientific and concise."
+        )
+        user_prompt = header + (
+            "Provide a concise scientific report:\n"
+            "1. Coral condition — what does this diagnosis mean for this reef and what are likely causes?\n"
+            "2. Inland water quality — is pH acidic or alkaline, what pollution source is likely, "
+            "and how does it threaten the reef when it arrives downstream?\n"
+            "3. Inland-to-reef pathway — how does river water travel to the reef and what lag time exists?\n"
+            "4. Three specific field research actions for this site."
+        )
 
     elif role == "tourism_guide":
-        system_prompt = "You are a marine conservation expert and tourism guide for Sri Lanka coral reefs. Give practical, visitor-friendly advice."
-        prompt = f"""Location: {coral_area}, {coast}, Sri Lanka
-Coral image AI diagnosis: {coral_condition}
-{water_section}
-{core_instruction}
-
-Provide tourist-focused guidance:
-1. What is the current state of the coral reef at {coral_area}? (Based on the AI image diagnosis — do NOT override with water quality.)
-2. Is it worth visiting for snorkeling/diving right now given the coral condition?
-3. What does the current water quality mean for the visitor experience?
-4. 3 responsible tourism tips specific to {coral_area}.
-Use simple, friendly language."""
+        system_prompt = (
+            "You are an eco-tourism and marine conservation guide for Sri Lanka coral reefs. "
+            "Use clear, visitor-friendly language."
+        )
+        user_prompt = header + (
+            "Provide visitor-focused guidance:\n"
+            "1. Is the reef worth visiting for snorkeling/diving based on the coral diagnosis?\n"
+            "2. Explain what the inland river readings mean for the visitor experience — "
+            "if pH < 6.5 describe it as farm/acid runoff; if pH > 8.5 describe it as "
+            "soapy household or detergent waste flowing toward the reef.\n"
+            "3. Three responsible tourism tips specific to this reef site."
+        )
 
     else:
-        system_prompt = "You are a friendly marine biologist explaining coral reef health to the public in simple language."
-        prompt = f"""Location: {coral_area}, {coast}, Sri Lanka
-Coral image AI diagnosis: {coral_condition}
-{water_section}
-{core_instruction}
-
-Explain in simple language:
-1. What is happening to the coral at {coral_area}? (Use the AI image diagnosis — do NOT change it based on water quality.)
-2. What does the current river water quality mean for this reef? Are conditions safe for coral right now?
-3. If the coral is bleached but water looks okay — explain in simple terms why this can happen (e.g. past heatwaves, other damage).
-4. 3 simple things the public can do to help protect {coral_area}.
-Keep it easy to understand."""
-
-    try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user",   "content": prompt}
-            ],
-            tools=[{"type": "web_search_preview"}],
-            max_tokens=600,
-            temperature=0.5
+        system_prompt = (
+            "You are a friendly marine biologist explaining coral reef health "
+            "and river pollution to the Sri Lankan public. Use simple, clear language."
         )
-        return response.choices[0].message.content.strip()
+        user_prompt = header + (
+            "Explain in simple language:\n"
+            "1. What is happening to the coral here based on the AI diagnosis?\n"
+            "2. What do the river readings mean — if pH < 6.5 say it is acidic runoff from "
+            "farms or factories; if pH > 8.5 say it is soapy or detergent-like household "
+            "waste — and explain how this travels downstream and affects the reef.\n"
+            "3. Three everyday actions the public can take to reduce inland pollution "
+            "reaching this reef."
+        )
 
-    except Exception:
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user",   "content": prompt}
-                ],
-                max_tokens=600,
-                temperature=0.5
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e2:
-            return f"Unable to generate suggestions. Error: {str(e2)}"
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user",   "content": user_prompt},
+    ]
+    return await call_openai(messages, max_tokens=500, temperature=0.5)
 
+
+# ── Pydantic models ──────────────────────────────────────────
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "system"]
@@ -173,63 +228,54 @@ class ChatRequest(BaseModel):
     history: Optional[List[ChatMessage]] = None
 
 
+# ── Endpoints ────────────────────────────────────────────────
+
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    has_water = any([req.ph_value, req.turbidity_ntu, req.temperature])
-    water_section = ""
-    if has_water:
-        water_section = f"""
-Current river water quality at {req.coral_area}:
-- pH         : {req.ph_value} → status: {req.ph_status}  (coral safe range: 8.0–8.3)
-- Turbidity  : {req.turbidity_ntu} NTU → status: {req.turbidity_status}  (coral safe range: 0–10 NTU)
-- Temperature: {req.temperature}°C → status: {req.temp_status}  (coral safe range: 23–29°C)
-Affecting rivers: {req.rivers}"""
 
-    base_rules = f"""
-You are a coral reef assistant for Sri Lanka.
-You must answer using the given location and real-time IoT water-quality values.
-If a value is missing, say it's not available.
-Be concise, practical, and avoid guessing numbers.
-Location: {req.coral_area}, {req.coast}, Sri Lanka.
-If provided, image diagnosis/prediction is: {req.prediction or "N/A"}.
-{water_section}
-"""
+    water = build_water_section(
+        req.coral_area, req.rivers,
+        req.ph_value, req.ph_status,
+        req.turbidity_ntu, req.turbidity_status,
+        req.temperature, req.temp_status,
+    )
+
+    base_rules = (
+        f"You are a coral reef and inland water quality assistant for Sri Lanka.\n"
+        f"Location: {req.coral_area}, {req.coast}. Rivers: {req.rivers}.\n"
+        f"Coral image diagnosis: {req.prediction or 'N/A'}.\n"
+        f"{water}\n"
+        f"{CORE_RULES}\n"
+        "Be concise. State when a value is missing rather than guessing."
+    )
 
     if req.role == "tourism_guide":
-        system_prompt = "You are a marine conservation expert and tourism guide for Sri Lanka coral reefs. Give practical, visitor-friendly advice."
+        system_prompt = (
+            "You are an eco-tourism and marine conservation guide for Sri Lanka coral reefs."
+        )
     elif req.role == "general":
-        system_prompt = "You are a friendly marine biologist explaining coral reef health to the public in simple language."
+        system_prompt = (
+            "You are a friendly marine biologist explaining reef health "
+            "and river pollution to the Sri Lankan public."
+        )
     else:
-        system_prompt = "You are a marine biologist specializing in coral reef ecology in Sri Lanka. Give scientific, evidence-based analysis."
+        system_prompt = (
+            "You are a marine biologist specializing in inland-to-reef "
+            "pollution pathways in Sri Lanka."
+        )
 
     messages = [{"role": "system", "content": system_prompt + "\n" + base_rules}]
+
     if req.history:
         for m in req.history[-12:]:
             messages.append({"role": m.role, "content": m.content})
+
     messages.append({"role": "user", "content": req.message})
 
-    try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            tools=[{"type": "web_search_preview"}],
-            max_tokens=500,
-            temperature=0.4,
-        )
-        content = (response.choices[0].message.content or "").strip()
-        return JSONResponse({"reply": content})
-    except Exception:
-        try:
-            response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages,
-                max_tokens=500,
-                temperature=0.4,
-            )
-            content = (response.choices[0].message.content or "").strip()
-            return JSONResponse({"reply": content})
-        except Exception as e2:
-            return JSONResponse({"error": str(e2)}, status_code=500)
+    reply = await call_openai(messages, max_tokens=400, temperature=0.4)
+    if reply.startswith("Unable to generate"):
+        return JSONResponse({"error": reply}, status_code=500)
+    return JSONResponse({"reply": reply})
 
 
 @app.post("/predict")
@@ -254,10 +300,9 @@ async def predict(
             outputs  = model(img_tensor)
             pred_idx = torch.argmax(outputs, 1).item()
 
-        # ✅ FIXED: friendly_messages keys match new class_names order
         friendly_messages = {
-            "bleach_1_40":    "Coral bleached 1–40%",
-            "bleach_40_100":  "Coral bleached 40–100%",
+            "bleach_11_50":   "Coral bleached 11–50%",
+            "bleach_50_100":  "Coral bleached 50–100%",
             "healthy_corals": "Healthy coral",
         }
         raw_prediction = class_names[pred_idx]
@@ -268,13 +313,13 @@ async def predict(
             coral_area, coast, rivers,
             ph_value, ph_status,
             turbidity_ntu, turbidity_status,
-            temperature, temp_status
+            temperature, temp_status,
         )
 
         return JSONResponse({
             "prediction":  prediction,
-            "suggestions": suggestions
+            "suggestions": suggestions,
         })
 
     except Exception as e:
-        return JSONResponse({"error": str(e)})
+        return JSONResponse({"error": str(e)}, status_code=500)
