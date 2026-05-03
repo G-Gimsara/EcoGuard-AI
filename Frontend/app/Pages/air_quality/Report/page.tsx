@@ -87,7 +87,7 @@ const SENSOR_CONFIG: Record<string, {
 };
 
 const SENSOR_TABS: { value: SensorType; label: string }[] = [
-  { value: "all",  label: "All Sensors" },
+
   { value: "gas",  label: "NH3" },
   { value: "co",   label: "CO" },
   { value: "co2",  label: "CO₂" },
@@ -99,7 +99,7 @@ const SENSOR_TABS: { value: SensorType; label: string }[] = [
    STATUS BADGE
 ========================= */
 const StatusBadge = ({ status }: { status?: string }) => {
-  if (!status) return <span className="text-gray-400 text-xs">—</span>;
+  if (!status) return <span className="text-gray-800 text-md">—</span>;
 
   const map: Record<string, { icon: React.ReactNode; cls: string }> = {
     Good:     { icon: <CheckCircle size={11} />, cls: "bg-green-50 text-green-700 border border-green-200" },
@@ -110,7 +110,7 @@ const StatusBadge = ({ status }: { status?: string }) => {
   const cfg = map[status] ?? { icon: <Minus size={11} />, cls: "bg-gray-50 text-gray-500 border border-gray-200" };
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium ${cfg.cls}`}>
       {cfg.icon}
       {status}
     </span>
@@ -149,7 +149,7 @@ const StatCard = ({
           : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm"
         }`}
     >
-      <div className={`flex items-center gap-1.5 text-md font-semibold
+      <div className={`flex items-center gap-1.5 text-[18px] font-semibold
         ${active ? "text-white/80" : cfg.iconClass}`}>
         {cfg.icon}
         <span>{cfg.label}</span>
@@ -166,10 +166,10 @@ const StatCard = ({
 const ValueCell = ({ row }: { row: TableRow }) => {
   if (row.type === "temp") {
     return (
-      <div className="flex gap-3 text-sm">
+      <div className="flex gap-3 text-md">
         <span>
           <span className="font-semibold text-gray-900">{row.temperature?.toFixed(1) ?? "--"}</span>
-          <span className="text-gray-400 ml-0.5">°C</span>
+          <span className="text-gray-800 ml-0.5">°C</span>
         </span>
       
       </div>
@@ -177,9 +177,9 @@ const ValueCell = ({ row }: { row: TableRow }) => {
   }
   const cfg = SENSOR_CONFIG[row.type];
   return (
-    <span className="text-sm">
+    <span className="text-md">
       <span className="font-semibold text-gray-900">{row.value?.toFixed(1) ?? "--"}</span>
-      <span className="text-gray-400 ml-1 text-xs">{cfg?.unit}</span>
+      <span className="text-gray-800 ml-1 text-md">{cfg?.unit}</span>
     </span>
   );
 };
@@ -188,7 +188,7 @@ const ValueCell = ({ row }: { row: TableRow }) => {
    MAIN COMPONENT
 ========================= */
 export default function SensorReport() {
-  const [selectedSensor, setSelectedSensor] = useState<SensorType>("all");
+  const [selectedSensor, setSelectedSensor] = useState<SensorType>("gas");
 
   const [pageSize] = useState(10);
 
@@ -250,10 +250,7 @@ export default function SensorReport() {
   /* FILTER */
 const filteredData = useMemo(() => {
   let data =
-    selectedSensor === "all"
-      ? tableData
-      : tableData.filter(r => r.type === selectedSensor);
-
+    tableData.filter(r => r.type === selectedSensor);
   return removeDuplicates(data);
 }, [tableData, selectedSensor]);
 
@@ -269,7 +266,7 @@ const filteredData = useMemo(() => {
         accessorKey: "device_id",
         header: "Device ID",
         cell: ({ getValue }) => (
-          <span className="font-mono text-sm text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded">
+          <span className="font-mono text-md text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded">
             {getValue() as string}
           </span>
         ),
@@ -291,10 +288,10 @@ const filteredData = useMemo(() => {
           const d = new Date(getValue() as string);
           return (
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-medium text-gray-900">
+              <span className="text-md font-medium text-gray-900">
                 {d.toLocaleDateString([], { month: "short", day: "2-digit", year: "numeric" })}
               </span>
-              <span className="text-[11px] text-gray-400">
+              <span className="text-[14px] text-gray-700">
                 {d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
               </span>
             </div>
@@ -346,7 +343,7 @@ const filteredData = useMemo(() => {
         <div className="mb-6">
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight mb-1">Sensor Report</h1>
           <p className="text-md text-gray-800">
-            Historical readings across all environmental sensors · Filtered &amp; paginated
+            Historical readings across all environmental sensors.
           </p>
         </div>
 
@@ -358,7 +355,7 @@ const filteredData = useMemo(() => {
               type={key}
               count={counts[key as keyof typeof counts]}
               active={selectedSensor === key}
-              onClick={() => setSelectedSensor(selectedSensor === key ? "all" : key as SensorType)}
+              onClick={() => setSelectedSensor(key as SensorType)}
             />
           ))}
         </div>
@@ -372,10 +369,10 @@ const filteredData = useMemo(() => {
               <button
                 key={tab.value}
                 onClick={() => setSelectedSensor(tab.value)}
-                className={`px-3 py-1.5 rounded-md text-[15px] transition-all outline-none cursor-pointer
+                className={`px-3 py-1.5 rounded-md text-[18px] transition-all outline-none cursor-pointer
                   ${selectedSensor === tab.value
                     ? "bg-white text-gray-900 shadow-sm font-semibold"
-                    : "text-gray-500 hover:text-gray-700 font-medium"
+                    : "text-gray-800 hover:text-gray-700 font-medium"
                   }`}
               >
                 {tab.label}
@@ -390,7 +387,7 @@ const filteredData = useMemo(() => {
             {/* Export */}
             <button
               onClick={exportCSV}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600
+              className="flex items-center gap-1.5 px-3 py-1.5 text-md font-medium text-gray-800
                 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 hover:border-gray-300
                 transition-all outline-none cursor-pointer"
             >
@@ -399,7 +396,7 @@ const filteredData = useMemo(() => {
             </button>
 
             {/* Count badge */}
-            <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full whitespace-nowrap">
+            <span className="text-md text-gray-700 bg-gray-100 px-3 py-1.5 rounded-full whitespace-nowrap">
               {filteredData.length} records
             </span>
           </div>
@@ -414,7 +411,7 @@ const filteredData = useMemo(() => {
                   {hg.headers.map(header => (
                     <th
                       key={header.id}
-                      className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 whitespace-nowrap"
+                      className="px-4 py-2.5 text-left text-[15px] font-semibold text-gray-900 uppercase tracking-wider bg-gray-50 whitespace-nowrap"
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
@@ -442,7 +439,7 @@ const filteredData = useMemo(() => {
                   <td colSpan={columns.length} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <Filter size={24} className="text-gray-300" />
-                      <span className="text-sm text-gray-400">No records match your filter</span>
+                      <span className="text-md text-gray-800">No records match your filter</span>
                     </div>
                   </td>
                 </tr>
@@ -456,7 +453,7 @@ const filteredData = useMemo(() => {
                     {row.getVisibleCells().map(cell => (
                       <td key={cell.id} className="px-4 py-3 align-middle">
                         {flexRender(cell.column.columnDef.cell, cell.getContext()) ?? (
-                          <span className="text-gray-400 text-xs">—</span>
+                          <span className="text-gray-800 text-md">—</span>
                         )}
                       </td>
                     ))}
@@ -470,7 +467,7 @@ const filteredData = useMemo(() => {
         {/* ── PAGINATION ── */}
         <div className="bg-white border border-gray-200 border-t-0 rounded-b-xl px-4 py-3 flex items-center justify-between flex-wrap gap-2">
 
-          <span className="text-xs text-gray-500">
+          <span className="text-md text-gray-800">
             Showing{" "}
             <strong className="text-gray-900">
               {pageIndex * pageSize + 1}–{Math.min((pageIndex + 1) * pageSize, filteredData.length)}
@@ -521,12 +518,12 @@ const filteredData = useMemo(() => {
 
         {/* ── FOOTER ── */}
         <div className="mt-8 pt-5 border-t border-gray-200 flex flex-wrap gap-5 items-center">
-          <span className="text-xs text-gray-400 font-medium">Sensor Units:</span>
+          <span className="text-md text-gray-800 font-medium">Sensor Units:</span>
           {Object.entries(SENSOR_CONFIG).map(([key, cfg]) => (
-            <span key={key} className="flex items-center gap-1.5 text-xs">
+            <span key={key} className="flex items-center gap-1.5 text-md">
               <span className={cfg.iconClass}>{cfg.icon}</span>
-              <span className="text-gray-700 font-medium">{cfg.label}</span>
-              <span className="text-gray-400">{cfg.unit}</span>
+              <span className="text-gray-800 font-medium">{cfg.label}</span>
+              <span className="text-gray-700">{cfg.unit}</span>
             </span>
           ))}
         </div>

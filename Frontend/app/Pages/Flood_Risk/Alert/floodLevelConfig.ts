@@ -1,5 +1,4 @@
-// Flood alert configuration used by Alert pages.
-// Keep thresholds in ascending order.
+//  thresholds in ascending order.
 export const levels = [
   { threshold: 0, name: "Normal", firstAffected: "No areas affected", nextAffected: "", floodFeet: 0, icon: "🌿" },
   { threshold: 40, name: "Alert", firstAffected: "Megoda Kolonnawa GND — 1 ft ankle-deep", nextAffected: "", floodFeet: 4, icon: "⚠️" },
@@ -10,6 +9,18 @@ export const levels = [
 ] as const;
 
 export type LevelName = (typeof levels)[number]["name"];
+
+
+export type FloodCardHeaderPx = { icon: number; name: number; feet: number };
+
+export const floodCardHeaderPx: Record<LevelName, FloodCardHeaderPx> = {
+  Normal: { icon: 34, name: 22, feet: 22 },
+  Alert: { icon: 34, name: 22, feet: 22 },
+  Minor: { icon: 34, name: 22, feet: 22 },
+  Moderate: { icon: 34, name: 22, feet: 22 },
+  Major: { icon: 34, name: 22, feet: 22 },
+  Critical: { icon: 34, name: 22, feet: 22 },
+};
 
 export interface WebAlertPolicy {
   channels: string[];
@@ -181,7 +192,7 @@ export function getLevelRow(severity: string) {
 }
 
 /**
- * Affected-area lines for a level, derived from `levels` first/next affected text (no duplicated copy).
+ * Affected-area lines for a level, derived from `levels` first/next affected text 
  * Normal returns an empty list; use `getNormalAffectedAreasLabel()` for the Normal display string.
  */
 export function getAffectedAreaLinesForLevel(level: LevelName): string[] {

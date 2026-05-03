@@ -31,7 +31,7 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
       unit: "°C",
       theme: "bg-indigo-500",
       legend: [
-        { label: "Normal", range: "<27", color: "bg-emerald-100" },
+        { label: "Normal", range: "<27", color: "bg-emerald-100"  },
         { label: "Caution", range: "27-32", color: "bg-amber-200" },
         { label: "Extreme Caution", range: "33-40", color: "bg-orange-500" },
         { label: "Danger", range: "41-50", color: "bg-red-600" },
@@ -43,11 +43,11 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
       unit: "°C",
       theme: "bg-orange-400",
       legend: [
-        { label: "Cool", range: "<24", color: "bg-emerald-100" },
-        { label: "Moderate", range: "24-28", color: "bg-amber-200" },
-        { label: "Warm", range: "29-32", color: "bg-orange-500" },
-        { label: "High", range: "33-37", color: "bg-red-600" },
-        { label: "Extreme", range: "38+", color: "bg-purple-700" },
+        { label: "", range: "<24", color: "bg-emerald-100" },
+        { label: "", range: "24-28", color: "bg-amber-200" },
+        { label: "", range: "29-32", color: "bg-orange-500" },
+        { label: "", range: "33-37", color: "bg-red-600" },
+        { label: "", range: "38+", color: "bg-purple-700" },
       ],
     },
     humidity: {
@@ -55,11 +55,11 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
       unit: "%",
       theme: "bg-blue-400",
       legend: [
-        { label: "Dry", range: "<40", color: "bg-slate-100" },
-        { label: "Comfort", range: "40-60", color: "bg-blue-100" },
-        { label: "Humid", range: "61-75", color: "bg-blue-300" },
-        { label: "High", range: "76-85", color: "bg-blue-600" },
-        { label: "Saturated", range: "85+", color: "bg-blue-800" },
+        { label: "", range: "<40", color: "bg-slate-100" },
+        { label: "", range: "40-60", color: "bg-blue-100" },
+        { label: "", range: "61-75", color: "bg-blue-300" },
+        { label: "", range: "76-85", color: "bg-blue-600" },
+        { label: "", range: "85+", color: "bg-blue-800" },
       ],
     },
   } satisfies Record<
@@ -130,7 +130,7 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
       if (val > 75) return "bg-blue-600 text-white";
       if (val > 60) return "bg-blue-300 text-blue-900";
       if (val > 40) return "bg-blue-100 text-blue-900";
-      return "bg-slate-100 text-slate-400";
+      return "bg-slate-100 text-slate-700";
     }
     if (val >= 51) return "bg-purple-700 text-white";
     if (val >= 41) return "bg-red-600 text-white";
@@ -144,7 +144,7 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
       {/* 1. TOP ANALYTICS HEADER */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-x divide-slate-200 bg-white border-b border-slate-200">
         <div className="p-3">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+          <p className="text-xs font-bold text-slate-700 uppercase tracking-tight">
             Parameter
           </p>
           <div className="flex bg-slate-100 p-0.5 rounded mt-1">
@@ -153,7 +153,7 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
                 <button
                   key={key}
                   onClick={() => setMetric(key)}
-                  className={`flex-1 py-1 rounded text-[10px] font-bold transition-all ${
+                  className={`flex-1 py-1.5 rounded text-xs font-bold transition-all ${
                     metric === key
                       ? "bg-white text-slate-900 shadow-sm"
                       : "text-slate-500 hover:text-slate-700"
@@ -167,53 +167,53 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
         </div>
 
         <div className="p-3">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+          <p className="text-xs font-bold text-slate-700 uppercase tracking-tight">
             Regional Average
           </p>
           <div className="flex items-baseline gap-1 mt-0.5">
-            <span className="text-xl font-bold text-slate-800">
+            <span className="text-2xl font-bold text-slate-800">
               {globalStats.avg}
             </span>
-            <span className="text-[10px] text-slate-500 font-bold">
+            <span className="text-xs text-slate-600 font-bold">
               {config[metric].unit}
             </span>
           </div>
         </div>
 
         <div className="p-3 bg-slate-50/50">
-          <p className="text-[9px] font-bold text-red-500 uppercase tracking-tighter">
+          <p className="text-xs font-bold text-red-600 uppercase tracking-tight">
             Peak Analysis
           </p>
           <div className="flex items-baseline gap-1 mt-0.5">
-            <span className="text-xl font-bold text-red-600">
+            <span className="text-2xl font-bold text-red-600">
               {globalStats.peak}
               {config[metric].unit}
             </span>
-            <span className="text-[10px] font-bold text-slate-700 whitespace-nowrap">
+            <span className="text-xs font-bold text-slate-700 whitespace-nowrap">
               @ {globalStats.peakLoc}
             </span>
           </div>
-          <p className="text-[9px] text-slate-400 font-medium mt-1 leading-none">
+          <p className="text-xs text-slate-600 font-medium mt-1 leading-none">
             {globalStats.peakDate}
           </p>
         </div>
 
         <div className="p-3 bg-indigo-50/30">
-          <p className="text-[9px] font-bold text-indigo-500 uppercase tracking-tighter">
+          <p className="text-xs font-bold text-indigo-600 uppercase tracking-tight">
             Cell Inspector
           </p>
           {hoverDetail ? (
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="text-xl font-bold text-indigo-700">
+              <span className="text-2xl font-bold text-indigo-700">
                 {Number(hoverDetail.val).toFixed(1)}
                 {config[metric].unit}
               </span>
-              <span className="text-[10px] font-bold text-slate-700 truncate">
+              <span className="text-xs font-bold text-slate-700 truncate">
                 {hoverDetail.loc}
               </span>
             </div>
           ) : (
-            <p className="text-[10px] text-slate-400 mt-2 italic font-medium">
+            <p className="text-xs text-slate-600 mt-2 italic font-medium">
               Hover grid for data
             </p>
           )}
@@ -226,7 +226,7 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
               <th className="sticky left-0 z-20 bg-slate-50 border-r border-slate-200 px-3 py-1 text-left w-32">
-                <span className="text-[9px] font-bold text-slate-400 uppercase">
+                <span className="text-xs font-bold text-slate-700 uppercase">
                   Division
                 </span>
               </th>
@@ -235,10 +235,10 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
                   key={date}
                   className="px-0.5 py-1 text-center border-r border-slate-100 last:border-0"
                 >
-                  <span className="text-[8px] font-bold text-slate-400 uppercase leading-none block">
+                  <span className="text-[10px] font-bold text-slate-600 uppercase leading-none block">
                     {date.split(" ")[0]}
                   </span>
-                  <span className="text-[11px] font-black text-slate-700">
+                  <span className="text-sm font-black text-slate-700">
                     {date.split(" ")[1]}
                   </span>
                 </th>
@@ -248,7 +248,7 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
           <tbody className="divide-y divide-slate-100">
             {locations.map((loc) => (
               <tr key={loc} className="hover:bg-slate-50 transition-colors">
-                <td className="sticky left-0 z-10 bg-white border-r border-slate-200 px-3 py-1 font-bold text-[9px] text-slate-600 uppercase tracking-tighter truncate">
+                <td className="sticky left-0 z-10 bg-white border-r border-slate-200 px-3 py-1.5 font-bold text-xs text-slate-700 uppercase tracking-tight truncate">
                   {loc}
                 </td>
                 {groupedFuture[loc]?.map((item) => {
@@ -261,7 +261,7 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
                       onMouseLeave={() => setHoverDetail(null)}
                     >
                       <div
-                        className={`h-6 w-full flex items-center justify-center rounded-[1px] text-[10px] font-mono font-bold transition-opacity cursor-crosshair ${getCellStyles(
+                        className={`h-7 w-full flex items-center justify-center rounded-[1px] text-xs font-mono font-bold transition-opacity cursor-crosshair ${getCellStyles(
                           val,
                           metric
                         )}`}
@@ -281,20 +281,20 @@ const DivisionHeatMap: React.FC<DivisionHeatMapProps> = ({ data }) => {
       <div className="bg-white border-t border-slate-200 p-3">
         <div className="flex flex-wrap items-center justify-between gap-y-3">
           <div className="flex items-center gap-4">
-            <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest border-r border-slate-200 pr-4">
+            <span className="text-xs font-black uppercase text-slate-800 tracking-widest border-r border-slate-200 pr-4">
               Legend
             </span>
             <div className="flex flex-wrap gap-x-4 gap-y-2">
-              {config[metric].legend.map((item) => (
-                <div key={item.label} className="flex items-center gap-1.5">
+              {config[metric].legend.map((item, idx) => (
+                <div key={`${item.label}-${item.range}-${idx}`} className="flex items-center gap-1.5">
                   <div
                     className={`w-3 h-3 rounded-sm ${item.color} border border-black/5`}
                   />
                   <div className="flex flex-col leading-none">
-                    <span className="text-[10px] font-bold text-slate-700">
+                    <span className="text-base font-bold text-slate-700">
                       {item.label}
                     </span>
-                    <span className="text-[8px] text-slate-400 font-mono">
+                    <span className="text-sm text-slate-700 font-mono">
                       {item.range}
                       {config[metric].unit}
                     </span>

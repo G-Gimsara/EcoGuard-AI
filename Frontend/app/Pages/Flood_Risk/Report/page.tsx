@@ -227,13 +227,13 @@ export default function Reports() {
             <table className="min-w-full text-[15px] font-medium text-gray-900">
               <thead>
                 <tr className="bg-gradient-to-r from-blue-700 to-blue-600 text-white uppercase tracking-wider">
-                  <th className="px-6 py-3 text-left text-[16px] font-semibold">#</th>
-                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Rise (mm)</th>
-                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Rise (ft)</th>
-                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Severity</th>
-                  <th className="px-6 py-3 text-left text-[16px] font-semibold">First Affected</th>
-                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Next Affected</th>
-                  <th className="px-6 py-3 text-left text-[16px] font-semibold">Date / Time</th>
+                  <th className="px-6 py-3 text-left text-[17px] font-semibold">#</th>
+                  <th className="px-6 py-3 text-left text-[17px] font-semibold">Rise (mm)</th>
+                  <th className="px-6 py-3 text-left text-[17px] font-semibold">Rise (ft)</th>
+                  <th className="px-6 py-3 text-left text-[17px] font-semibold">Severity</th>
+                  <th className="px-6 py-3 text-left text-[17px] font-semibold">First Affected</th>
+                  <th className="px-6 py-3 text-left text-[17px] font-semibold">Next Affected</th>
+                  <th className="px-6 py-3 text-left text-[17px] font-semibold">Date / Time</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -243,25 +243,25 @@ export default function Reports() {
                       key={m.id}
                       className="hover:shadow-xl hover:bg-blue-50 transition transform hover:scale-[1.01]"
                     >
-                      <td className="px-6 py-3 text-[15px] text-gray-700">{indexOfFirstRow + idx + 1}</td>
-                      <td className="px-6 py-3 text-[15px] text-blue-700 font-semibold">{m.riseLevel.toFixed(1)}</td>
-                      <td className="px-6 py-3 text-[15px]">{m.floodFeet}</td>
+                      <td className="px-6 py-3 text-[16px] text-gray-700">{indexOfFirstRow + idx + 1}</td>
+                      <td className="px-6 py-3 text-[16px] text-blue-700 font-semibold">{m.riseLevel.toFixed(1)}</td>
+                      <td className="px-6 py-3 text-[16px]">{m.floodFeet}</td>
 
-                      <td className="px-6 py-3 text-[15px]">
+                      <td className="px-6 py-3 text-[16px]">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${severityColors[m.severity]?.bg} ${severityColors[m.severity]?.text}`}>
                           {m.severity}
                         </span>
                       </td>
 
-                      <td className="px-6 py-3 text-[15px] text-gray-800 whitespace-pre-wrap truncate max-w-[150px]">
+                      <td className="px-6 py-3 text-[16px] text-gray-800 whitespace-pre-wrap truncate max-w-[150px]">
                         {m.firstAffected.length > 30 ? `${m.firstAffected.slice(0,30)}...` : m.firstAffected}
                       </td>
 
-                      <td className="px-6 py-3 text-[15px] text-gray-800 whitespace-pre-wrap truncate max-w-[150px]">
+                      <td className="px-6 py-3 text-[16px] text-gray-800 whitespace-pre-wrap truncate max-w-[150px]">
                         {m.nextAffected && m.nextAffected.length > 30 ? `${m.nextAffected.slice(0,30)}...` : m.nextAffected || "-"}
                       </td>
 
-                      <td className="px-6 py-3 text-[15px] text-gray-600 font-mono">
+                      <td className="px-6 py-3 text-[16px] text-gray-600 font-mono">
                         {new Date(m.createdAt).toLocaleString("en-GB", {
                           day: "2-digit",
                           month: "short",

@@ -5,7 +5,7 @@ const COReading      = require('../Models/COReading');
 const Co2Reading     = require('../Models/Co2Reading');
 
 // ───────────────────────────────
-// 🔥 MEMORY BUFFERS (15 min batch)
+// 🔥 MEMORY BUFFERS (2 min batch)
 // ───────────────────────────────
 const gasBuffer  = [];
 const airBuffer  = [];

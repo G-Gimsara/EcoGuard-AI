@@ -10,13 +10,14 @@ import {
   levelWarnings,
   safetyGuidelines,
   feetRanges,
+  floodCardHeaderPx,
   getColor,
   getBadge,
   getActiveGradient,
   type LevelName,
 } from "./floodLevelConfig";
 
-// Minimal shape consumed from `/api/flood` records.
+/** Response row shape from `GET /api/flood`. The UI reads the newest row (`data[0]`). */
 interface FloodMeasurement {
   id: number;
   riseLevel: number;
@@ -28,19 +29,18 @@ interface FloodMeasurement {
 }
 
 export default function FloodLevelsPage() {
-  // Current live values shown in the header + cards.
   const [currentSeverity, setCurrentSeverity] = useState("");
   const [riseLevel, setRiseLevel] = useState(0);
   const [audioReady, setAudioReady] = useState(false);
   const previousAlarmSeverityRef = useRef("");
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // REST initial load, WebSocket updates, 5s polling fallback, reconnect on socket loss.
   useEffect(() => {
     let cancelled = false;
     let ws: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // Load latest saved reading first, then also as periodic fallback.
     const fetchData = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/flood", { cache: "no-store" });
@@ -50,7 +50,6 @@ export default function FloodLevelsPage() {
         setCurrentSeverity(data[0].severity);
         setRiseLevel(data[0].riseLevel);
       } catch {
-        // Ignore temporary network/API issues; next poll or reconnect will retry.
       }
     };
 
@@ -59,25 +58,24 @@ export default function FloodLevelsPage() {
       ws = new WebSocket("ws://localhost:5000");
 
       ws.onopen = () => {
-        // Sync immediately after (re)connect so level cards don't wait for next poll tick.
         void fetchData();
       };
 
       ws.onmessage = (event) => {
         try {
-          const msg = JSON.parse(event.data);
-          if (msg.type === "FLOOD_UPDATE") {
+          const msg = JSON.parse(event.data) as {
+            type?: string;
+            data?: { severity: string; riseLevel: number };
+          };
+          if (msg.type === "FLOOD_UPDATE" && msg.data) {
             setCurrentSeverity(msg.data.severity);
             setRiseLevel(msg.data.riseLevel);
           }
-        } catch {
-          /* ignore malformed payloads */
-        }
+        } catch {}
       };
 
       ws.onclose = () => {
         if (cancelled) return;
-        // Pull latest known value while socket is down.
         void fetchData();
         reconnectTimer = setTimeout(connect, 2000);
       };
@@ -87,7 +85,6 @@ export default function FloodLevelsPage() {
     fetchData();
     connect();
 
-    // Fallback polling keeps UI fresh even if WS disconnects silently.
     const pollTimer = setInterval(fetchData, 5000);
 
     return () => {
@@ -98,12 +95,12 @@ export default function FloodLevelsPage() {
     };
   }, []);
 
+  // Prime audio after the first user gesture (autoplay restrictions).
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.load();
 
-    // Unlock audio on first user gesture to satisfy browser autoplay policy.
     const unlockAudio = () => {
       const el = audioRef.current;
       if (!el) return;
@@ -119,9 +116,7 @@ export default function FloodLevelsPage() {
           window.removeEventListener("keydown", unlockAudio);
           window.removeEventListener("touchstart", unlockAudio);
         })
-        .catch(() => {
-          // Keep listeners until browser accepts a gesture event.
-        });
+        .catch(() => {});
     };
 
     window.addEventListener("pointerdown", unlockAudio, { passive: true });
@@ -135,6 +130,7 @@ export default function FloodLevelsPage() {
     };
   }, []);
 
+  // Alarm audio on Major/Critical: one play per transition into that band, not on every render.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -147,10 +143,9 @@ export default function FloodLevelsPage() {
       return;
     }
 
-    // Play once per high-risk transition (no nonstop loop).
     if (previousAlarmSeverityRef.current === currentSeverity) return;
 
-    // If browser already has user activation in this tab, allow immediate playback.
+    // Chromium exposes `navigator.userActivation`; it is omitted from default `Navigator` typings.
     const browserActivated =
       typeof navigator !== "undefined" &&
       "userActivation" in navigator &&
@@ -172,9 +167,7 @@ export default function FloodLevelsPage() {
           previousAlarmSeverityRef.current = currentSeverity;
           retryEvents.forEach((eventName) => window.removeEventListener(eventName, tryPlayAlarm));
         })
-        .catch(() => {
-          // Keep listeners attached; next interaction will retry.
-        });
+        .catch(() => {});
     };
 
     tryPlayAlarm();
@@ -186,7 +179,7 @@ export default function FloodLevelsPage() {
     };
   }, [currentSeverity, audioReady]);
 
-  // Resolve all UI blocks from the current level once.
+  // Narrow API `severity` string to a configured level name for `levelWarnings` / `safetyGuidelines`.
   const activeLevel = levels.find((l) => l.name === currentSeverity)?.name as LevelName | undefined;
   const warning = activeLevel ? levelWarnings[activeLevel] : null;
   const guidelines = activeLevel ? safetyGuidelines[activeLevel] : [];
@@ -227,7 +220,6 @@ export default function FloodLevelsPage() {
             <span className="ml-2 font-bold text-blue-600 text-[24px]">{riseLevel} mm</span>
           </p>
 
-          {/* Shown before first usable severity arrives from API/websocket. */}
           {!warning && (
             <div className="mb-6 p-4 rounded-lg bg-gray-200 text-gray-800 font-medium shadow flex items-center">
               <span className="mr-3 text-[24px]">📡</span>
@@ -235,7 +227,6 @@ export default function FloodLevelsPage() {
             </div>
           )}
 
-          {/* Top status banner: headline + short action text for active level */}
           {warning && (
             <div className={`mb-6 p-5 rounded-lg shadow-lg ${warning.bannerClass}`}>
               <div className="flex items-start gap-3">
@@ -253,19 +244,18 @@ export default function FloodLevelsPage() {
             </div>
           )}
 
-          {/* Safety list for only the current live level */}
           {guidelines.length > 0 && (
             <section
               className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-6 shadow-sm"
               aria-labelledby="safety-guidelines-heading"
             >
-              <h2 id="safety-guidelines-heading" className="text-[28px] font-bold text-blue-900 mb-2">
+              <h2 id="safety-guidelines-heading" className="text-[30px] font-bold text-blue-900 mb-2">
                 Safety guidelines
               </h2>
               <p className="text-blue-800 mb-4 text-[18px]">
                 Follow these steps for the <strong>{currentSeverity}</strong> level. Adjust as local authorities direct.
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-blue-900 text-[17px] leading-relaxed">
+              <ul className="list-disc pl-6 space-y-2 text-blue-900 text-[18px] leading-relaxed">
                 {guidelines.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -273,51 +263,61 @@ export default function FloodLevelsPage() {
             </section>
           )}
 
-          {/* Always show full level map so users can compare thresholds quickly */}
+          {/* Reference cards: thresholds and copy from `levels` / `floodCardHeaderPx` in floodLevelConfig. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {levels.map((level) => {
-              // Active level gets stronger visual treatment so it stands out in the grid.
               const isActive = currentSeverity === level.name;
+              const headerPx = floodCardHeaderPx[level.name];
               return (
                 <div
                   key={level.name}
                   id={`level-${level.name.toLowerCase()}`}
                   className={`border-l-4 ${getColor(level.name)}
                     rounded-xl p-6 shadow hover:shadow-lg transition-all duration-300
-                    flex flex-col justify-between
+                    flex flex-col justify-between text-[17px] md:text-[18px] leading-relaxed
                     ${isActive ? `scale-105 ring-2 ring-blue-500 ${getActiveGradient(level.name)}` : "bg-white"}`}
                 >
-                  <div className="flex items-center mb-4">
-                    <span className="text-[30px] mr-3">{level.icon}</span>
-                    <h2 className="text-[20px] font-bold">{level.name}</h2>
-                    <span className="ml-3 text-[20px] font-bold">{feetRanges[level.name]}</span>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-4">
+                    <span
+                      className="leading-none shrink-0"
+                      style={{ fontSize: headerPx.icon }}
+                    >
+                      {level.icon}
+                    </span>
+                    <h2 className="font-bold leading-tight" style={{ fontSize: headerPx.name }}>
+                      {level.name}
+                    </h2>
+                    <span className="font-bold leading-tight" style={{ fontSize: headerPx.feet }}>
+                      {feetRanges[level.name]}
+                    </span>
                   </div>
 
-                  {/* Quick color badge for scanning level severity. */}
-                  <span className={`px-3 py-1 rounded-full font-semibold mb-3 ${getBadge(level.name)}`}>
+                  <span
+                    className={`px-3 py-1.5 rounded-full text-[17px] md:text-[18px] font-semibold mb-3 ${getBadge(level.name)}`}
+                  >
                     {level.name}
                   </span>
 
-                  <p className="mb-3 text-gray-700">Threshold: {level.threshold} mm</p>
+                  <p className="mb-3 text-gray-700 text-[18px] md:text-[19px]">
+                    Threshold: {level.threshold} mm
+                  </p>
 
-                  <p className="font-semibold mb-1">First Affected Areas</p>
-                  <pre className="whitespace-pre-wrap">{level.firstAffected}</pre>
+                  <p className="font-semibold mb-1 text-[18px] md:text-[19px]">First Affected Areas</p>
+                  <pre className="whitespace-pre-wrap text-[17px] md:text-[18px] font-sans">{level.firstAffected}</pre>
 
-                  {/* Some levels don't define a next area; hide block when absent. */}
                   {level.nextAffected && (
                     <>
-                      <p className="font-semibold mt-3 mb-1">Next Affected</p>
-                      <pre className="whitespace-pre-wrap">{level.nextAffected}</pre>
+                      <p className="font-semibold mt-3 mb-1 text-[18px] md:text-[19px]">Next Affected</p>
+                      <pre className="whitespace-pre-wrap text-[17px] md:text-[18px] font-sans">{level.nextAffected}</pre>
                     </>
                   )}
 
-                  <p className="mt-3 font-semibold text-blue-600">
+                  <p className="mt-3 font-semibold text-blue-600 text-[18px] md:text-[19px]">
                     Estimated Flood Depth: {level.floodFeet} ft
                   </p>
 
-                  {/* Active marker inside the matching card only. */}
                   {isActive && (
-                    <div className="mt-3 p-2 bg-blue-600 text-white rounded text-center font-bold animate-bounce">
+                    <div className="mt-3 p-2.5 bg-blue-600 text-white rounded text-center text-[17px] md:text-[18px] font-bold animate-bounce">
                       CURRENT LEVEL
                     </div>
                   )}

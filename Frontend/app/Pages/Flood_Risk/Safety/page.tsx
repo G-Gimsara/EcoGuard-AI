@@ -61,7 +61,10 @@ const FONT = {
   tiny: "text-[12px]",
 } as const;
 
-// Card definitions for each severity level.
+/**
+ * Six flood severity tiers as structured data (Normal through Critical).
+ * UI maps over this array instead of a long if/else chain: one card template, six rows,
+ */
 const safetyLevels: SafetyLevel[] = [
   {
     level: "NORMAL",
@@ -203,7 +206,7 @@ const emergencyContacts: EmergencyContact[] = [
 
 // ─── Component ───────────────────────────────────────────
 const SafetyGuidancePage = () => {
-  // Selected card index; null means "all cards collapsed" state.
+  /** Which `safetyLevels` row is expanded (0–5), or `null` for none. Toggled in `onClick` with a ternary, not if/else per tier. */
   const [activeLevel, setActiveLevel] = useState<number | null>(null);
   // Live clock is for situational awareness in operations view.
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -254,7 +257,6 @@ const SafetyGuidancePage = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
               {safetyLevels.map((item, index) => {
-                // Clicking same card toggles it closed.
                 const isActive = activeLevel === index;
                 return (
                   <button

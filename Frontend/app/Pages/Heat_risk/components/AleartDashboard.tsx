@@ -156,7 +156,7 @@ const HeatAlert: React.FC = () => {
   const bannerLabel = error
     ? "Service Unavailable"
     : hasDanger
-      ? `${data?.dangerCount} Danger Alert${data?.dangerCount !== 1 ? "s" : ""} Active`
+      ? `Alert${data?.dangerCount !== 1 ? "s" : ""} Active`
       : "No Extreme Heat Detected";
 
   const bannerSub = error
@@ -303,6 +303,15 @@ const HeatAlert: React.FC = () => {
 
             <div style={{ padding: "8px 0" }}>
               {dayWarnings.map((warning, index) => (
+                (() => {
+                  const possibleSituations = Array.isArray(warning?.message?.possible_situations)
+                    ? warning.message.possible_situations
+                    : [];
+                  const mitigationStrategies = Array.isArray(warning?.message?.mitigation_strategies)
+                    ? warning.message.mitigation_strategies
+                    : [];
+
+                  return (
                 <div key={index} style={{ borderBottom: index < dayWarnings.length - 1 ? "1px solid #ffe4e6" : "none" }}>
                   <button
                     onClick={() => setOpenWarning(openWarning === index ? null : index)}
@@ -328,11 +337,11 @@ const HeatAlert: React.FC = () => {
                           <p style={{ ...sectionLabel, color: "#9f1239" }}>Warning</p>
                           <p style={{ fontSize: 15, color: "#1e293b", lineHeight: 1.7 }}>{warning.message.main_warning_message}</p>
                         </div>
-                        {warning.message.possible_situations?.length > 0 && (
+                        {possibleSituations.length > 0 && (
                           <div>
                             <p style={{ ...sectionLabel, color: "#9f1239" }}>Possible situations</p>
                             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 7 }}>
-                              {warning.message.possible_situations.map((item, i) => (
+                              {possibleSituations.map((item, i) => (
                                 <li key={i} style={{ fontSize: 15, color: "#1e293b", display: "flex", alignItems: "flex-start", gap: 8 }}>
                                   <span style={{ color: "#e11d48", fontWeight: 800, flexShrink: 0, fontSize: 16 }}>{">"}</span>
                                   {item}
@@ -341,11 +350,11 @@ const HeatAlert: React.FC = () => {
                             </ul>
                           </div>
                         )}
-                        {warning.message.mitigation_strategies?.length > 0 && (
+                        {mitigationStrategies.length > 0 && (
                           <div>
                             <p style={{ ...sectionLabel, color: "#9f1239" }}>Mitigation strategies</p>
                             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 7 }}>
-                              {warning.message.mitigation_strategies.map((step, i) => (
+                              {mitigationStrategies.map((step, i) => (
                                 <li key={i} style={{ fontSize: 15, color: "#1e293b", display: "flex", alignItems: "flex-start", gap: 8 }}>
                                   <span style={{ color: "#16a34a", fontWeight: 800, flexShrink: 0, fontSize: 16 }}>+</span>
                                   {step}
@@ -358,6 +367,8 @@ const HeatAlert: React.FC = () => {
                     </div>
                   )}
                 </div>
+                  );
+                })()
               ))}
             </div>
           </div>
