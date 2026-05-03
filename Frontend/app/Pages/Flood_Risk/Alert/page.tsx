@@ -9,7 +9,8 @@ import {
   levels,
   levelWarnings,
   safetyGuidelines,
-  feetRanges,
+  depthRangeCompact,
+  estimatedDepthRangeByLevel,
   floodCardHeaderPx,
   getColor,
   getBadge,
@@ -286,9 +287,9 @@ export default function FloodLevelsPage() {
                     </span>
                     <h2 className="font-bold leading-tight" style={{ fontSize: headerPx.name }}>
                       {level.name}
-                    </h2>
+                    </h2>{" "}
                     <span className="font-bold leading-tight" style={{ fontSize: headerPx.feet }}>
-                      {feetRanges[level.name]}
+                      ({depthRangeCompact[level.name]})
                     </span>
                   </div>
 
@@ -313,7 +314,7 @@ export default function FloodLevelsPage() {
                   )}
 
                   <p className="mt-3 font-semibold text-blue-600 text-[18px] md:text-[19px]">
-                    Estimated Flood Depth: {level.floodFeet} ft
+                    {estimatedDepthRangeByLevel[level.name]}
                   </p>
 
                   {isActive && (
