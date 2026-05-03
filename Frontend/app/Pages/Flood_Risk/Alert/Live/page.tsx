@@ -8,7 +8,7 @@ import {
   levels,
   levelWarnings,
   safetyGuidelines,
-  feetRanges,
+  estimatedDepthRangeByLevel,
   webAlertPolicies,
   getLevelRow,
   type LevelName,
@@ -473,7 +473,7 @@ export default function FloodLiveAlertPage() {
                       <div>
                         <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">{levelRow.name}</h2>
                         <p className="text-sm font-medium text-slate-500 sm:text-base">
-                          {feetRanges[levelRow.name as LevelName]}
+                          {estimatedDepthRangeByLevel[levelRow.name as LevelName]}
                         </p>
                       </div>
                     </div>
@@ -481,9 +481,6 @@ export default function FloodLiveAlertPage() {
                   <div className="mt-4 flex shrink-0 flex-wrap gap-2">
                     <span className={`rounded-lg px-3 py-2 text-sm font-medium ${chrome.statChip}`}>
                       Threshold <span className="tabular-nums">{levelRow.threshold}</span> mm
-                    </span>
-                    <span className={`rounded-lg px-3 py-2 text-sm font-medium ${chrome.statChip}`}>
-                      Est. depth <span className="tabular-nums">{levelRow.floodFeet}</span> ft
                     </span>
                   </div>
                   <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain border-t border-slate-100 pt-4">
