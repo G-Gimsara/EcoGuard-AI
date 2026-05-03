@@ -156,7 +156,7 @@ const HeatAlert: React.FC = () => {
   const bannerLabel = error
     ? "Service Unavailable"
     : hasDanger
-      ? `${data?.dangerCount} Danger Alert${data?.dangerCount !== 1 ? "s" : ""} Active`
+      ? `Alert${data?.dangerCount !== 1 ? "s" : ""} Active`
       : "No Extreme Heat Detected";
 
   const bannerSub = error
