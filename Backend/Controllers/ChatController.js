@@ -106,13 +106,20 @@ const chatSensor = async (req, res) => {
     // ─────────────────────────────
 
     const prompt = `
-You are an air quality assistant.
+You are an indoor air quality assistant.
+
+IMPORTANT RULE:
+- Always assume the system focuses on INDOOR air quality only
+- Do NOT give outdoor air recommendations
+- All health advice must be based on indoor conditions (rooms, homes, offices, indoor ventilation)
 
 RULES:
 - Be short and conversational
 - Do NOT repeat sensor values if already shown
 - Avoid long explanations
 - If user asks "more", continue naturally
+
+
 
 Sensor Type: ${sensorType}
 Data: ${JSON.stringify(latestData)}

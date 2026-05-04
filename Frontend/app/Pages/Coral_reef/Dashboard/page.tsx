@@ -160,7 +160,7 @@ const RiverCard = ({
       </div>
       <div className="grid grid-cols-3 gap-2">
         {[
-          // ✅ Updated pH range label
+          //Updated pH range label
           { icon: "🧪", label: "pH",   val: ph?.toFixed(2),        unit: "",     st: phSt,   range: "6.5–8.5" },
           { icon: "💧", label: "Turb", val: turbidity?.toFixed(1), unit: " NTU", st: turbSt, range: "0–10"    },
           { icon: "🌡️", label: "Temp", val: temp?.toFixed(1),      unit: "°C",   st: tempSt, range: "23–29"   },
