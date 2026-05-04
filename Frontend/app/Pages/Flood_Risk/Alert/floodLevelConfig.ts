@@ -137,15 +137,28 @@ export const safetyGuidelines: Record<LevelName, string[]> = {
   ],
 };
 
-// Flood depth range label for each level.
-export const feetRanges: Record<LevelName, string> = {
-  Normal: "(0 - 4 Feet)",
-  Alert: "(4 - 5 Feet)",
-  Minor: "(5 - 6.5 Feet)",
-  Moderate: "(6.5 - 7 Feet)",
-  Major: "(7 - 8 Feet)",
-  Critical: "(8+ Feet)",
+/** Full depth line for cards: non-overlapping bands, en dash, "ft", "<" on upper bound (Critical: 8+). */
+export const estimatedDepthRangeByLevel: Record<LevelName, string> = {
+  Normal: "Estimated Depth Range: (0-<4 ft)",
+  Alert: "Estimated Depth Range: (4-<5 ft)",
+  Minor: "Estimated Depth Range: (5-<6.5 ft)",
+  Moderate: "Estimated Depth Range: (6.5-<7 ft)",
+  Major: "Estimated Depth Range: (7-<8 ft)",
+  Critical: "Estimated Depth Range: (8+ ft)",
 };
+
+/** Compact band next to level title (same numeric bands as `estimatedDepthRangeByLevel`). */
+export const depthRangeCompact: Record<LevelName, string> = {
+  Normal: "0-<4 ft",
+  Alert: "4-<5 ft",
+  Minor: "5-<6.5 ft",
+  Moderate: "6.5-<7 ft",
+  Major: "7-<8 ft",
+  Critical: "8+ ft",
+};
+
+/** @deprecated Prefer `depthRangeCompact` or `estimatedDepthRangeByLevel`. */
+export const feetRanges = depthRangeCompact;
 
 // Returns left border color class for each level.
 export function getColor(name: string) {
