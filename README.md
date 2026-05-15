@@ -15,6 +15,7 @@ An AI and IoT integrated platform for predictive environmental risk analysis, re
 - [Abstract](#abstract)
 - [Research objectives](#research-objectives)
 - [System modules](#system-modules)
+- [IoT integration](#iot-integration)
 - [Architecture](#architecture)
 - [Technology stack](#technology-stack)
 - [Repository structure](#repository-structure)
@@ -59,12 +60,37 @@ This project was developed as a **Final Year Research (FYP)** deliverable with t
 
 ## System modules
 
-| Module | Focus | Key capabilities |
+All four modules are **IoT-enabled**: field devices stream sensor readings to the Node.js backend in real time; dashboards, ML services, and alert workflows consume that data for monitoring, prediction, and notifications.
+
+| Module | IoT sensors & devices | Key capabilities |
 | --- | --- | --- |
-| **Coral Reef Health Monitoring Module** | Marine ecosystem health | EfficientNet-B0 coral bleaching classification, inland water-quality context, role-based AI guidance |
-| **Air Quality Monitoring & Health Advisory Module** | Indoor/outdoor pollution | PM and gas sensor readings, health guidance, OTP-based subscribe/unsubscribe |
-| **Flood Risk Monitoring & Alert Module** | River and urban flood monitoring | Ultrasonic and float sensor data, live WebSocket updates, SMS alert subscriptions |
-| **Urban Heat Risk Prediction & Alert Module** | Heat island and heat-index risk | LightGBM multi-step forecasting, scheduled weather updates, heat warnings and alerts |
+| **Coral Reef Health Monitoring Module** | pH, turbidity, and water-temperature probes (inland river monitoring) | EfficientNet-B0 coral bleaching classification, live water-quality fusion, role-based AI guidance |
+| **Air Quality Monitoring & Health Advisory Module** | MQ-7, MQ-135, ENS160, DHT11 (CO, CO₂, NH₃, PM2.5, temperature/humidity) | Real-time pollution dashboards, health advisories, OTP-based alert subscriptions |
+| **Flood Risk Monitoring & Alert Module** | Ultrasonic water-level sensors and ESP32-based float sensors | Live level tracking, WebSocket updates, threshold-based SMS alerts |
+| **Urban Heat Risk Prediction & Alert Module** | IoT temperature/humidity nodes (heat-index and risk-level reporting) | LightGBM multi-step forecasting, weather API enrichment, heat warnings and SMS alerts |
+
+---
+
+## IoT integration
+
+EcoGuard-AI is built around a **shared IoT data pipeline** used by every research module:
+
+```text
+IoT devices (ESP32 / sensor nodes)
+        ↓  HTTP POST / live ingest
+Node.js backend (Express + PostgreSQL)
+        ↓  REST API + WebSocket
+Next.js dashboards, ML services, SMS & chatbot alerts
+```
+
+| Module | Data ingested from IoT | Backend endpoints (examples) |
+| --- | --- | --- |
+| Coral Reef Health Monitoring Module | pH, turbidity, water temperature | `/api/water-quality/*` |
+| Air Quality Monitoring & Health Advisory Module | CO, CO₂, NH₃, dust/PM, ambient conditions | `/api/air/*`, `/api/pollution` |
+| Flood Risk Monitoring & Alert Module | Water level (ultrasonic), float status (ESP32) | `/api/flood`, `/api/float` |
+| Urban Heat Risk Prediction & Alert Module | Temperature, humidity, computed heat index | `/api/sensors` |
+
+Live flood and float updates are pushed to the frontend via **WebSocket**; other modules refresh through REST polling and cached prediction jobs.
 
 ---
 
@@ -122,8 +148,9 @@ flowchart LR
 
 | Layer | Technologies |
 | --- | --- |
+| IoT & edge | ESP32 microcontrollers, ultrasonic/float flood sensors, air-quality gas sensors (MQ-7, MQ-135, ENS160), DHT11, pH/turbidity/temperature water probes |
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, Leaflet, Recharts |
-| Backend | Node.js, Express 5, Sequelize, PostgreSQL, JWT, WebSocket (`ws`) |
+| Backend | Node.js, Express 5, Sequelize, PostgreSQL, JWT, WebSocket (`ws`) — central IoT ingest hub |
 | ML - heat | FastAPI, pandas, scikit-learn, LightGBM, APScheduler |
 | ML - coral | FastAPI, PyTorch, torchvision (EfficientNet-B0), OpenAI API |
 | Notifications | OTP flows, Text.lk SMS integration |
