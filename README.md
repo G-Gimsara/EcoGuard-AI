@@ -1,38 +1,76 @@
 # EcoGuard-AI
-🌿 Environmental Risk and Resource Management AI System
-🔗 GitHub Repository: [https://github.com/shamalgodawela/EcoGuard-AI.git](https://github.com/shamalgodawela/EcoGuard-AI.git)
 
-EcoGuard-AI is a multi-module environmental intelligence platform that combines IoT data ingestion, machine learning services, and real-time dashboards to support risk detection and response.
+**Environmental Risk and Resource Management AI System - Final Year Research Project**
 
-## Project overview
-EcoGuard-AI integrates multiple environmental monitoring and prediction capabilities into one system:
-- Coral reef and aquatic ecosystem health monitoring
-- Urban heat risk prediction and Alert System
-- Flood risk monitoring and Alert System
-- Air Quality Monitoring and Alert System
+Faculty of Computing, **SLIIT** (Sri Lanka Institute of Information Technology) ,Sri Lanka
 
-Frontend: Next.js + Tailwind CSS  
-Backend: Node.js + Express (APIs) + PostgreSQL (data)  
-ML services: FastAPI (model inference)
+An AI and IoT integrated platform for predictive environmental risk analysis, real-time monitoring, and sustainable resource management across flood, air quality, urban heat, and coral reef domains.
 
-The platform is designed for actionable decision support across agencies, researchers, and communities through data visualization, forecasting, and notifications.
+**Repository:** [https://github.com/shamalgodawela/EcoGuard-AI](https://github.com/shamalgodawela/EcoGuard-AI)
 
 ---
 
-## Key capabilities
+## Table of contents
 
-- Real-time dashboards for flood, heat, air quality, and coral modules
-- IoT sensor data ingestion and historical trend analysis
-- Heat-risk prediction pipeline with scheduled weather data updates
-- Coral image inference powered by deep learning (PyTorch)
-- Alert subscription workflows (OTP-based subscribe/unsubscribe flows)
-- WebSocket-backed live updates for selected risk modules
-- AI-assisted chat endpoints in both backend and Python inference services
+- [Abstract](#abstract)
+- [Research objectives](#research-objectives)
+- [System modules](#system-modules)
+- [Architecture](#architecture)
+- [Technology stack](#technology-stack)
+- [Repository structure](#repository-structure)
+- [Prerequisites](#prerequisites)
+- [Installation and setup](#installation-and-setup)
+- [Environment variables](#environment-variables)
+- [Running the system](#running-the-system)
+- [API overview](#api-overview)
+- [Machine learning components](#machine-learning-components)
+- [Research significance](#research-significance)
+- [Project information](#project-information)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
-## Architecture (diagram)
-The diagram below uses Mermaid for a clearer flow. GitHub's Markdown renderer supports Mermaid diagrams in public repositories. If Mermaid does not render in your environment, use a Mermaid live editor (https://mermaid.live/) or replace this section with an SVG/PNG.
+## Abstract
+
+<div align="justify">
+
+Sri Lanka faces mounting environmental challenges including coral reef bleaching, recurrent flooding, escalating urban heat stress, and deteriorating air quality all deeply interconnected yet largely monitored in isolation. Traditional approaches rely on manual observation and fragmented sensor networks, limiting real-time response and effective cross-domain environmental analysis.
+
+To address these critical gaps, this study presents an integrated AI-powered Environmental Intelligence System designed to proactively monitor and manage key environmental conditions across Sri Lanka. The system combines IoT multi-sensor networks with advanced machine learning and deep learning techniques to continuously collect, process, and analyze environmental data in real time. It delivers intelligent risk classification, early warnings, and actionable insights through a unified web dashboard, SMS alert mechanisms, and an LLM-powered chatbot interface that supports informed decision-making.
+
+Prototype evaluation confirms high predictive accuracy and reliable real-time performance, demonstrating the system's potential as a scalable and proactive solution for national environmental risk management.
+
+</div>
+
+---
+
+## Research objectives
+
+This project was developed as a **Final Year Research (FYP)** deliverable with the following goals:
+
+1. Develop predictive models for environmental risk assessment
+2. Integrate real-time IoT sensor data with AI analytics
+3. Provide early warnings for floods, heat waves, and air pollution
+4. Support sustainable resource management and policy decisions
+5. Improve resilience of urban and coastal ecosystems
+
+---
+
+## System modules
+
+| Module | Focus | Key capabilities |
+| --- | --- | --- |
+| **Coral Reef Health Monitoring Module** | Marine ecosystem health | EfficientNet-B0 coral bleaching classification, inland water-quality context, role-based AI guidance |
+| **Air Quality Monitoring & Health Advisory Module** | Indoor/outdoor pollution | PM and gas sensor readings, health guidance, OTP-based subscribe/unsubscribe |
+| **Flood Risk Monitoring & Alert Module** | River and urban flood monitoring | Ultrasonic and float sensor data, live WebSocket updates, SMS alert subscriptions |
+| **Urban Heat Risk Prediction & Alert Module** | Heat island and heat-index risk | LightGBM multi-step forecasting, scheduled weather updates, heat warnings and alerts |
+
+---
+
+## Architecture
+
+The diagram below uses Mermaid for a clearer flow. GitHub's Markdown renderer supports Mermaid diagrams in public repositories. If Mermaid does not render in your environment, use a [Mermaid live editor](https://mermaid.live/) or replace this section with an SVG/PNG.
 
 ```mermaid
 flowchart LR
@@ -69,210 +107,300 @@ flowchart LR
   BE -->|Responses & Alerts| FE
 ```
 
+**Service ports (local development)**
+
+| Service | Default URL | Purpose |
+| --- | --- | --- |
+| Frontend | `http://localhost:3000` | Web dashboards and landing page |
+| Backend | `http://localhost:5000` | APIs, auth, database, WebSocket |
+| Heat ML (`python_api_heat_risk`) | `http://localhost:8000` | Urban heat predictions |
+| Coral ML (`python_api`) | `http://localhost:8001` | Coral image inference and chat |
+
 ---
 
 ## Technology stack
 
 | Layer | Technologies |
 | --- | --- |
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, Leaflet, Recharts |
-| Backend | Node.js, Express, Sequelize, PostgreSQL, JWT, WebSocket (`ws`) |
-| Python ML Services | FastAPI, pandas, scikit-learn, LightGBM, APScheduler, PyTorch |
-| AI Integrations | Google Generative AI SDK, OpenAI API |
-| Notifications | OTP-based subscriber management, SMS integration service hooks |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, Leaflet, Recharts |
+| Backend | Node.js, Express 5, Sequelize, PostgreSQL, JWT, WebSocket (`ws`) |
+| ML - heat | FastAPI, pandas, scikit-learn, LightGBM, APScheduler |
+| ML - coral | FastAPI, PyTorch, torchvision (EfficientNet-B0), OpenAI API |
+| Notifications | OTP flows, Text.lk SMS integration |
+| AI assistants | OpenAI API, Google Generative AI SDK (backend modules) |
 
 ---
 
-## Folder structure
-A high-level structure of this repository:
+## Repository structure
 
 ```text
 EcoGuard-AI/
-├── Frontend/                          # Next.js frontend
+├── Frontend/                    # Next.js application
 │   ├── app/
-│   │   ├── Pages/
-│   │   │   ├── Coral_reef/            # Coral dashboards, auth/report pages
-│   │   │   ├── Heat_risk/             # Heat maps, prediction, alerts, chatbot
-│   │   │   ├── Flood_Risk/            # Flood dashboard, alerts, notifications
-│   │   │   └── air_quality/           # Air dashboard, reports, subscriptions
-│   │   ├── Header/
-│   │   └── Footer/
-│   ├── public/                        # Static assets and geojson files
+│   │   ├── page.tsx             # Research landing page
+│   │   └── Pages/
+│   │       ├── Flood_Risk/      # Flood dashboards, alerts, safety
+│   │       ├── air_quality/     # Air monitoring and subscriptions
+│   │       ├── Heat_risk/       # Heat maps, predictions, chatbot
+│   │       └── Coral_reef/      # Coral dashboards, analysis, auth
 │   └── package.json
-├── Backend/                           # Express + Sequelize backend
-│   ├── Config/                        # DB configuration
-│   ├── Controllers/                   # Route business logic
-│   ├── Models/                        # Sequelize models
-│   ├── Routes/                        # API route definitions
-│   ├── Middleware/                    # Auth and request middleware
-│   ├── Services/                      # OTP/SMS and utility services
-│   ├── Utils/
+├── Backend/                     # Express API and PostgreSQL models
+│   ├── Config/                  # Sequelize database config
+│   ├── Controllers/
+│   ├── Models/
+│   ├── Routes/
+│   ├── Services/                # OTP, SMS utilities
+│   ├── Middleware/
 │   ├── seed/
-│   ├── Server.js                      # Main app/server entry
-│   └── package.json
-├── python_api/                        # Coral inference service (FastAPI + PyTorch)
+│   └── Server.js
+├── python_api/                  # Coral bleaching inference (PyTorch)
 │   ├── api.py
+│   ├── efficientnetb0_model.pth # Trained weights (required)
 │   └── requirements.txt
-├── python_api_heat_risk/              # Heat prediction service (FastAPI + LightGBM)
+├── python_api_heat_risk/        # Urban heat forecasting (LightGBM)
 │   ├── api.py
 │   ├── config/
-│   ├── services/
+│   ├── services/                # Weather CSV updater
 │   ├── utils/
-│   ├── data/
-│   ├── train_model.py
+│   ├── models/direct_multistep/ # Trained .pkl models
+│   ├── data/                    # Historical weather CSV
 │   └── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Module highlights
+## Prerequisites
 
-### 1) Heat risk module
-- Prediction APIs under `/api/predictions`
-- Backend heat warning endpoint `/api/heat-warning` with cache refresh cycle
-- Python heat service with scheduled dataset updates and forecasting pipeline
-
-### 2) Flood risk module
-- Measurement and float-sensor APIs under `/api/flood` and `/api/float`
-- Alert user management under `/api/alert-users`
-- WebSocket event broadcasting for live UI updates
-
-### 3) Air quality module
-- Pollution APIs under `/api/pollution`
-- Sensor and reporting workflows integrated into dashboard pages
-- Subscription endpoints for notifications under `/api/subscribe/*` and `/api/unsubscribe/*`
-
-### 4) Coral & water quality module
-- Coral auth and report routes
-- Water quality sensor endpoints for pH, turbidity, and temperature
-- Python `python_api` service for coral bleaching inference + contextual AI suggestions
+- **Node.js** 18+ and **npm** 9+
+- **Python** 3.10+
+- **PostgreSQL** 14+ (16+ recommended)
+- **Git**
+- Optional: NVIDIA GPU for faster coral model inference (CPU works)
 
 ---
 
-## Getting Started (local development)
-Requirements:
-- Node.js 18+
-- npm 9+
-- Python 3.10+
-- PostgreSQL 14+ (16+ recommended)
+## Installation and setup
 
-1. Clone repository
-   ```bash
-   git clone https://github.com/<owner>/EcoGuard-AI.git
-   cd EcoGuard-AI
-   ```
+### 1. Clone the repository
 
-2. Run frontend
-   ```bash
-   cd Frontend
-   npm install
-   npm run dev
-   ```
-   Frontend URL: `http://localhost:3000`
+```bash
+git clone https://github.com/shamalgodawela/EcoGuard-AI.git
+cd EcoGuard-AI
+```
 
-3. Run backend
-   ```bash
-   cd ../Backend
-   npm install
-   npm run dev
-   ```
-   Backend URL: `http://localhost:5000`
+### 2. PostgreSQL database
 
-4. Run heat-risk FastAPI service
-   ```bash
-   cd ../python_api_heat_risk
-   python -m venv venv
-   venv\Scripts\activate
-   pip install -r requirements.txt
-   uvicorn api:app --reload --port 8001
-   ```
+Create a database for the project (example name: `ecoguard`):
 
-5. Run coral inference FastAPI service
-   ```bash
-   cd ../python_api
-   python -m venv venv
-   venv\Scripts\activate
-   pip install -r requirements.txt
-   uvicorn api:app --reload --port 8002
-   ```
+```sql
+CREATE DATABASE ecoguard;
+```
 
-6. Configure environment variables
-   - Create `Backend/.env` for DB and auth settings
-   - Create `python_api/.env` with `OPENAI_API_KEY` for coral suggestion/chat routes
-   - Adjust service URLs/ports if running on non-default ports
+### 3. Backend
 
----
+```bash
+cd Backend
+npm install
+```
 
-## Backend API overview
+Create `Backend/.env` (see [Environment variables](#environment-variables)), then start:
 
-Core route groups currently include:
-- `/api/auth` (heat auth)
-- `/api/predictions` (heat predictions)
-- `/api/heat-warning` and `/api/heat-warning` route group
-- `/api/flood`, `/api/float` (flood and float sensor data)
-- `/api/alert-users` (flood alert recipients and subscription management)
-- `/api/pollution` (air pollution data and chat endpoint)
-- `/api/water-quality` (pH, turbidity, water temperature)
-- `/api/reports`, `/api/coral-auth`, `/api/sensors`
+```bash
+npm run dev
+```
 
-Backend root check:
-- `GET /` returns API status payload
+Backend runs at `http://localhost:5000`.
 
----
+### 4. Frontend
 
-## Data and model flow
+```bash
+cd Frontend
+npm install
+npm run dev
+```
 
-- Heat-risk service fetches historical/forecast weather signals and blends sensor context for prediction features.
-- Prediction artifacts include heat index and classified risk levels.
-- Backend consumes and serves processed risk data to UI dashboards and alert workflows.
-- Coral service performs image classification (`healthy_corals`, `bleach_1_40`, `bleach_40_100`) and generates context-aware guidance.
+Frontend runs at `http://localhost:3000`.
 
----
+### 5. Heat-risk ML service
 
-## Scripts
+```bash
+cd python_api_heat_risk
+python -m venv venv
 
-### Frontend (`Frontend/package.json`)
-- `npm run dev`
-- `npm run build`
-- `npm run start`
-- `npm run lint`
+# Windows
+venv\Scripts\activate
 
-### Backend (`Backend/package.json`)
-- `npm run dev`
-- `npm start`
+# macOS / Linux
+# source venv/bin/activate
+
+pip install -r requirements.txt
+uvicorn api:app --reload --port 8000
+```
+
+On startup, this service refreshes weather data, loads the CSV dataset, and loads LightGBM models from `models/direct_multistep/`.
+
+### 6. Coral ML service
+
+```bash
+cd python_api
+python -m venv venv
+venv\Scripts\activate   # or source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Ensure `efficientnetb0_model.pth` is present in `python_api/`, then:
+
+```bash
+uvicorn api:app --reload --port 8001
+```
+
+Create `python_api/.env` with `OPENAI_API_KEY` for suggestion and chat endpoints.
 
 ---
 
-## Deployment notes
+## Environment variables
 
-- Deploy each service independently: frontend, backend, `python_api`, and `python_api_heat_risk`.
-- Use managed PostgreSQL for production durability and backups.
-- Put backend and Python services behind a reverse proxy/API gateway.
-- Restrict CORS origins for production domains.
-- Run CI checks for lint/build/test before release.
+### Backend (`Backend/.env`)
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | API port (default `5000`) |
+| `DB_NAME` / `PG_DATABASE` | PostgreSQL database name |
+| `DB_USER` / `PG_USER` | Database user |
+| `DB_PASSWORD` / `PG_PASSWORD` | Database password |
+| `DB_HOST` / `PG_HOST` | Database host (e.g. `localhost`) |
+| `DB_PORT` / `PG_PORT` | Database port (default `5432`) |
+| `JWT_SECRET` | Secret for JWT auth (heat and coral modules) |
+| `FASTAPI_URL` | Heat ML base URL (e.g. `http://localhost:8000`) |
+| `OPENAI_API_KEY` | OpenAI key for heat alert / chat features |
+| `AIROPENAI_API_KEY` | OpenAI key for air-quality chat |
+| `TEXTLK_API_KEY` / `TEXTLK_API_TOKEN` | Text.lk SMS API |
+| `TEXTLK_SENDER_ID` | SMS sender ID |
+| `AIRTEXTLK_API_KEY` | Alternate SMS provider key |
+| `AIRTEXTLK_SENDER_ID` | Alternate SMS sender ID |
+
+### Coral service (`python_api/.env`)
+
+| Variable | Description |
+| --- | --- |
+| `OPENAI_API_KEY` | Required for `/chat` and contextual suggestions |
 
 ---
 
-## Contributing
+## Running the system
 
-1. Fork repository
-2. Create branch: `git checkout -b feature/my-feature`
-3. Commit and push changes
-4. Open a Pull Request with clear testing notes
+Start all four processes (in separate terminals):
 
-Follow/add a CONTRIBUTING.md to document branching, testing, and PR guidelines.
+1. PostgreSQL (running)
+2. `Backend` → `npm run dev`
+3. `Frontend` → `npm run dev`
+4. `python_api_heat_risk` → `uvicorn api:app --reload --port 8000`
+5. `python_api` → `uvicorn api:app --reload --port 8001`
+
+Open `http://localhost:3000` for the research landing page and module navigation.
+
+**Production build (frontend only)**
+
+```bash
+cd Frontend
+npm run build
+npm start
+```
+
+---
+
+## API overview
+
+| Route group | Description |
+| --- | --- |
+| `GET /` | Backend health check |
+| `/api/auth` | Heat module authentication |
+| `/api/predictions` | Heat prediction data (proxies heat ML service) |
+| `GET /api/heat-warning` | Cached heat danger warnings |
+| `/api/flood`, `/api/float` | Flood and float sensor measurements |
+| `/api/alert-users` | Flood SMS alert subscribers |
+| `/api/pollution` | Air quality readings and chat |
+| `/api/subscribe/*`, `/api/unsubscribe/*` | Air alert subscriptions (OTP) |
+| `/api/water-quality` | pH, turbidity, water temperature |
+| `/api/coral-auth`, `/api/reports` | Coral module auth and reporting |
+| `/api/sensors` | Heat IoT sensor endpoints |
+| WebSocket on backend server | Live flood/float updates to dashboard |
+
+**Coral ML service (`python_api`, port 8001)**
+
+| Endpoint | Method | Description |
+| --- | --- | --- |
+| `/predict` | POST | Coral image classification + AI suggestions |
+| `/chat` | POST | Role-aware reef and water-quality assistant |
+
+**Heat ML service (`python_api_heat_risk`, port 8000)**
+
+| Endpoint | Method | Description |
+| --- | --- | --- |
+| `/predict` | GET | JSON heat forecasts for all configured locations |
+| `/predict/ui` | GET | HTML prediction dashboard |
+
+---
+
+## Machine learning components
+
+### Urban Heat Risk Prediction & Alert Module (`python_api_heat_risk`)
+
+- **Approach:** Direct multi-step forecasting with LightGBM models per horizon and weather variable (temperature, humidity, solar radiation).
+- **Data:** Historical and live-updated weather CSV (`data/Weather_*.csv`), refreshed via scheduled weather API updates.
+- **Output:** Heat-index style risk levels consumed by the Node.js backend and heat dashboards.
+
+### Coral Reef Health Monitoring Module (`python_api`)
+
+- **Model:** EfficientNet-B0 fine-tuned for three classes:
+  - `healthy_corals`
+  - `bleach_11_50` (11–50% bleaching)
+  - `bleach_50_100` (50–100% bleaching)
+- **Context:** Inland river pH, turbidity, and temperature are combined with image inference to explain inland-to-reef pollution pathways (research focus: Sri Lankan coastal ecosystems).
+- **Guidance:** OpenAI-powered, role-specific recommendations (researcher, tourism guide, marine authority, general public).
+
+---
+
+## Research significance
+
+The proposed system enhances disaster preparedness, improves environmental monitoring accuracy, and supports evidence-based decision-making. Target users include government agencies, researchers, urban planners, and environmental organizations working to mitigate climate-related and anthropogenic risks and to promote sustainable resource use.
+
+---
+
+## Project information
+
+| | |
+| --- | --- |
+| **Institution** | Faculty of Computing, SLIIT |
+| **Supervisor** | Prof. Koliya Pulasinghe |
+| **Repository** | [shamalgodawela/EcoGuard-AI](https://github.com/shamalgodawela/EcoGuard-AI) |
+
+**Suggested citation (adapt for your report):**
+
+> *EcoGuard-AI: An AI and IoT Platform for Environmental Risk and Resource Management.* Final Year Research Project, Faculty of Computing, SLIIT, 2025–2026. Supervised by Prof. Koliya Pulasinghe.
 
 ---
 
 ## Troubleshooting
 
-- If backend cannot connect, verify PostgreSQL credentials and host/port in `Backend/.env`.
-- If heat-risk predictions fail, ensure model `.pkl` files and CSV data paths exist in `python_api_heat_risk`.
-- If coral service fails at startup, ensure `python_api/.env` contains `OPENAI_API_KEY` and model file `my_model.pth` is present.
-- If CORS errors occur, verify frontend origin (`http://localhost:3000`) matches backend and FastAPI CORS settings.
+| Issue | What to check |
+| --- | --- |
+| Backend cannot connect to DB | `Backend/.env` credentials; PostgreSQL service running |
+| Heat predictions fail | `python_api_heat_risk` on port **8000**; `.pkl` files in `models/direct_multistep/`; weather CSV present |
+| Coral service fails at startup | `OPENAI_API_KEY` in `python_api/.env`; `efficientnetb0_model.pth` in `python_api/` |
+| Coral UI cannot reach ML API | Coral service on port **8001** (matches `Coral_an/page.tsx`) |
+| CORS errors | Frontend origin `http://localhost:3000` allowed in backend and FastAPI CORS settings |
+| Flood live updates missing | Backend WebSocket running; dashboard connected to backend `ws` URL |
 
 ---
 
 ## License
-MIT License
+
+MIT License 
+
+---
+
+## Acknowledgments
+
+This project was completed as a **Final Year Research** project at the Faculty of Computing, SLIIT, under the supervision of **Prof. Koliya Pulasinghe**. Thanks also to open-data and API providers used for weather and environmental datasets, as detailed in the research reports.
